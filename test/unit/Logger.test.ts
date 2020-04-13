@@ -3,7 +3,7 @@ import * as sinon from "sinon";
 import { Memory } from "./mock";
 
 import sinonChai from "sinon-chai";
-import { disableLogger, enableLogger, getLogger, Logger, disableLevel, enableLevel } from "utils/Logger";
+import { disableLevel, disableLogger, enableLevel, enableLogger, getLogger, Logger } from "utils/Logger";
 const { expect } = chai;
 
 chai.use(sinonChai);

@@ -102,3 +102,6 @@ dist
 
 # TernJS port file
 .tern-port
+
+# screeps sensitive files
+screeps.json

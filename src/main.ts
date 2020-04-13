@@ -1,3 +1,4 @@
+import { mainLoop } from "phases";
 import { ErrorMapper } from "utils/ErrorMapper";
 import { getLogger } from "utils/Logger";
 import "utils/prototypes";
@@ -12,7 +13,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
     logger.debug("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
     logger.debug(`[MAIN] Tick ${Game.time} begins."`);
     try {
-        run();
+        mainLoop();
     } catch (e) {
         logger.fatal(`Interrupted tick: ${e.message}\n${e.stack}`);
         // tslint:disable-next-line:no-debugger

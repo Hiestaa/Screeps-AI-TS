@@ -65,6 +65,15 @@ const CODE_TO_ERROR = {
     [-15]: "ERR_GCL_NOT_ENOUGH",
 };
 
+// https://coolors.co/7c7800-d600c4-0078ce-b51200-422100
+export const COLORS = {
+    tasks: "7c7800",
+    controllers: "#d600c4",
+    objectives: "#0078ce",
+    phases: "#b51200",
+    utils: "#422100",
+};
+
 type logFn = (message: string, color: string, highlight?: boolean) => void;
 
 /**
@@ -84,7 +93,7 @@ class LevelLogger {
     constructor() {
         Memory.loggerLevelEnabled = Memory.loggerLevelEnabled || {
             // default level state, if no state is defined in memory
-            debug: false,
+            debug: true,
             info: true,
             warning: true,
             error: true,
@@ -278,6 +287,8 @@ function findLoggers(scope: string): Logger[] {
     return recursiveFindAllLoggers(pointer);
 }
 
+const myLogger = getLogger("utils.Logger", COLORS.utils);
+
 /**
  * Enable all loggers falling under the given scope
  * @param {string} scope - the scope of the loggers to enable, or the string
@@ -315,6 +326,9 @@ export function disableLogger(scope: string): number {
  */
 export function enableLevel(level: LOG_LEVEL) {
     levelLogger._enable(level);
+    if (level !== "failure") {
+        myLogger[level](`Logging level ${level} enabled`);
+    }
 }
 
 /**
@@ -324,6 +338,9 @@ export function enableLevel(level: LOG_LEVEL) {
  * @param {LOG_LEVEL} level - level to disable
  */
 export function disableLevel(level: LOG_LEVEL) {
+    if (level !== "failure") {
+        myLogger[level](`Disabling logging level ${level}`);
+    }
     levelLogger._disable(level);
 }
 

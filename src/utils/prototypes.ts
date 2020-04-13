@@ -23,7 +23,7 @@ RoomPosition.prototype.toString = function(htmlLink = true, id = undefined, memW
 };
 
 Creep.prototype.toString = function(htmlLink = true) {
-    return `[${this.name ? this.name : this.id} ${this.pos.toString(htmlLink, this.id, "creeps." + this.name)}]`;
+    return `[creep ${this.name ? this.name : this.id} ${this.pos.toString(htmlLink, this.id, "creeps." + this.name)}]`;
 };
 
 Structure.prototype.toString = function(htmlLink = true) {
@@ -35,7 +35,7 @@ Structure.prototype.toString = function(htmlLink = true) {
 };
 
 StructureSpawn.prototype.toString = function(htmlLink = true) {
-    return `[structure (${this.structureType}) #${this.id} ${this.pos.toString(
+    return `[structure (${this.structureType}) #${this.name ? this.name : this.id} ${this.pos.toString(
         htmlLink,
         this.id,
         "spawns." + this.name,
