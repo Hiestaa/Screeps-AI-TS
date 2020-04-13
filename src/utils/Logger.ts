@@ -67,11 +67,11 @@ const CODE_TO_ERROR = {
 
 // https://coolors.co/7c7800-d600c4-0078ce-b51200-422100
 export const COLORS = {
-    tasks: "7c7800",
-    controllers: "#d600c4",
-    objectives: "#0078ce",
-    phases: "#b51200",
-    utils: "#422100",
+    tasks: "#5B9300",
+    controllers: "#D600C4",
+    objectives: "#0078CE",
+    phases: "#B51200",
+    utils: "#C46200",
 };
 
 type logFn = (message: string, color: string, highlight?: boolean) => void;
