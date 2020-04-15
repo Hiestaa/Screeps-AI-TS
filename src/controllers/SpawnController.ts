@@ -1,35 +1,29 @@
-import { SpawnTask } from "tasks/Spawn";
-import { SpawnTaskExecutor } from "tasks/TaskExecutor";
-import { COLORS, getLogger } from "utils/Logger";
-import { BaseTaskExecutorController } from "./BaseTaskExecutorController";
+import { BaseController, ReturnCodeSwitcher } from "./BaseController";
 
-const logger = getLogger("controllers.CreepController", COLORS.controllers);
-/**
- * Base class to control a spawn unit
- */
-export class SpawnController extends BaseTaskExecutorController<StructureSpawn, SpawnTask, SpawnTaskExecutor> {
-    public spawn?: StructureSpawn;
-    public memoryLocation: "spawns" = "spawns";
-    public memory: SpawnMemory = {
-        tasks: [],
-    };
+export class SpawnController extends BaseController<StructureSpawn> {
+    public roomObject: StructureSpawn;
+    public spawn: StructureSpawn;
 
-    constructor(name: string) {
-        super(name, SpawnTaskExecutor, logger);
+    constructor(roomObject: StructureSpawn) {
+        super();
+        this.roomObject = roomObject;
+        this.spawn = roomObject;
     }
 
-    public reloadGameObjects() {
-        const spawn = Game.spawns[this.name];
-        if (spawn) {
-            this.spawn = spawn;
-        }
+    public spawnCreep(
+        body: BodyPartConstant[],
+        name: string,
+        opts?: SpawnOptions | undefined,
+    ): ReturnCodeSwitcher<ScreepsReturnCode> {
+        return this.doSwitch(this.spawn.spawnCreep(body, name, opts), "spawnCreep");
     }
-
-    public getRoomObject() {
-        return this.spawn;
+    public destroy(): ReturnCodeSwitcher<ScreepsReturnCode> {
+        throw new Error("Method not implemented.");
     }
-
-    public toString() {
-        return `controller for ${this.spawn}`;
+    public renewCreep(target: Creep): ReturnCodeSwitcher<ScreepsReturnCode> {
+        throw new Error("Method not implemented.");
+    }
+    public recycleCreep(target: Creep): ReturnCodeSwitcher<ScreepsReturnCode> {
+        throw new Error("Method not implemented.");
     }
 }

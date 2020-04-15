@@ -1,3 +1,4 @@
+import { CreepController } from "controllers/CreepController";
 import { BaseTask } from "tasks/ITask";
 import { COLORS, getLogger } from "utils/Logger";
 
@@ -9,7 +10,7 @@ type TASK_TYPE = "TASK_HARVEST" | "TASK_HAUL";
  * Simple harvest task - go harvest from the first source available.
  * @param creepController controller for the creep that will perform this task
  */
-export abstract class BaseCreepTask extends BaseTask<Creep> {
+export abstract class BaseCreepTask extends BaseTask<Creep, CreepController> {
     public type: TASK_TYPE;
 
     constructor(type: TASK_TYPE) {
@@ -17,9 +18,9 @@ export abstract class BaseCreepTask extends BaseTask<Creep> {
         this.type = type;
     }
 
-    public abstract execute(creep: Creep): void;
+    public abstract execute(creep: CreepController): void;
 
-    public abstract completed(creep: Creep): boolean;
+    public abstract completed(creep: CreepController): boolean;
 
     public toJSON(): TaskMemory {
         return {

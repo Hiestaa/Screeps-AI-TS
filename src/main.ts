@@ -3,6 +3,7 @@ import "utils/cli";
 import { ErrorMapper } from "utils/ErrorMapper";
 import { getLogger } from "utils/Logger";
 import "utils/prototypes";
+import { VERSION } from "utils/version";
 
 const logger = getLogger("main", "white");
 
@@ -10,7 +11,7 @@ const logger = getLogger("main", "white");
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
     logger.debug("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
-    logger.debug(`[MAIN] Tick ${Game.time} begins."`);
+    logger.debug(`[MAIN] Tick ${Game.time} begins - ${VERSION}.`);
     try {
         mainLoop();
     } catch (e) {

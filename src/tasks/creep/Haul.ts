@@ -1,3 +1,4 @@
+import { CreepController } from "controllers/CreepController";
 import { BaseCreepTask } from "tasks/creep/BaseCreepTask";
 import { COLORS, getLogger } from "utils/Logger";
 
@@ -12,25 +13,23 @@ export class Haul extends BaseCreepTask {
         super("TASK_HAUL");
     }
 
-    public execute(creep: Creep) {
-        const spawns = creep.room.find(FIND_MY_SPAWNS);
+    public execute(creepCtl: CreepController) {
+        const spawns = creepCtl.creep.room.find(FIND_MY_SPAWNS);
         if (spawns.length <= 0) {
             logger.warning("No spawn available in the current creep room");
             return;
         }
-        const tCode = creep.transfer(spawns[0], RESOURCE_ENERGY);
-        if (tCode === ERR_NOT_IN_RANGE) {
-            const mCode = creep.moveTo(spawns[0]);
-            if (mCode !== OK && mCode !== ERR_BUSY) {
-                logger.failure(mCode, `${creep}: Unable to perform moveTo action`);
-            }
-        } else if (tCode !== OK && tCode !== ERR_BUSY) {
-            logger.failure(tCode, `${creep}: Unable to perform transfer action`);
-        }
+
+        creepCtl
+            .transfer(spawns[0], RESOURCE_ENERGY)
+            .on(ERR_NOT_IN_RANGE, () => {
+                creepCtl.moveTo(spawns[0]).logFailure();
+            })
+            .logFailure();
     }
 
-    public completed(creep: Creep) {
-        return creep.store.getUsedCapacity() === 0;
+    public completed(creepCtl: CreepController) {
+        return creepCtl.creep.store.getUsedCapacity() === 0;
     }
 
     public description() {

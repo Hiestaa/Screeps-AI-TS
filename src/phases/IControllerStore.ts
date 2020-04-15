@@ -1,9 +1,9 @@
-import { CreepController } from "controllers/CreepController";
-import { SpawnController } from "controllers/SpawnController";
+import { CreepTaskExecutor } from "controllers/taskExecutors/CreepTaskExecutor";
+import { SpawnTaskExecutor } from "controllers/taskExecutors/SpawnTaskExecutor";
 
 export interface IControllerStore {
-    creeps: { [key: string]: CreepController };
-    spawns: { [key: string]: SpawnController };
+    creeps: { [key: string]: CreepTaskExecutor };
+    spawns: { [key: string]: SpawnTaskExecutor };
 }
 
 export function initControllerStore(): IControllerStore {

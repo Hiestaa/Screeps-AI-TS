@@ -1,5 +1,5 @@
-import { CreepController } from "controllers/CreepController";
-import { SpawnController } from "controllers/SpawnController";
+import { CreepTaskExecutor } from "controllers/taskExecutors/CreepTaskExecutor";
+import { SpawnTaskExecutor } from "controllers/taskExecutors/SpawnTaskExecutor";
 import { IControllerStore } from "phases/IControllerStore";
 import { Harvest } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
@@ -34,14 +34,14 @@ export class ReachRCL1 extends BaseObjective {
         return this;
     }
 
-    private ensureSpawnTask(spawnController: SpawnController) {
+    private ensureSpawnTask(spawnController: SpawnTaskExecutor) {
         logger.debug(`${this}: ensuring ${spawnController} has task TASK_SPAWN scheduled`);
         if (!spawnController.hasTaskScheduled("TASK_SPAWN")) {
             spawnController.scheduleTask(new SpawnTask(100));
         }
     }
 
-    private ensureHarvestAndHaulTasks(creepController: CreepController) {
+    private ensureHarvestAndHaulTasks(creepController: CreepTaskExecutor) {
         logger.debug(`${this}: ensuring ${creepController} has tasks TASK_HARVEST and TASK_HAUL scheduled`);
         if (!creepController.hasTaskScheduled("TASK_HARVEST")) {
             creepController.scheduleTask(new Harvest());

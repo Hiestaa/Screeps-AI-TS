@@ -1,0 +1,95 @@
+import { COLORS, getLogger } from "utils/Logger";
+
+const logger = getLogger("controllers.CreepController", COLORS.controllers);
+
+export abstract class BaseController<RoomObjectType extends RoomObject> {
+    public abstract roomObject: RoomObjectType;
+
+    public toString() {
+        return `controller for ${this.roomObject}`;
+    }
+
+    protected doSwitch<Code extends ScreepsReturnCode>(code: Code, action: string) {
+        return new ReturnCodeSwitcher<Code>(code)
+            ._on(ERR_BUSY, () => logger.debug(`${this} did not perform ${action} because it is busy`))
+            ._on(ERR_TIRED, () => logger.debug(`${this} did not perform ${action} because it is tired`))
+            .failure((_code: Code) => logger.failure(_code, `${this}: Unable to perform action`));
+    }
+}
+
+/**
+ * Utility to facilitate doing a switch over the resulting values of a creep action.
+ * This object will wrap the return code of a particular action to offer some handy shortcuts.
+ */
+export class ReturnCodeSwitcher<Code extends ScreepsReturnCode> {
+    public code: Code;
+    public checkedValues: Set<ScreepsReturnCode>;
+    public failCallback?: (code: Code) => void;
+
+    constructor(code: Code) {
+        this.code = code;
+        this.checkedValues = new Set<ScreepsReturnCode>();
+    }
+
+    /**
+     * Add a handler function for a particular response code
+     * As many callback as desired can be added to the same response code. Each callback is executed immediately.
+     *
+     * @param code return code of the executed action
+     * @param callback callback to execute if the executed action return code matches the provided one
+     */
+    public on(code: Code, callback: () => void) {
+        this.checkedValues.add(code);
+        if (this.code === code) {
+            callback();
+        }
+        return this;
+    }
+
+    /**
+     * Add a handler function for a particular response code
+     * This is to be used internally to add generic callback to specific return code
+     * that may not match one of the expected ones
+     *
+     * @param code possible return code of the executed action
+     * @param callback callback to execute if the executed action return code matches the provided one
+     */
+    public _on(code: ScreepsReturnCode, callback: () => void) {
+        this.checkedValues.add(code);
+        if (this.code === code) {
+            callback();
+        }
+        return this;
+    }
+
+    /**
+     * Add a success callback - handy shortcut for `on(OK, callback)`
+     * @param callback callback to execute in case of success
+     */
+    public success(callback: () => void) {
+        if (this.code === OK) {
+            callback();
+        }
+        return this;
+    }
+
+    /**
+     * Add a failure callback to be called on when calling `logFailure`.
+     * The callback will be called in case of
+     * * non-OK return code, AND
+     * * the returned code has not matched any of the provided callbacks
+     * @param callback callback to execute in case of failure
+     */
+    public failure(callback: (code: Code) => void) {
+        this.failCallback = callback;
+        return this;
+    }
+
+    public logFailure() {
+        if (this.code !== OK && !this.checkedValues.has(this.code)) {
+            if (this.failCallback) {
+                this.failCallback(this.code);
+            }
+        }
+    }
+}

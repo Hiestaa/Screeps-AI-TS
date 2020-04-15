@@ -1,5 +1,5 @@
-import { CreepController } from "controllers/CreepController";
-import { SpawnController } from "controllers/SpawnController";
+import { CreepTaskExecutor } from "controllers/taskExecutors/CreepTaskExecutor";
+import { SpawnTaskExecutor } from "controllers/taskExecutors/SpawnTaskExecutor";
 import { IObjective, OBJECTIVE_TYPE } from "objectives/IObjective";
 import { ReachRCL1 } from "objectives/ReachRCL1";
 import { COLORS, getLogger } from "utils/Logger";
@@ -20,8 +20,8 @@ export function reload(): [IControllerStore, IObjective] {
     return [controllerStore, objective];
 }
 
-const reloadCreeps = makeControllerReload("creeps");
-const reloadSpawns = makeControllerReload("spawns");
+const reloadCreeps = makeTaskExecutorReload("creeps");
+const reloadSpawns = makeTaskExecutorReload("spawns");
 
 function reloadObjective(): IObjective {
     const getObjectiveClass = (objectiveType: OBJECTIVE_TYPE): ReloadableObjective => {
@@ -40,22 +40,22 @@ function reloadObjective(): IObjective {
 }
 
 type IConstructable<T> = new (...args: any) => T;
-type ReloadableController = IConstructable<CreepController> | IConstructable<SpawnController>;
+type ReloadableTaskExecutor = IConstructable<CreepTaskExecutor> | IConstructable<SpawnTaskExecutor>;
 type ReloadableObjective = IConstructable<ReachRCL1>;
 
-type CONTROLLER_MEM_LOCS = "creeps" | "spawns";
+type TASK_EXECUTOR_MEM_LOCS = "creeps" | "spawns";
 
-function makeControllerReload(memLoc: CONTROLLER_MEM_LOCS) {
-    const getController = (_memLoc: CONTROLLER_MEM_LOCS): ReloadableController => {
+function makeTaskExecutorReload(memLoc: TASK_EXECUTOR_MEM_LOCS) {
+    const getTaskExecutor = (_memLoc: TASK_EXECUTOR_MEM_LOCS): ReloadableTaskExecutor => {
         switch (_memLoc) {
             case "creeps":
-                return CreepController;
+                return CreepTaskExecutor;
             case "spawns":
-                return SpawnController;
+                return SpawnTaskExecutor;
         }
     };
 
-    const Controller = getController(memLoc);
+    const TaskExecutor = getTaskExecutor(memLoc);
 
     return (controllerStore: IControllerStore) => {
         for (const name in Memory[memLoc]) {
@@ -63,7 +63,7 @@ function makeControllerReload(memLoc: CONTROLLER_MEM_LOCS) {
                 continue;
             }
 
-            const controller = new Controller(name);
+            const controller = new TaskExecutor(name);
             controllerStore[memLoc][name] = controller;
             logger.debug(`Reloading ${controller} from Memory`);
             controller.reload();
@@ -77,7 +77,7 @@ function makeControllerReload(memLoc: CONTROLLER_MEM_LOCS) {
                 continue;
             }
 
-            const controller = new Controller(name);
+            const controller = new TaskExecutor(name);
             controllerStore[memLoc][name] = controller;
             logger.debug(`Reloading ${controller} from Game`);
             controller.reload();

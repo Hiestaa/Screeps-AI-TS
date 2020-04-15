@@ -1,3 +1,5 @@
+import "utils/version"; // imported because Logger will be put first in the file and we can view the version in the comment at the top of the build artifact
+
 /*
  * Logging utilities for the screeps ai.
  * Logging is scoped by domain. To instantiate a logger, call:

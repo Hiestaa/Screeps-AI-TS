@@ -1,3 +1,4 @@
+import { SpawnController } from "controllers/SpawnController";
 import { BaseTask } from "tasks/ITask";
 import { gun } from "utils/id";
 import { COLORS, getLogger } from "utils/Logger";
@@ -6,7 +7,7 @@ const logger = getLogger("tasks.Spawn", COLORS.tasks);
 
 /**
  */
-export class SpawnTask extends BaseTask<StructureSpawn> {
+export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     public target: number;
 
     constructor(target: number) {
@@ -14,9 +15,9 @@ export class SpawnTask extends BaseTask<StructureSpawn> {
         this.target = target;
     }
 
-    public execute(spawn: StructureSpawn) {
+    public execute(spawnCtl: SpawnController) {
         const name = gun("H:CMW");
-        const res = spawn.spawnCreep([CARRY, MOVE, WORK], name);
+        const res = spawnCtl.spawn.spawnCreep([CARRY, MOVE, WORK], name);
         if (res === ERR_NOT_ENOUGH_ENERGY) {
             logger.debug("Not enough energy to produce harvester");
         } else if (res !== OK && res !== ERR_BUSY) {
