@@ -3,7 +3,7 @@ import { SpawnTaskExecutor } from "controllers/taskExecutors/SpawnTaskExecutor";
 import { IObjective, OBJECTIVE_TYPE } from "objectives/IObjective";
 import { ReachRCL1 } from "objectives/ReachRCL1";
 import { COLORS, getLogger } from "utils/Logger";
-import { IControllerStore, initControllerStore } from "./IControllerStore";
+import { initTaskExecutorStore, ITaskExecutorStore } from "./ITaskExecutorStore";
 
 const logger = getLogger("phases.reload", COLORS.phases);
 
@@ -11,9 +11,9 @@ const logger = getLogger("phases.reload", COLORS.phases);
  * Reload phase of the loop
  * Re-instantiate all the game objects based on the current memory/game state.
  */
-export function reload(): [IControllerStore, IObjective] {
+export function reload(): [ITaskExecutorStore, IObjective] {
     logger.debug(">>> RELOAD <<<");
-    const controllerStore = initControllerStore();
+    const controllerStore = initTaskExecutorStore();
     reloadCreeps(controllerStore);
     reloadSpawns(controllerStore);
     const objective = reloadObjective();
@@ -57,7 +57,7 @@ function makeTaskExecutorReload(memLoc: TASK_EXECUTOR_MEM_LOCS) {
 
     const TaskExecutor = getTaskExecutor(memLoc);
 
-    return (controllerStore: IControllerStore) => {
+    return (controllerStore: ITaskExecutorStore) => {
         for (const name in Memory[memLoc]) {
             if (!Memory[memLoc].hasOwnProperty(name)) {
                 continue;

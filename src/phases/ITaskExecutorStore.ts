@@ -1,12 +1,12 @@
 import { CreepTaskExecutor } from "controllers/taskExecutors/CreepTaskExecutor";
 import { SpawnTaskExecutor } from "controllers/taskExecutors/SpawnTaskExecutor";
 
-export interface IControllerStore {
+export interface ITaskExecutorStore {
     creeps: { [key: string]: CreepTaskExecutor };
     spawns: { [key: string]: SpawnTaskExecutor };
 }
 
-export function initControllerStore(): IControllerStore {
+export function initTaskExecutorStore(): ITaskExecutorStore {
     return {
         creeps: {},
         spawns: {},

@@ -26,6 +26,6 @@ export abstract class BaseTask<RO extends RoomObject, Controller extends BaseCon
     }
 
     public toString() {
-        return `task ${this.getType()}`;
+        return `task ${JSON.stringify(this.toJSON())}`;
     }
 }

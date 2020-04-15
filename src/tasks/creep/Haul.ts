@@ -9,23 +9,89 @@ const logger = getLogger("tasks.creep.Haul", COLORS.tasks);
  * @param creepController controller for the creep that will perform this task
  */
 export class Haul extends BaseCreepTask {
-    constructor() {
+    public deliveryTargets: DeliveryTarget[];
+
+    constructor(deliveryTargets: DeliveryTarget[]) {
         super("TASK_HAUL");
+        this.deliveryTargets = deliveryTargets;
     }
 
     public execute(creepCtl: CreepController) {
-        const spawns = creepCtl.creep.room.find(FIND_MY_SPAWNS);
-        if (spawns.length <= 0) {
-            logger.warning("No spawn available in the current creep room");
+        const emptyTargets: Structure[] = [];
+        const targets = emptyTargets.concat.apply(
+            emptyTargets,
+            this.deliveryTargets.map(target => this.findTargets(creepCtl, target)),
+        );
+        if (targets.length <= 0) {
+            logger.warning(`No ${this.deliveryTargets} available in the current creep room`);
             return;
         }
+        return this.transferToTargets(creepCtl, this.sortTargets(creepCtl, targets));
+    }
 
+    private transferToTargets(creepCtl: CreepController, targets: Structure[], attempt: number = 0) {
+        if (targets.length === 0) {
+            logger.error(`${creepCtl}: All specified delivery targets ${this.deliveryTargets.join("/")} are full`);
+        }
         creepCtl
-            .transfer(spawns[0], RESOURCE_ENERGY)
+            .transfer(targets[0], RESOURCE_ENERGY)
             .on(ERR_NOT_IN_RANGE, () => {
-                creepCtl.moveTo(spawns[0]).logFailure();
+                creepCtl.moveTo(targets[0]).logFailure();
+            })
+            .on(ERR_FULL, () => {
+                logger.debug(`${creepCtl}: Attempt #${attempt}: target ${targets[0]} is full.`);
+                this.transferToTargets(creepCtl, targets.slice(1), attempt + 1);
             })
             .logFailure();
+    }
+
+    private findTargets(creepCtl: CreepController, target: DeliveryTarget): Structure[] {
+        switch (target) {
+            case STRUCTURE_SPAWN:
+                return creepCtl.creep.room.find(FIND_MY_SPAWNS, {
+                    filter: spawn => spawn.energy < spawn.energyCapacity,
+                });
+            case STRUCTURE_CONTROLLER:
+                const controller = creepCtl.creep.room.controller;
+                return controller ? [controller] : [];
+            case STRUCTURE_CONTAINER:
+                return creepCtl.creep.room.find(FIND_STRUCTURES, {
+                    filter: structure =>
+                        structure.structureType === STRUCTURE_CONTAINER && structure.store[RESOURCE_ENERGY] > 0,
+                });
+        }
+    }
+
+    /**
+     * Sort the targets by the following rules in order:
+     * 1. Prefer a target of the type seen earlier in the deliveryTarget array
+     * 2. Prefer a target of closer distance
+     * It is assumed that all targets should have available capacity.
+     * TODO: Test me
+     * @param creepCtl creep controller used to compute distances
+     * @param targets targets to sort
+     */
+    private sortTargets(creepCtl: CreepController, targets: Structure[]): Structure[] {
+        const matchStructureToDeliveryTargetType = (target: Structure, deliveryType: DeliveryTarget): boolean => {
+            return target.structureType === deliveryType;
+        };
+        const computeTargetRelevance = (target: Structure): number => {
+            return (this.deliveryTargets as STRUCTURE_X[]).indexOf(target.structureType);
+        };
+        const distances: { [key: string]: number } = {};
+        for (const target of targets) {
+            distances[target.id] = creepCtl.creep.pos.getRangeTo(target);
+        }
+        const maxDist = Math.max.apply(
+            null,
+            Object.keys(distances).map(k => distances[k]),
+        );
+        targets.sort((t1: Structure, t2: Structure) => {
+            const t1Relevance = computeTargetRelevance(t1) * maxDist;
+            const t2Relevance = computeTargetRelevance(t2) * maxDist;
+            return t1Relevance + distances[t1.id] - (t2Relevance + distances[t2.id]);
+        });
+        return targets;
     }
 
     public completed(creepCtl: CreepController) {
@@ -34,5 +100,16 @@ export class Haul extends BaseCreepTask {
 
     public description() {
         return "👜";
+    }
+
+    public reload(memory: HaulTaskMemory) {
+        super.reload(memory);
+        this.deliveryTargets = memory.deliveryTargets;
+    }
+
+    public toJSON(): HaulTaskMemory {
+        const json = super.toJSON();
+        const memory: HaulTaskMemory = { deliveryTargets: this.deliveryTargets, ...json };
+        return memory;
     }
 }

@@ -32,6 +32,6 @@ export class SpawnTaskExecutor extends BaseTaskExecutor<StructureSpawn, SpawnCon
     }
 
     protected createTaskInstance(taskMemory: SpawnTaskMemory): SpawnTask {
-        return new SpawnTask(taskMemory.target);
+        return new SpawnTask(taskMemory.creepCountTarget);
     }
 }

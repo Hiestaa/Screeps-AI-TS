@@ -22,7 +22,7 @@ export abstract class BaseCreepTask extends BaseTask<Creep, CreepController> {
 
     public abstract completed(creep: CreepController): boolean;
 
-    public toJSON(): TaskMemory {
+    public toJSON(): CreepTaskMemory {
         return {
             type: this.type,
             executionStarted: this.executionStarted,

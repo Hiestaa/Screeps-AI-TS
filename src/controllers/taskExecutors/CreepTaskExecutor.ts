@@ -36,7 +36,7 @@ export class CreepTaskExecutor extends BaseTaskExecutor<Creep, CreepController, 
     protected createTaskInstance(taskMemory: CreepTaskMemory): BaseCreepTask {
         switch (taskMemory.type) {
             case "TASK_HAUL":
-                return new Haul();
+                return new Haul((taskMemory as HaulTaskMemory).deliveryTargets);
             case "TASK_HARVEST":
                 return new Harvest();
         }

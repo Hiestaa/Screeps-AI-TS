@@ -50,7 +50,7 @@ export class CreepController extends BaseController<Creep> {
     public harvest(
         target: Source | Mineral<MineralConstant> | Deposit,
     ): ReturnCodeSwitcher<0 | -1 | -4 | -5 | -6 | -7 | -9 | -11 | -12> {
-        return this.doSwitch(this.creep.harvest(target), "harvest");
+        return this.doSwitch<0 | -1 | -4 | -5 | -6 | -7 | -9 | -11 | -12>(this.creep.harvest(target), "harvest");
     }
     // public heal(target: AnyCreep): ReturnCodeSwitcher<CreepActionReturnCode> {};
     // public move{ (direction: DirectionConstant): CreepMoveReturnCode; (target: Creep): 0 | -1 | -4 | -9 | -10 };

@@ -6,11 +6,12 @@ import { BaseTask, TASK_TYPE } from "tasks/ITask";
 import { SpawnTask } from "tasks/Spawn";
 import { COLORS, getLogger, Logger } from "utils/Logger";
 
-let logger = getLogger("controllers.taskExecutors.BaseTaskExecutor", COLORS.controllers);
+const logger = getLogger("controllers.taskExecutors.BaseTaskExecutor", COLORS.controllers);
 
 /**
  * Base class for any object able to execute tasks.
- * Tasks executor manages tasks, that is initialize, schedule, reloads and execute them.
+ * Tasks executors initialize, schedule, reloads and execute tasks given the controller
+ * for the room object performing the task.
  */
 export abstract class BaseTaskExecutor<
     RoomObjectType extends RoomObject,
@@ -23,11 +24,13 @@ export abstract class BaseTaskExecutor<
     public memory: { tasks: TaskMemory[] } = {
         tasks: [],
     };
+    public logger: Logger = logger;
+
     constructor(name: string, _logger?: Logger) {
         this.name = name;
 
         if (_logger) {
-            logger = _logger;
+            this.logger = _logger;
         }
     }
 
@@ -56,12 +59,16 @@ export abstract class BaseTaskExecutor<
     protected abstract getController(): ControllerType | undefined;
 
     public scheduleTask(task: TaskType) {
-        logger.info(`${this}: scheduling ${task}`);
+        this.logger.info(`${this}: scheduling ${task}`);
         this.taskQueue.push(task);
     }
 
     public hasTaskScheduled(task: TASK_TYPE): boolean {
         return this.taskQueue.some(t => t.getType() === task);
+    }
+
+    public getScheduledTasks(task: TASK_TYPE): TaskType[] {
+        return this.taskQueue.filter(t => t.getType() === task);
     }
 
     public save() {
@@ -81,7 +88,7 @@ export abstract class BaseTaskExecutor<
     public execute() {
         const controller = this.getController();
         if (this.taskQueue.length === 0) {
-            logger.warning(`${controller}: No task to perform`);
+            this.logger.warning(`${controller}: No task to perform`);
             return;
         }
 
@@ -106,11 +113,11 @@ export abstract class BaseTaskExecutor<
 
     private executeTask(task: TaskType, controller: ControllerType | undefined) {
         if (controller) {
-            logger.debug(`${controller} is executing ${task}`);
+            this.logger.debug(`${controller} is executing ${task}`);
             task.executionStarted = true;
             return task.execute(controller);
         } else {
-            logger.debug(`Not executing ${task} - room object is undefined`);
+            this.logger.debug(`Not executing ${task} - room object is undefined`);
         }
     }
 
@@ -122,12 +129,12 @@ export abstract class BaseTaskExecutor<
     }
 
     protected onTaskExecutionStarts(task: TaskType, controller: ControllerType | undefined) {
-        logger.info(`${controller}: Started execution of task: ${task}`);
+        this.logger.info(`${controller}: Started execution of task: ${task}`);
         return;
     }
 
     protected onTaskExecutionCompletes(task: TaskType, controller: ControllerType | undefined) {
-        logger.info(`${controller}: Completed execution of task: ${task}`);
+        this.logger.info(`${controller}: Completed execution of task: ${task}`);
         return;
     }
 

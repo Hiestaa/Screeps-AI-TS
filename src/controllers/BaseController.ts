@@ -2,6 +2,11 @@ import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("controllers.CreepController", COLORS.controllers);
 
+/**
+ * Base class for any controller
+ * A controller is a low-level wrapper around a room object of any kind.
+ * It offers additional methods to facilitate the manipulation of that room object.
+ */
 export abstract class BaseController<RoomObjectType extends RoomObject> {
     public abstract roomObject: RoomObjectType;
 
