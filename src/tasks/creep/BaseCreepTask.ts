@@ -4,16 +4,14 @@ import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("tasks.BaseCreepTask", COLORS.tasks);
 
-type TASK_TYPE = "TASK_HARVEST" | "TASK_HAUL";
-
 /**
  * Simple harvest task - go harvest from the first source available.
  * @param creepController controller for the creep that will perform this task
  */
 export abstract class BaseCreepTask extends BaseTask<Creep, CreepController> {
-    public type: TASK_TYPE;
+    public type: CREEP_TASK;
 
-    constructor(type: TASK_TYPE) {
+    constructor(type: CREEP_TASK) {
         super();
         this.type = type;
     }

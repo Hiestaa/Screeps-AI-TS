@@ -97,11 +97,7 @@ export abstract class BaseAgent<
         }
 
         const currentTask = this.taskQueue[0];
-        if (currentTask.executionStarted && this.hasTaskCompleted(currentTask, controller)) {
-            this.onTaskExecutionCompletes(currentTask, controller);
-
-            this.taskQueue.shift();
-
+        if (this.hasTaskCompleted(currentTask, controller)) {
             if (this.taskQueue.length > 0) {
                 this.onTaskExecutionStarts(this.taskQueue[0], controller);
             }
@@ -113,6 +109,21 @@ export abstract class BaseAgent<
             this.onTaskExecutionStarts(currentTask, controller);
         }
         this.executeTask(currentTask, controller);
+
+        // re-check if task has completed, saves some memory in case the task doesnt need to be saved
+        this.hasTaskCompleted(currentTask, controller);
+    }
+
+    private hasTaskCompleted(currentTask: TaskType, controller: ControllerType | undefined) {
+        const hasTaskCompleted = controller && currentTask.completed(controller);
+        if (currentTask.executionStarted && hasTaskCompleted) {
+            this.onTaskExecutionCompletes(currentTask, controller);
+
+            this.taskQueue.shift();
+
+            return true;
+        }
+        return false;
     }
 
     private executeTask(task: TaskType, controller: ControllerType | undefined) {
@@ -123,13 +134,6 @@ export abstract class BaseAgent<
         } else {
             this.logger.debug(`Not executing ${task} - room object is undefined`);
         }
-    }
-
-    private hasTaskCompleted(task: TaskType, controller: ControllerType | undefined) {
-        if (!controller) {
-            return false;
-        }
-        return task.completed(controller);
     }
 
     protected onTaskExecutionStarts(task: TaskType, controller: ControllerType | undefined) {

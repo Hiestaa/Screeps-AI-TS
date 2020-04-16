@@ -1,6 +1,6 @@
 import { BaseController } from "agents/controllers/BaseController";
 
-export type TASK_TYPE = "TASK_SPAWN" | "TASK_HARVEST" | "TASK_HAUL";
+export type TASK_TYPE = "TASK_SPAWN" | CREEP_TASK;
 
 export interface ITask<RO extends RoomObject, Controller extends BaseController<RO>> {
     execute(roomObject: Controller): void;

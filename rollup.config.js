@@ -8,7 +8,7 @@ import commonjs from "@rollup/plugin-commonjs";
 import typescript from "rollup-plugin-typescript2";
 import screeps from "rollup-plugin-screeps";
 import progress from "rollup-plugin-progress";
-import versionInjector from "rollup-plugin-version-injector";
+import versionInject from "./rollup-plugin-version-inject";
 
 let cfg;
 const dest = process.env.DEST;
@@ -34,14 +34,7 @@ export default {
         commonjs(),
         typescript({ tsconfig: "./tsconfig.json" }),
         progress(),
-        versionInjector({
-            injectInComments: {
-                fileRegexp: /\.(js|html|css|ts)$/g,
-            },
-            injectInTags: {
-                fileRegexp: /\.(js|html|css|ts)$/g,
-            },
-        }),
+        versionInject(),
         screeps({ config: cfg, dryRun: cfg == null }),
     ],
 };

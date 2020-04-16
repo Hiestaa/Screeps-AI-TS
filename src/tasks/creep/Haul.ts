@@ -9,7 +9,8 @@ const logger = getLogger("tasks.creep.Haul", COLORS.tasks);
  * @param creepController controller for the creep that will perform this task
  */
 export class Haul extends BaseCreepTask {
-    public deliveryTargets: DeliveryTarget[];
+    private deliveryTargets: DeliveryTarget[];
+    private noMoreTarget: boolean = false;
 
     constructor(deliveryTargets: DeliveryTarget[]) {
         super("TASK_HAUL");
@@ -23,7 +24,8 @@ export class Haul extends BaseCreepTask {
             this.deliveryTargets.map(target => this.findTargets(creepCtl, target)),
         );
         if (targets.length <= 0) {
-            logger.warning(`No ${this.deliveryTargets} available in the current creep room`);
+            logger.debug(`No ${this.deliveryTargets.join("/")} available in the current creep room`);
+            this.noMoreTarget = true;
             return;
         }
         return this.transferToTargets(creepCtl, this.sortTargets(creepCtl, targets));
@@ -32,6 +34,7 @@ export class Haul extends BaseCreepTask {
     private transferToTargets(creepCtl: CreepController, targets: Structure[], attempt: number = 0) {
         if (targets.length === 0) {
             logger.error(`${creepCtl}: All specified delivery targets ${this.deliveryTargets.join("/")} are full`);
+            this.noMoreTarget = true;
         }
         creepCtl
             .transfer(targets[0], RESOURCE_ENERGY)
@@ -72,9 +75,6 @@ export class Haul extends BaseCreepTask {
      * @param targets targets to sort
      */
     private sortTargets(creepCtl: CreepController, targets: Structure[]): Structure[] {
-        const matchStructureToDeliveryTargetType = (target: Structure, deliveryType: DeliveryTarget): boolean => {
-            return target.structureType === deliveryType;
-        };
         const computeTargetRelevance = (target: Structure): number => {
             return (this.deliveryTargets as STRUCTURE_X[]).indexOf(target.structureType);
         };
@@ -95,7 +95,7 @@ export class Haul extends BaseCreepTask {
     }
 
     public completed(creepCtl: CreepController) {
-        return creepCtl.creep.store.getUsedCapacity() === 0;
+        return this.noMoreTarget || creepCtl.creep.store.getUsedCapacity() === 0;
     }
 
     public description() {

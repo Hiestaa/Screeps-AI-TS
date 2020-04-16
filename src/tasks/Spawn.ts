@@ -23,15 +23,16 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
             return;
         }
 
+        const energyStructures = this.getEnergyStructures(spawnCtl);
         spawnCtl
-            .spawnCreep(this.maxCreepProfile(spawnCtl), name)
+            .spawnCreep(this.maxCreepProfile(spawnCtl, energyStructures), name, { energyStructures })
             .on(ERR_NOT_ENOUGH_ENERGY, () => logger.debug("Not enough energy to produce creep"))
             .logFailure();
     }
 
     // TODO: maybe hard-code a few levels instead to make it more predictable?
-    private maxCreepProfile(spawnCtl: SpawnController) {
-        const energy = spawnCtl.availableEnergy();
+    private maxCreepProfile(spawnCtl: SpawnController, energyStructures: Array<StructureSpawn | StructureExtension>) {
+        const energy = this.computeAvailableEnergy(spawnCtl, energyStructures);
         let parts = [CARRY, WORK, MOVE];
         const newParts = parts.slice();
         let level = 3;
@@ -47,6 +48,16 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
         return parts;
     }
 
+    private computeAvailableEnergy(
+        spawnCtl: SpawnController,
+        energyStructures: Array<StructureSpawn | StructureExtension>,
+    ) {
+        return (
+            spawnCtl.availableEnergy() +
+            energyStructures.reduce((acc, structure) => structure.store[RESOURCE_ENERGY], 0)
+        );
+    }
+
     private computeBuildCost(parts: BodyPartConstant[]) {
         return parts.reduce((acc, p) => acc + BODYPART_COST[p], 0);
     }
@@ -59,6 +70,21 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
         } else {
             return MOVE;
         }
+    }
+
+    private getEnergyStructures(spawnCtl: SpawnController): Array<StructureExtension | StructureSpawn> {
+        return ([spawnCtl.spawn] as Array<StructureExtension | StructureSpawn>)
+            .concat(
+                spawnCtl.spawn.room.find(FIND_MY_STRUCTURES, {
+                    filter: structure => structure.structureType === STRUCTURE_EXTENSION,
+                }) as StructureExtension[],
+            )
+            .concat(
+                spawnCtl.spawn.room.find(FIND_MY_STRUCTURES, {
+                    filter: structure =>
+                        structure.structureType === STRUCTURE_SPAWN && structure.id !== spawnCtl.spawn.id,
+                }) as StructureSpawn[],
+            );
     }
 
     public completed() {

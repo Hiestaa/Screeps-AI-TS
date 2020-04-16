@@ -9,8 +9,10 @@ interface SpawnTaskMemory extends BaseTaskMemory {
     creepCountTarget: number;
 }
 
+type CREEP_TASK = "TASK_HARVEST" | "TASK_HAUL" | "TASK_BUILD";
+
 interface CreepTaskMemory extends BaseTaskMemory {
-    type: "TASK_HARVEST" | "TASK_HAUL";
+    type: CREEP_TASK;
 }
 
 interface HaulTaskMemory extends CreepTaskMemory {

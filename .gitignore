@@ -1,4 +1,4 @@
-# Logs
+7# Logs
 logs
 *.log
 npm-debug.log*
@@ -105,3 +105,4 @@ dist
 
 # screeps sensitive files
 screeps.json
+src/utils/version.ts

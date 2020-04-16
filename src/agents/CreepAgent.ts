@@ -1,5 +1,6 @@
 import { CreepController } from "agents/controllers/CreepController";
 import { BaseCreepTask } from "tasks/creep/BaseCreepTask";
+import { Build } from "tasks/creep/Build";
 import { Harvest } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
 import { COLORS, getLogger } from "utils/Logger";
@@ -39,6 +40,8 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask>
                 return new Haul((taskMemory as HaulTaskMemory).deliveryTargets);
             case "TASK_HARVEST":
                 return new Harvest();
+            case "TASK_BUILD":
+                return new Build();
         }
     }
 

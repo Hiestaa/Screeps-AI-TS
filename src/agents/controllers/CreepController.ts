@@ -24,25 +24,29 @@ export class CreepController extends BaseController<Creep> {
         opts?: MoveToOpts,
     ): ReturnCodeSwitcher<CreepMoveReturnCode | ERR_NO_PATH | ERR_INVALID_TARGET | ERR_NOT_FOUND> {
         if (typeof x === "number" && typeof y === "number") {
+            const _opts = Object.assign({}, opts, { visualizePathStyle: "#ffffff" });
             return this.doSwitch<CreepMoveReturnCode | ERR_NO_PATH | ERR_INVALID_TARGET | ERR_NOT_FOUND>(
-                this.creep.moveTo(x, y, opts),
+                this.creep.moveTo(x, y, _opts),
                 "moveTo",
             );
         } else if (typeof x !== "number" && typeof y !== "number") {
+            const _opts = Object.assign({}, y, { visualizePathStyle: "#ffffff" });
             return this.doSwitch<CreepMoveReturnCode | ERR_NO_PATH | ERR_INVALID_TARGET | ERR_NOT_FOUND>(
-                this.creep.moveTo(x, y),
+                this.creep.moveTo(x, _opts),
                 "moveTo",
             );
         } else {
-            throw new Error("Invalid Argument Types");
+            throw new Error("CreepController.moveTo: Invalid Argument Types");
         }
     }
 
     // public attack(target: Creep | PowerCreep | Structure<StructureConstant>): ReturnCodeSwitcher<CreepActionReturnCode> {};
     // public attackController(target: StructureController): ReturnCodeSwitcher<CreepActionReturnCode> {};
-    // public build(
-    //     target: ConstructionSite<BuildableStructureConstant>,
-    // ): ReturnCodeSwitcher<0 | -1 | -4 | -6 | -7 | -9 | -11 | -12 | -14> {};
+    public build(
+        target: ConstructionSite<BuildableStructureConstant>,
+    ): ReturnCodeSwitcher<0 | -1 | -4 | -6 | -7 | -9 | -11 | -12 | -14> {
+        return this.doSwitch<0 | -1 | -4 | -6 | -7 | -9 | -11 | -12 | -14>(this.creep.build(target), "build");
+    }
     // public cancelOrder(methodName: string): ReturnCodeSwitcher<0 | -5> {};
     // public dismantle(target: Structure<StructureConstant>): ReturnCodeSwitcher<CreepActionReturnCode> {};
     // public drop(resourceType: ResourceConstant, amount?: number | undefined): ReturnCodeSwitcher<0 | -1 | -4 | -6> {};
