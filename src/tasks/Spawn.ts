@@ -32,7 +32,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
 
     // TODO: maybe hard-code a few levels instead to make it more predictable?
     private maxCreepProfile(spawnCtl: SpawnController, energyStructures: Array<StructureSpawn | StructureExtension>) {
-        const energy = this.computeAvailableEnergy(spawnCtl, energyStructures);
+        const energy = this.computeAvailableEnergy(energyStructures);
         let parts = [CARRY, WORK, MOVE];
         const newParts = parts.slice();
         let level = 3;
@@ -48,14 +48,8 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
         return parts;
     }
 
-    private computeAvailableEnergy(
-        spawnCtl: SpawnController,
-        energyStructures: Array<StructureSpawn | StructureExtension>,
-    ) {
-        return (
-            spawnCtl.availableEnergy() +
-            energyStructures.reduce((acc, structure) => structure.store[RESOURCE_ENERGY], 0)
-        );
+    private computeAvailableEnergy(energyStructures: Array<StructureSpawn | StructureExtension>) {
+        return energyStructures.reduce((acc, structure) => structure.store[RESOURCE_ENERGY], 0);
     }
 
     private computeBuildCost(parts: BodyPartConstant[]) {
@@ -73,18 +67,13 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     }
 
     private getEnergyStructures(spawnCtl: SpawnController): Array<StructureExtension | StructureSpawn> {
-        return ([spawnCtl.spawn] as Array<StructureExtension | StructureSpawn>)
-            .concat(
-                spawnCtl.spawn.room.find(FIND_MY_STRUCTURES, {
-                    filter: structure => structure.structureType === STRUCTURE_EXTENSION,
-                }) as StructureExtension[],
-            )
-            .concat(
-                spawnCtl.spawn.room.find(FIND_MY_STRUCTURES, {
-                    filter: structure =>
-                        structure.structureType === STRUCTURE_SPAWN && structure.id !== spawnCtl.spawn.id,
-                }) as StructureSpawn[],
-            );
+        const extensions = spawnCtl.spawn.room.find(FIND_MY_STRUCTURES, {
+            filter: structure => structure.structureType === STRUCTURE_EXTENSION,
+        }) as StructureExtension[];
+        const otherSpawns = spawnCtl.spawn.room.find(FIND_MY_STRUCTURES, {
+            filter: structure => structure.structureType === STRUCTURE_SPAWN && structure.id !== spawnCtl.spawn.id,
+        }) as StructureSpawn[];
+        return ([spawnCtl.spawn] as Array<StructureExtension | StructureSpawn>).concat(extensions).concat(otherSpawns);
     }
 
     public completed() {

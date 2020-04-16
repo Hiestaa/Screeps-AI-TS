@@ -1,8 +1,6 @@
 /**
- * Self-generated version file. Do not touch.
- * A custom rollup plugin will override this file with the declaration of the `VERSION` constant
- * with a proper value before every build.
- * Version: XXX - Built on DATE
+ * If the following works, then we might have a working version injection
+ * Version: 0.0.1 - built on {Wed Apr 15 2020 22:43:56 GMT-0400 (Eastern Daylight Time)}
  */
 
-export const VERSION = "Version: XXX - built on DATE";
+export const VERSION = "Version: 0.0.1 - built on Wed Apr 15 2020 22:43:56 GMT-0400 (Eastern Daylight Time)";

@@ -1,6 +1,6 @@
 import { COLORS, getLogger } from "utils/Logger";
 
-const logger = getLogger("controllers.CreepController", COLORS.controllers);
+const logger = getLogger("controllers.BaseController", COLORS.controllers);
 
 /**
  * Base class for any controller
@@ -18,7 +18,7 @@ export abstract class BaseController<RoomObjectType extends RoomObject> {
         return new ReturnCodeSwitcher<Code>(code)
             ._on(ERR_BUSY, () => logger.debug(`${this} did not perform ${action} because it is busy`))
             ._on(ERR_TIRED, () => logger.debug(`${this} did not perform ${action} because it is tired`))
-            .failure((_code: Code) => logger.failure(_code, `${this}: Unable to perform action`));
+            .failure((_code: Code) => logger.failure(_code, `${this}: Unable to perform action ${action}`));
     }
 }
 
