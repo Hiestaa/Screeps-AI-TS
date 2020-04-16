@@ -1,7 +1,7 @@
 import { CreepAgent } from "agents/CreepAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
 import { IObjective, OBJECTIVE_TYPE } from "objectives/IObjective";
-import { ReachRCL1 } from "objectives/ReachRCL1";
+import { ReachRCL2 } from "objectives/ReachRCL2";
 import { COLORS, getLogger } from "utils/Logger";
 import { IAgentStore, initAgentStore } from "./IAgentStore";
 
@@ -27,7 +27,7 @@ function reloadObjective(): IObjective {
     const getObjectiveClass = (objectiveType: OBJECTIVE_TYPE): ReloadableObjective => {
         switch (objectiveType) {
             case "REACH_RCL1":
-                return ReachRCL1;
+                return ReachRCL2;
         }
     };
 
@@ -41,7 +41,7 @@ function reloadObjective(): IObjective {
 
 type IConstructable<T> = new (...args: any) => T;
 type ReloadableAgent = IConstructable<CreepAgent> | IConstructable<SpawnAgent>;
-type ReloadableObjective = IConstructable<ReachRCL1>;
+type ReloadableObjective = IConstructable<ReachRCL2>;
 
 type TASK_EXECUTOR_MEM_LOCS = "creeps" | "spawns";
 

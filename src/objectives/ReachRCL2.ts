@@ -8,11 +8,9 @@ import { SpawnTask } from "tasks/Spawn";
 import { COLORS, getLogger } from "utils/Logger";
 import { BaseObjective, OBJECTIVE_TYPE } from "./IObjective";
 
-const logger = getLogger("objectives.ReachRCL1", COLORS.objectives);
+const logger = getLogger("objectives.ReachRCL2", COLORS.objectives);
 
-const MAX_HAUL_TO_SPAWN = 2;
-
-export class ReachRCL1 extends BaseObjective {
+export class ReachRCL2 extends BaseObjective {
     protected name: OBJECTIVE_TYPE = "REACH_RCL1";
 
     public execute(agentStore: IAgentStore) {
