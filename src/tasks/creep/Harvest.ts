@@ -1,4 +1,4 @@
-import { CreepController } from "controllers/CreepController";
+import { CreepController } from "agents/controllers/CreepController";
 import { BaseCreepTask } from "tasks/creep/BaseCreepTask";
 import { COLORS, getLogger } from "utils/Logger";
 

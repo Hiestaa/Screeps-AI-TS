@@ -1,10 +1,10 @@
 import { IObjective } from "objectives/IObjective";
 import { COLORS, getLogger } from "utils/Logger";
-import { CONTROLLER_STORE_LOCATIONS, ITaskExecutorStore } from "./ITaskExecutorStore";
+import { AGENT_STORE_LOCATIONS, IAgentStore } from "./IAgentStore";
 
 const logger = getLogger("phases.act", COLORS.phases);
 
-export function act(controllerStore: ITaskExecutorStore, objective: IObjective) {
+export function act(controllerStore: IAgentStore, objective: IObjective) {
     logger.debug(">>> ACT <<<");
     const newObjective = objective.execute(controllerStore);
 
@@ -17,8 +17,8 @@ export function act(controllerStore: ITaskExecutorStore, objective: IObjective) 
 const executeCreepControllers = makeControllerExecute("creeps");
 const executeSpawnControllers = makeControllerExecute("spawns");
 
-function makeControllerExecute(storeLoc: CONTROLLER_STORE_LOCATIONS) {
-    return (controllerStore: ITaskExecutorStore) => {
+function makeControllerExecute(storeLoc: AGENT_STORE_LOCATIONS) {
+    return (controllerStore: IAgentStore) => {
         for (const controllerId in controllerStore[storeLoc]) {
             if (!controllerStore[storeLoc].hasOwnProperty(controllerId)) {
                 continue;

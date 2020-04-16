@@ -1,11 +1,11 @@
-import { SpawnController } from "controllers/SpawnController";
-import { BaseTaskExecutor } from "controllers/taskExecutors/BaseTaskExecutor";
+import { BaseAgent } from "agents/BaseAgent";
+import { SpawnController } from "agents/controllers/SpawnController";
 import { SpawnTask } from "tasks/Spawn";
 import { COLORS, getLogger } from "utils/Logger";
 
-const logger = getLogger("controllers.taskExecutors.SpawnTaskExecutor", COLORS.controllers);
+const logger = getLogger("controllers.agents.SpawnAgent", COLORS.controllers);
 
-export class SpawnTaskExecutor extends BaseTaskExecutor<StructureSpawn, SpawnController, SpawnTask> {
+export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, SpawnTask> {
     public spawnController?: SpawnController;
     public memoryLocation: "spawns" = "spawns";
     public memory: SpawnMemory = {
@@ -28,7 +28,7 @@ export class SpawnTaskExecutor extends BaseTaskExecutor<StructureSpawn, SpawnCon
     }
 
     public toString() {
-        return `task executor for ${this.spawnController}`;
+        return `agents for ${this.spawnController}`;
     }
 
     protected createTaskInstance(taskMemory: SpawnTaskMemory): SpawnTask {

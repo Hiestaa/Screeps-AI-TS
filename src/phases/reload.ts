@@ -1,9 +1,9 @@
-import { CreepTaskExecutor } from "controllers/taskExecutors/CreepTaskExecutor";
-import { SpawnTaskExecutor } from "controllers/taskExecutors/SpawnTaskExecutor";
+import { CreepAgent } from "agents/CreepAgent";
+import { SpawnAgent } from "agents/SpawnAgent";
 import { IObjective, OBJECTIVE_TYPE } from "objectives/IObjective";
 import { ReachRCL1 } from "objectives/ReachRCL1";
 import { COLORS, getLogger } from "utils/Logger";
-import { initTaskExecutorStore, ITaskExecutorStore } from "./ITaskExecutorStore";
+import { IAgentStore, initAgentStore } from "./IAgentStore";
 
 const logger = getLogger("phases.reload", COLORS.phases);
 
@@ -11,17 +11,17 @@ const logger = getLogger("phases.reload", COLORS.phases);
  * Reload phase of the loop
  * Re-instantiate all the game objects based on the current memory/game state.
  */
-export function reload(): [ITaskExecutorStore, IObjective] {
+export function reload(): [IAgentStore, IObjective] {
     logger.debug(">>> RELOAD <<<");
-    const controllerStore = initTaskExecutorStore();
+    const controllerStore = initAgentStore();
     reloadCreeps(controllerStore);
     reloadSpawns(controllerStore);
     const objective = reloadObjective();
     return [controllerStore, objective];
 }
 
-const reloadCreeps = makeTaskExecutorReload("creeps");
-const reloadSpawns = makeTaskExecutorReload("spawns");
+const reloadCreeps = makeAgentReload("creeps");
+const reloadSpawns = makeAgentReload("spawns");
 
 function reloadObjective(): IObjective {
     const getObjectiveClass = (objectiveType: OBJECTIVE_TYPE): ReloadableObjective => {
@@ -40,30 +40,30 @@ function reloadObjective(): IObjective {
 }
 
 type IConstructable<T> = new (...args: any) => T;
-type ReloadableTaskExecutor = IConstructable<CreepTaskExecutor> | IConstructable<SpawnTaskExecutor>;
+type ReloadableAgent = IConstructable<CreepAgent> | IConstructable<SpawnAgent>;
 type ReloadableObjective = IConstructable<ReachRCL1>;
 
 type TASK_EXECUTOR_MEM_LOCS = "creeps" | "spawns";
 
-function makeTaskExecutorReload(memLoc: TASK_EXECUTOR_MEM_LOCS) {
-    const getTaskExecutor = (_memLoc: TASK_EXECUTOR_MEM_LOCS): ReloadableTaskExecutor => {
+function makeAgentReload(memLoc: TASK_EXECUTOR_MEM_LOCS) {
+    const getAgentClass = (_memLoc: TASK_EXECUTOR_MEM_LOCS): ReloadableAgent => {
         switch (_memLoc) {
             case "creeps":
-                return CreepTaskExecutor;
+                return CreepAgent;
             case "spawns":
-                return SpawnTaskExecutor;
+                return SpawnAgent;
         }
     };
 
-    const TaskExecutor = getTaskExecutor(memLoc);
+    const Agent = getAgentClass(memLoc);
 
-    return (controllerStore: ITaskExecutorStore) => {
+    return (controllerStore: IAgentStore) => {
         for (const name in Memory[memLoc]) {
             if (!Memory[memLoc].hasOwnProperty(name)) {
                 continue;
             }
 
-            const controller = new TaskExecutor(name);
+            const controller = new Agent(name);
             controllerStore[memLoc][name] = controller;
             logger.debug(`Reloading ${controller} from Memory`);
             controller.reload();
@@ -77,7 +77,7 @@ function makeTaskExecutorReload(memLoc: TASK_EXECUTOR_MEM_LOCS) {
                 continue;
             }
 
-            const controller = new TaskExecutor(name);
+            const controller = new Agent(name);
             controllerStore[memLoc][name] = controller;
             logger.debug(`Reloading ${controller} from Game`);
             controller.reload();

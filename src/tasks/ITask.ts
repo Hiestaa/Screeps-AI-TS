@@ -1,4 +1,4 @@
-import { BaseController } from "controllers/BaseController";
+import { BaseController } from "agents/controllers/BaseController";
 
 export type TASK_TYPE = "TASK_SPAWN" | "TASK_HARVEST" | "TASK_HAUL";
 

@@ -1,4 +1,4 @@
-import { ITaskExecutorStore } from "phases/ITaskExecutorStore";
+import { IAgentStore } from "phases/IAgentStore";
 
 export interface IObjective {
     /**
@@ -6,7 +6,7 @@ export interface IObjective {
      * @param controllerStore an access to the existing controllers after reload
      * @return the next objective in line, may be the current one if not yet completed
      */
-    execute(controllerStore: ITaskExecutorStore): IObjective;
+    execute(controllerStore: IAgentStore): IObjective;
 
     save(): void;
     reload(): void;
@@ -16,7 +16,7 @@ export abstract class BaseObjective implements IObjective {
     protected abstract name: OBJECTIVE_TYPE;
     protected memory?: ObjectiveMemory;
 
-    public abstract execute(controllerStore: ITaskExecutorStore): BaseObjective;
+    public abstract execute(controllerStore: IAgentStore): BaseObjective;
 
     public save() {
         Memory.objective = {

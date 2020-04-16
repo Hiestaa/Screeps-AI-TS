@@ -308,7 +308,7 @@ export function enableLogger(scope: string, color: string): number {
 }
 
 /**
- * Disable all logers falling under the given scope
+ * Disable all loggers falling under the given scope
  * @param {string} scope - the scope of the loggers to disable, identical to `enableLogger`
  * @return {number} - return the number of loggers affected.
  */
@@ -324,7 +324,7 @@ export function disableLogger(scope: string): number {
  * Enable the given logging level for all loggers.
  * This is independent from other levels in that 'debug' can solely be enabled
  * without necessarily enabling levels above.
- * @param {LOG_LEVEL} level - level to enablea
+ * @param {LOG_LEVEL} level - level to enable
  */
 export function enableLevel(level: LOG_LEVEL) {
     levelLogger._enable(level);

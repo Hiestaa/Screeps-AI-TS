@@ -1,10 +1,10 @@
 import { IObjective } from "objectives/IObjective";
 import { COLORS, getLogger } from "utils/Logger";
-import { CONTROLLER_STORE_LOCATIONS, ITaskExecutorStore } from "./ITaskExecutorStore";
+import { AGENT_STORE_LOCATIONS, IAgentStore } from "./IAgentStore";
 
 const logger = getLogger("phases.save", COLORS.phases);
 
-export function save(controllerStore: ITaskExecutorStore, objective: IObjective) {
+export function save(controllerStore: IAgentStore, objective: IObjective) {
     logger.debug(">>> SAVE <<<");
     saveCreepControllers(controllerStore);
     saveSpawnControllers(controllerStore);
@@ -14,8 +14,8 @@ export function save(controllerStore: ITaskExecutorStore, objective: IObjective)
 const saveCreepControllers = makeControllerSave("creeps");
 const saveSpawnControllers = makeControllerSave("spawns");
 
-function makeControllerSave(storeLoc: CONTROLLER_STORE_LOCATIONS) {
-    return (controllerStore: ITaskExecutorStore) => {
+function makeControllerSave(storeLoc: AGENT_STORE_LOCATIONS) {
+    return (controllerStore: IAgentStore) => {
         for (const key in controllerStore[storeLoc]) {
             if (!controllerStore[storeLoc].hasOwnProperty(key)) {
                 continue;

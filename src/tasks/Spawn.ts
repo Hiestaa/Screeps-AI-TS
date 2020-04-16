@@ -1,4 +1,4 @@
-import { SpawnController } from "controllers/SpawnController";
+import { SpawnController } from "agents/controllers/SpawnController";
 import { BaseTask } from "tasks/ITask";
 import { gun } from "utils/id";
 import { COLORS, getLogger } from "utils/Logger";
@@ -18,7 +18,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     public execute(spawnCtl: SpawnController) {
         const name = gun("H:CMW");
         const creepCount = Object.keys(Game.creeps).length;
-        if (creepCount > this.creepCountTarget) {
+        if (creepCount >= this.creepCountTarget) {
             logger.debug(`Not spawning any creep - reached desired count ${creepCount}/${this.creepCountTarget}`);
             return;
         }
@@ -29,7 +29,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
             .logFailure();
     }
 
-    // TODO: maybe hardcode a few levels instead to make it more predictable?
+    // TODO: maybe hard-code a few levels instead to make it more predictable?
     private maxCreepProfile(spawnCtl: SpawnController) {
         const energy = spawnCtl.availableEnergy();
         let parts = [CARRY, WORK, MOVE];

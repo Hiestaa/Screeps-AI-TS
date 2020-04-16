@@ -1,13 +1,13 @@
-import { CreepController } from "controllers/CreepController";
+import { CreepController } from "agents/controllers/CreepController";
 import { BaseCreepTask } from "tasks/creep/BaseCreepTask";
 import { Harvest } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
 import { COLORS, getLogger } from "utils/Logger";
-import { BaseTaskExecutor } from "./BaseTaskExecutor";
+import { BaseAgent } from "./BaseAgent";
 
-const logger = getLogger("controllers.taskExecutors.CreepTaskExecutor", COLORS.controllers);
+const logger = getLogger("controllers.agents.CreepAgent", COLORS.controllers);
 
-export class CreepTaskExecutor extends BaseTaskExecutor<Creep, CreepController, BaseCreepTask> {
+export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask> {
     public creepController?: CreepController;
     public memoryLocation: "creeps" = "creeps";
     public memory: CreepMemory = {
@@ -30,7 +30,7 @@ export class CreepTaskExecutor extends BaseTaskExecutor<Creep, CreepController, 
     }
 
     public toString() {
-        return `task executor for ${this.creepController}`;
+        return `agent for ${this.creepController}`;
     }
 
     protected createTaskInstance(taskMemory: CreepTaskMemory): BaseCreepTask {

@@ -1,6 +1,6 @@
-import { CreepTaskExecutor } from "controllers/taskExecutors/CreepTaskExecutor";
-import { SpawnTaskExecutor } from "controllers/taskExecutors/SpawnTaskExecutor";
-import { ITaskExecutorStore } from "phases/ITaskExecutorStore";
+import { CreepAgent } from "agents/CreepAgent";
+import { SpawnAgent } from "agents/SpawnAgent";
+import { IAgentStore } from "phases/IAgentStore";
 import { Harvest } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
 import { SpawnTask } from "tasks/Spawn";
@@ -14,43 +14,43 @@ const MAX_HAUL_TO_SPAWN = 2;
 export class ReachRCL1 extends BaseObjective {
     protected name: OBJECTIVE_TYPE = "REACH_RCL1";
 
-    public execute(controllerStore: ITaskExecutorStore) {
-        for (const spawnName in controllerStore.spawns) {
-            if (!controllerStore.spawns.hasOwnProperty(spawnName)) {
+    public execute(agentStore: IAgentStore) {
+        for (const spawnName in agentStore.spawns) {
+            if (!agentStore.spawns.hasOwnProperty(spawnName)) {
                 continue;
             }
 
-            const spawnTaskExecutor = controllerStore.spawns[spawnName];
-            this.ensureSpawnTask(spawnTaskExecutor);
+            const spawnAgent = agentStore.spawns[spawnName];
+            this.ensureSpawnTask(spawnAgent);
         }
 
-        for (const creepName in controllerStore.creeps) {
-            if (!controllerStore.creeps.hasOwnProperty(creepName)) {
+        for (const creepName in agentStore.creeps) {
+            if (!agentStore.creeps.hasOwnProperty(creepName)) {
                 continue;
             }
 
-            const creepTaskExecutor = controllerStore.creeps[creepName];
-            this.ensureHarvestAndHaulTasks(creepTaskExecutor);
+            const creepAgent = agentStore.creeps[creepName];
+            this.ensureHarvestAndHaulTasks(creepAgent);
         }
 
         return this;
     }
 
-    private ensureSpawnTask(spawnTaskExecutor: SpawnTaskExecutor) {
-        logger.debug(`${this}: ensuring ${spawnTaskExecutor} has task TASK_SPAWN scheduled`);
-        if (!spawnTaskExecutor.hasTaskScheduled("TASK_SPAWN")) {
-            spawnTaskExecutor.scheduleTask(new SpawnTask(5));
+    private ensureSpawnTask(spawnAgent: SpawnAgent) {
+        logger.debug(`${this}: ensuring ${spawnAgent} has task TASK_SPAWN scheduled`);
+        if (!spawnAgent.hasTaskScheduled("TASK_SPAWN")) {
+            spawnAgent.scheduleTask(new SpawnTask(5));
         }
     }
 
-    private ensureHarvestAndHaulTasks(creepTaskExecutor: CreepTaskExecutor) {
-        logger.debug(`${this}: ensuring ${creepTaskExecutor} has tasks TASK_HARVEST and TASK_HAUL scheduled`);
-        if (!creepTaskExecutor.hasTaskScheduled("TASK_HARVEST")) {
-            creepTaskExecutor.scheduleTask(new Harvest());
+    private ensureHarvestAndHaulTasks(creepAgent: CreepAgent) {
+        logger.debug(`${this}: ensuring ${creepAgent} has tasks TASK_HARVEST and TASK_HAUL scheduled`);
+        if (!creepAgent.hasTaskScheduled("TASK_HARVEST")) {
+            creepAgent.scheduleTask(new Harvest());
         }
 
-        if (!creepTaskExecutor.hasTaskScheduled("TASK_HAUL")) {
-            creepTaskExecutor.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_CONTROLLER]));
+        if (!creepAgent.hasTaskScheduled("TASK_HAUL")) {
+            creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_CONTROLLER]));
         }
     }
 }

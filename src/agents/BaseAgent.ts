@@ -1,4 +1,4 @@
-import { BaseController } from "controllers/BaseController";
+import { BaseController } from "agents/controllers/BaseController";
 import { BaseCreepTask } from "tasks/creep/BaseCreepTask";
 import { Harvest } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
@@ -6,14 +6,18 @@ import { BaseTask, TASK_TYPE } from "tasks/ITask";
 import { SpawnTask } from "tasks/Spawn";
 import { COLORS, getLogger, Logger } from "utils/Logger";
 
-const logger = getLogger("controllers.taskExecutors.BaseTaskExecutor", COLORS.controllers);
+const logger = getLogger("controllers.agents.BaseAgent", COLORS.controllers);
 
 /**
- * Base class for any object able to execute tasks.
- * Tasks executors initialize, schedule, reloads and execute tasks given the controller
- * for the room object performing the task.
+ * Base class for any agent.
+ * Agent initialize, schedule, reloads and execute tasks given the controller
+ *  for the room object performing the task.
+ * TODO: add the ability to send and receive messages
+ *  To make implementation and usage easier try using a client/server approach with a global message server singleton
+ *   storing messages indexed by destination and visible to recipient only
+ *      -> can be reused to set status as sending messages to oneself but visible to everybody
  */
-export abstract class BaseTaskExecutor<
+export abstract class BaseAgent<
     RoomObjectType extends RoomObject,
     ControllerType extends BaseController<RoomObjectType>,
     TaskType extends BaseTask<RoomObjectType, ControllerType>
@@ -139,6 +143,6 @@ export abstract class BaseTaskExecutor<
     }
 
     public toString() {
-        return `task executor ${this.name};`;
+        return `agent ${this.name};`;
     }
 }
