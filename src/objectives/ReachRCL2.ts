@@ -34,19 +34,21 @@ export class ReachRCL2 extends BaseObjective {
         }
     }
 
-    private assignSpawnTasks(spawnAgent: SpawnAgent) {
+    protected assignSpawnTasks(spawnAgent: SpawnAgent) {
         logger.debug(`${this}: ensuring ${spawnAgent} has task TASK_SPAWN scheduled`);
         if (!spawnAgent.hasTaskScheduled("TASK_SPAWN")) {
             spawnAgent.scheduleTask(new SpawnTask(5));
         }
     }
 
-    private assignCreepTasks(creepAgent: CreepAgent) {
+    protected assignCreepTasks(creepAgent: CreepAgent) {
         logger.debug(`${this}: ensuring ${creepAgent} has all creep tasks scheduled`);
         if (!creepAgent.taskQueue.length) {
             creepAgent.scheduleTask(new Harvest());
             creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN]));
-            creepAgent.scheduleTask(new Build());
+            creepAgent.scheduleTask(
+                new Build([STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_RAMPART, STRUCTURE_TOWER]),
+            );
             creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_CONTROLLER, STRUCTURE_CONTAINER]));
         }
     }

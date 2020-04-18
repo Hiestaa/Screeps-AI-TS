@@ -11,9 +11,15 @@ const logger = getLogger("tasks.creep.Haul", COLORS.tasks);
 export class Build extends BaseCreepTask {
     // when on, task is complete - only useful during the current turn, saving in task memory is not needed
     private noMoreTarget: boolean = false;
+    private buildPriority: STRUCTURE_X[];
 
-    constructor() {
+    /**
+     *
+     * @param buildPriority array of structure types first come first serve.
+     */
+    constructor(buildPriority: STRUCTURE_X[] = []) {
         super("TASK_BUILD");
+        this.buildPriority = buildPriority || [];
     }
 
     public execute(creepCtl: CreepController) {
@@ -36,6 +42,10 @@ export class Build extends BaseCreepTask {
             .on(ERR_NOT_IN_RANGE, () => {
                 creepCtl.moveTo(targets[0]).logFailure();
             })
+            .on(ERR_RCL_NOT_ENOUGH, () => {
+                logger.debug(`${creepCtl}: Attempt #${attempt}: RCL not enough to build target ${targets[0]}.`);
+                this.buildTargets(creepCtl, targets.slice(1), attempt + 1);
+            })
             .on(ERR_INVALID_TARGET, () => {
                 logger.debug(`${creepCtl}: Attempt #${attempt}: target ${targets[0]} is fully built.`);
                 this.buildTargets(creepCtl, targets.slice(1), attempt + 1);
@@ -57,12 +67,25 @@ export class Build extends BaseCreepTask {
         for (const target of targets) {
             distances[target.id] = creepCtl.creep.pos.getRangeTo(target);
         }
-        // TODO: accept a build preference order - see how sorting is done in the Haul task
-        // const maxDist = Math.max.apply(
-        //     null,
-        //     Object.keys(distances).map(k => distances[k]),
-        // );
+        const priorities: { [key: string]: number } = {};
+        for (const target of targets) {
+            priorities[target.id] = this.buildPriority.indexOf(target.structureType);
+            if (priorities[target.id] === -1) {
+                priorities[target.id] = this.buildPriority.length;
+            }
+        }
+
+        // sort primarily by priority - among items of the same priority, pick the closest to completion,
+        // and among the same the same level of completion pick the closest one by distance.
         targets.sort((t1: ConstructionSite, t2: ConstructionSite) => {
+            if (priorities[t1.structureType] !== priorities[t2.structureType]) {
+                return priorities[t1.structureType] - priorities[t2.structureType];
+            }
+            if (t1.progress > 100 || t2.progress > 100) {
+                const remainingT1 = t1.progressTotal - t1.progress;
+                const remainingT2 = t2.progressTotal - t2.progress;
+                return remainingT1 - remainingT2;
+            }
             return distances[t1.id] - distances[t2.id];
         });
         return targets;
@@ -70,6 +93,12 @@ export class Build extends BaseCreepTask {
 
     public completed(creepCtl: CreepController) {
         return this.noMoreTarget || creepCtl.creep.store.getUsedCapacity() === 0;
+    }
+
+    public toJSON(): BuildTaskMemory {
+        const json = super.toJSON();
+        const memory: BuildTaskMemory = { buildPriority: this.buildPriority, ...json };
+        return memory;
     }
 
     public description() {

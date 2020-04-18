@@ -25,8 +25,17 @@ interface HaulTaskMemory extends CreepTaskMemory {
     deliveryTargets: DeliveryTarget[];
 }
 
-interface PlaceConstructionSitesMemory extends BaseTaskMemory {
-    type: "TASK_PLACE_CONSTRUCTION_SITES";
+interface BuildTaskMemory extends CreepTaskMemory {
+    buildPriority: STRUCTURE_X[];
+}
+
+type ROOM_TASK = "TASK_PLACE_CONSTRUCTION_SITES";
+
+interface RoomTaskMemory extends BaseTaskMemory {
+    type: ROOM_TASK;
+}
+
+interface PlaceConstructionSitesMemory extends RoomTaskMemory {
     anchor: RoomPosition;
     scheduledBuildUnits: IBuildUnit[];
 }
@@ -99,4 +108,4 @@ type STRUCTURE_X =
     | STRUCTURE_FACTORY
     | STRUCTURE_INVADER_CORE;
 
-type DeliveryTarget = STRUCTURE_SPAWN | STRUCTURE_CONTAINER | STRUCTURE_CONTROLLER;
+type DeliveryTarget = STRUCTURE_SPAWN | STRUCTURE_CONTAINER | STRUCTURE_CONTROLLER | STRUCTURE_EXTENSION;

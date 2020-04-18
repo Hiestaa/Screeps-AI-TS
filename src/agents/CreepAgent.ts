@@ -43,7 +43,7 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask>
             case "TASK_HARVEST":
                 return new Harvest();
             case "TASK_BUILD":
-                return new Build();
+                return new Build((taskMemory as BuildTaskMemory).buildPriority);
         }
     }
 

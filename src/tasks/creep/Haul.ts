@@ -36,6 +36,7 @@ export class Haul extends BaseCreepTask {
             logger.error(`${creepCtl}: All specified delivery targets ${this.deliveryTargets.join("/")} are full`);
             this.noMoreTarget = true;
         }
+        // FIXME: if target is a controller we need to do `upgradeController` instead of `transfer`?
         creepCtl
             .transfer(targets[0], RESOURCE_ENERGY)
             .on(ERR_NOT_IN_RANGE, () => {
@@ -58,9 +59,12 @@ export class Haul extends BaseCreepTask {
                 const controller = creepCtl.creep.room.controller;
                 return controller ? [controller] : [];
             case STRUCTURE_CONTAINER:
+            case STRUCTURE_EXTENSION:
                 return creepCtl.creep.room.find(FIND_STRUCTURES, {
                     filter: structure =>
-                        structure.structureType === STRUCTURE_CONTAINER && structure.store[RESOURCE_ENERGY] > 0,
+                        (structure.structureType === STRUCTURE_CONTAINER ||
+                            structure.structureType === STRUCTURE_EXTENSION) &&
+                        structure.store[RESOURCE_ENERGY] > 0,
                 });
         }
     }
