@@ -17,6 +17,7 @@
                 "<node_internals>/**"
             ],
             "outputCapture": "console",
+            "preLaunchTask": "npm: build-test-unit"
         }
     ]
 }

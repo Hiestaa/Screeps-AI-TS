@@ -1,4 +1,4 @@
-import { BaseController } from "agents/controllers/BaseController";
+import { BaseController, Controllable } from "agents/controllers/BaseController";
 import { BaseCreepTask } from "tasks/creep/BaseCreepTask";
 import { Harvest } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
@@ -18,12 +18,12 @@ const logger = getLogger("controllers.agents.BaseAgent", COLORS.controllers);
  *      -> can be reused to set status as sending messages to oneself but visible to everybody
  */
 export abstract class BaseAgent<
-    RoomObjectType extends RoomObject,
-    ControllerType extends BaseController<RoomObjectType>,
-    TaskType extends BaseTask<RoomObjectType, ControllerType>
+    ControlledRoomObjectType extends Controllable,
+    ControllerType extends BaseController<ControlledRoomObjectType>,
+    TaskType extends BaseTask<ControlledRoomObjectType, ControllerType>
 > {
     public taskQueue: TaskType[] = [];
-    public abstract memoryLocation: "creeps" | "spawns";
+    public abstract memoryLocation: "creeps" | "spawns" | "rooms";
     public name: string;
     public memory: { tasks: TaskMemory[] } = {
         tasks: [],
@@ -38,6 +38,10 @@ export abstract class BaseAgent<
         }
     }
 
+    /**
+     * Reload the agent and its associated tasks from the memory assigned to this particular name
+     * Throws an error if the reload process couldn't complete (memory wipe, agent death, etc...)
+     */
     public reload() {
         const tasks = this.reloadTasks();
         if (tasks) {
@@ -49,18 +53,19 @@ export abstract class BaseAgent<
     protected reloadTasks(): TaskMemory[] | void {
         const mem = Memory[this.memoryLocation][this.name];
         if (mem && mem.tasks) {
-            this.taskQueue = mem.tasks.map(taskMemory => {
-                const task = this.createTaskInstance(taskMemory);
-                task.reload(taskMemory);
-                return task;
-            });
+            this.taskQueue = mem.tasks.map(taskMemory => this._createTaskInstance(taskMemory));
             return mem.tasks;
         }
+    }
+    private _createTaskInstance(taskMemory: TaskMemory): TaskType {
+        const taskInstance = this.createTaskInstance(taskMemory);
+        taskInstance.executionStarted = taskMemory.executionStarted;
+        return taskInstance;
     }
 
     protected abstract createTaskInstance(task: TaskMemory): TaskType;
     protected abstract reloadControllers(): void;
-    protected abstract getController(): ControllerType | undefined;
+    public abstract getController(): ControllerType | undefined;
 
     public scheduleTask(task: TaskType) {
         this.logger.info(`${this}: scheduling ${task}`);
@@ -110,13 +115,13 @@ export abstract class BaseAgent<
         }
         this.executeTask(currentTask, controller);
 
-        // re-check if task has completed, saves some memory in case the task doesnt need to be saved
+        // re-check if task has completed, saves some memory in case the task doesn'taskMemoryt need to be saved
         this.hasTaskCompleted(currentTask, controller);
     }
 
     private hasTaskCompleted(currentTask: TaskType, controller: ControllerType | undefined) {
-        const hasTaskCompleted = controller && currentTask.completed(controller);
-        if (currentTask.executionStarted && hasTaskCompleted) {
+        const hasTaskCompleted = currentTask.executionStarted && controller && currentTask.completed(controller);
+        if (hasTaskCompleted) {
             this.onTaskExecutionCompletes(currentTask, controller);
 
             this.taskQueue.shift();
@@ -132,7 +137,7 @@ export abstract class BaseAgent<
             task.executionStarted = true;
             return task.execute(controller);
         } else {
-            this.logger.debug(`Not executing ${task} - room object is undefined`);
+            this.logger.error(`Not executing ${task} - controller is undefined`);
         }
     }
 

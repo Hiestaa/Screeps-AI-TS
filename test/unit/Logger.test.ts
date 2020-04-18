@@ -213,6 +213,7 @@ describe("Logger", () => {
 
         it("should affect all loggers across the hierarchy", () => {
             disableLevel("info");
+            consoleLogMock.resetHistory();
             loggerA.info("test message a");
             loggerAB.info("test message a.b");
             loggerABCD.info("test message a.b.c.d");
@@ -221,6 +222,7 @@ describe("Logger", () => {
             expect(consoleLogMock.notCalled).to.eq(true);
 
             enableLevel("info");
+            consoleLogMock.resetHistory();
             loggerA.info("test message a");
             loggerAB.info("test message a.b");
             loggerABCD.info("test message a.b.c.d");
@@ -244,6 +246,7 @@ describe("Logger", () => {
         it("should not affect any other level", () => {
             enableLevel("debug");
             disableLevel("info");
+            consoleLogMock.resetHistory();
 
             loggerABXY.info("test message a.b.x.y");
             loggerABCD.warning("test message a.b.c.d");

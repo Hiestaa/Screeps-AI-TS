@@ -23,10 +23,12 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask>
         const creep = Game.creeps[this.name];
         if (creep) {
             this.creepController = new CreepController(creep);
+        } else {
+            throw new Error("Unable to find creep object in Game.creeps");
         }
     }
 
-    protected getController() {
+    public getController() {
         return this.creepController;
     }
 
@@ -45,8 +47,10 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask>
         }
     }
 
-    protected onTaskExecutionStarts(task: BaseCreepTask, creepCtl: CreepController) {
+    protected onTaskExecutionStarts(task: BaseCreepTask, creepCtl: CreepController | undefined) {
         super.onTaskExecutionStarts(task, creepCtl);
-        creepCtl.creep.say(task.description());
+        if (creepCtl) {
+            creepCtl.creep.say(task.description());
+        }
     }
 }

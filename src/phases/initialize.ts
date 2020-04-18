@@ -7,11 +7,16 @@ const logger = getLogger("phases.initialize", COLORS.phases);
  * This function is called for every turn, but should only have an effect on a bare game state (or wipe out)
  */
 export function initialize(): void {
-    if (!Memory.objective) {
+    if (!Memory.roomObjectives) {
         logger.warning("Initializing Memory state");
+        Memory.roomObjectives = {};
 
-        Memory.objective = {
-            name: "REACH_RCL1",
-        };
+        for (const roomName in Game.rooms) {
+            if (Game.rooms.hasOwnProperty(roomName)) {
+                Memory.roomObjectives[roomName] = {
+                    name: "REACH_RCL2",
+                };
+            }
+        }
     }
 }

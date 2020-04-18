@@ -95,7 +95,7 @@ class LevelLogger {
     constructor() {
         Memory.loggerLevelEnabled = Memory.loggerLevelEnabled || {
             // default level state, if no state is defined in memory
-            debug: true,
+            debug: false,
             info: true,
             warning: true,
             error: true,

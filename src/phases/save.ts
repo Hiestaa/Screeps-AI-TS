@@ -1,14 +1,19 @@
-import { IObjective } from "objectives/IObjective";
 import { COLORS, getLogger } from "utils/Logger";
-import { AGENT_STORE_LOCATIONS, IAgentStore } from "./IAgentStore";
+import { AGENT_STORE_LOCATIONS, IAgentStore, IAgentStoreCollection } from "./IAgentStore";
 
 const logger = getLogger("phases.save", COLORS.phases);
 
-export function save(controllerStore: IAgentStore, objective: IObjective) {
+export function save(agentStoreCollection: IAgentStoreCollection) {
     logger.debug(">>> SAVE <<<");
-    saveCreepControllers(controllerStore);
-    saveSpawnControllers(controllerStore);
-    objective.save();
+    for (const roomName in agentStoreCollection) {
+        if (agentStoreCollection.hasOwnProperty(roomName)) {
+            const agentStore = agentStoreCollection[roomName];
+            saveCreepControllers(agentStore);
+            saveSpawnControllers(agentStore);
+            agentStore.room.save();
+            agentStore.objective.save();
+        }
+    }
 }
 
 const saveCreepControllers = makeControllerSave("creeps");

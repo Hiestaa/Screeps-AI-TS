@@ -23,7 +23,7 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
         }
     }
 
-    protected getController() {
+    public getController() {
         return this.spawnController;
     }
 

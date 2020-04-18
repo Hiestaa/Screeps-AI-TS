@@ -1,31 +1,37 @@
-import { IObjective } from "objectives/IObjective";
+import { nextObjectiveInRoom } from "objectives/transition";
 import { COLORS, getLogger } from "utils/Logger";
-import { AGENT_STORE_LOCATIONS, IAgentStore } from "./IAgentStore";
+import { AGENT_STORE_LOCATIONS, IAgentStore, IAgentStoreCollection } from "./IAgentStore";
 
 const logger = getLogger("phases.act", COLORS.phases);
 
-export function act(controllerStore: IAgentStore, objective: IObjective) {
+export function act(agentStoreCollection: IAgentStoreCollection) {
     logger.debug(">>> ACT <<<");
-    const newObjective = objective.execute(controllerStore);
+    for (const roomName in agentStoreCollection) {
+        if (agentStoreCollection.hasOwnProperty(roomName)) {
+            const agentStore = agentStoreCollection[roomName];
 
-    executeCreepControllers(controllerStore);
-    executeSpawnControllers(controllerStore);
-
-    return newObjective;
+            const objective = agentStore.objective;
+            objective.execute(agentStore);
+            agentStore.objective = nextObjectiveInRoom(agentStore.objective.name, agentStore.room);
+            executeCreepControllers(agentStore);
+            executeSpawnControllers(agentStore);
+            agentStore.room.execute();
+        }
+    }
 }
 
 const executeCreepControllers = makeControllerExecute("creeps");
 const executeSpawnControllers = makeControllerExecute("spawns");
 
 function makeControllerExecute(storeLoc: AGENT_STORE_LOCATIONS) {
-    return (controllerStore: IAgentStore) => {
-        for (const controllerId in controllerStore[storeLoc]) {
-            if (!controllerStore[storeLoc].hasOwnProperty(controllerId)) {
+    return (agentStore: IAgentStore) => {
+        for (const agentId in agentStore[storeLoc]) {
+            if (!agentStore[storeLoc].hasOwnProperty(agentId)) {
                 continue;
             }
-            const controller = controllerStore[storeLoc][controllerId];
-            logger.debug(`Executing ${controller}`);
-            controller.execute();
+            const agent = agentStore[storeLoc][agentId];
+            logger.debug(`Executing ${agent}`);
+            agent.execute();
         }
     };
 }

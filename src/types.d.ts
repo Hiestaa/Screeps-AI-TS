@@ -1,5 +1,11 @@
 // example declaration file - remove these and add your own custom typings
 
+declare interface IBuildUnit {
+    structureType: BuildableStructureConstant;
+    x: number;
+    y: number;
+}
+
 interface BaseTaskMemory {
     executionStarted: boolean;
 }
@@ -19,7 +25,13 @@ interface HaulTaskMemory extends CreepTaskMemory {
     deliveryTargets: DeliveryTarget[];
 }
 
-type TaskMemory = SpawnTaskMemory | CreepTaskMemory;
+interface PlaceConstructionSitesMemory extends BaseTaskMemory {
+    type: "TASK_PLACE_CONSTRUCTION_SITES";
+    anchor: RoomPosition;
+    scheduledBuildUnits: IBuildUnit[];
+}
+
+type TaskMemory = SpawnTaskMemory | CreepTaskMemory | PlaceConstructionSitesMemory;
 
 // memory extension samples
 interface CreepMemory {
@@ -30,8 +42,14 @@ interface SpawnMemory {
     tasks: TaskMemory[];
 }
 
+interface RoomMemory {
+    tasks: PlaceConstructionSitesMemory[];
+}
+
+type ObjectiveType = "REACH_RCL2" | "REACH_RCL3" | "IDLE";
+
 interface ObjectiveMemory {
-    name: "REACH_RCL1";
+    name: ObjectiveType;
 }
 
 interface Memory {
@@ -39,7 +57,7 @@ interface Memory {
     loggerLevelEnabled: { [key in LOG_LEVEL]: boolean };
     globalCount: number;
     nameCount: [number, number, number];
-    objective: ObjectiveMemory;
+    roomObjectives: { [key: string]: ObjectiveMemory };
 }
 declare interface RoomPosition {
     toString: (htmlLink?: boolean, id?: string, memWatch?: string) => string;

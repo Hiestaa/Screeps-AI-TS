@@ -19,5 +19,14 @@
   },
   "[typescript]": {
     "editor.formatOnSave": true
-  }
+  },
+  "cSpell.words": [
+    "RETETXTETER",
+    "buble",
+    "ecer",
+    "eter",
+    "eterc",
+    "nodent",
+    "rece"
+  ]
 }

@@ -6,12 +6,13 @@ import { Harvest } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
 import { SpawnTask } from "tasks/Spawn";
 import { COLORS, getLogger } from "utils/Logger";
-import { BaseObjective, OBJECTIVE_TYPE } from "./IObjective";
+import { BaseObjective } from "./IObjective";
+import { ReachRCL3 } from "./ReachRCL3";
 
 const logger = getLogger("objectives.ReachRCL2", COLORS.objectives);
 
 export class ReachRCL2 extends BaseObjective {
-    protected name: OBJECTIVE_TYPE = "REACH_RCL1";
+    public name: ObjectiveType = "REACH_RCL2";
 
     public execute(agentStore: IAgentStore) {
         for (const spawnName in agentStore.spawns) {
@@ -31,8 +32,6 @@ export class ReachRCL2 extends BaseObjective {
             const creepAgent = agentStore.creeps[creepName];
             this.assignCreepTasks(creepAgent);
         }
-
-        return this;
     }
 
     private assignSpawnTasks(spawnAgent: SpawnAgent) {
@@ -43,21 +42,12 @@ export class ReachRCL2 extends BaseObjective {
     }
 
     private assignCreepTasks(creepAgent: CreepAgent) {
-        logger.debug(`${this}: ensuring ${creepAgent} has tasks TASK_HARVEST and TASK_HAUL scheduled`);
-        if (!creepAgent.hasTaskScheduled("TASK_HARVEST")) {
+        logger.debug(`${this}: ensuring ${creepAgent} has all creep tasks scheduled`);
+        if (!creepAgent.taskQueue.length) {
             creepAgent.scheduleTask(new Harvest());
-        }
-
-        if (!creepAgent.hasTaskScheduled("TASK_HAUL")) {
             creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN]));
-        }
-
-        if (!creepAgent.hasTaskScheduled("TASK_BUILD")) {
             creepAgent.scheduleTask(new Build());
-        }
-
-        if (!creepAgent.hasTaskScheduled("TASK_HAUL")) {
-            creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_CONTAINER, STRUCTURE_CONTROLLER]));
+            creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_CONTROLLER, STRUCTURE_CONTAINER]));
         }
     }
 }

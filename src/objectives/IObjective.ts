@@ -1,31 +1,38 @@
 import { IAgentStore } from "phases/IAgentStore";
+import { COLORS, getLogger } from "utils/Logger";
+
+const logger = getLogger("objectives.IOBjective", COLORS.objectives);
 
 export interface IObjective {
     /**
      * Execute the operations for this objective
-     * @param controllerStore an access to the existing controllers after reload
-     * @return the next objective in line, may be the current one if not yet completed
+     * @param agentStore an access to the existing controllers after reload
      */
-    execute(controllerStore: IAgentStore): IObjective;
+    execute(agentStore: IAgentStore): void;
 
     save(): void;
     reload(): void;
 }
 
 export abstract class BaseObjective implements IObjective {
-    protected abstract name: OBJECTIVE_TYPE;
+    public abstract name: ObjectiveType;
     protected memory?: ObjectiveMemory;
+    public roomName: string;
 
-    public abstract execute(controllerStore: IAgentStore): BaseObjective;
+    constructor(roomName: string) {
+        this.roomName = roomName;
+    }
+
+    public abstract execute(agentStore: IAgentStore): void;
 
     public save() {
-        Memory.objective = {
+        Memory.roomObjectives[this.roomName] = {
             name: this.name,
         };
     }
 
     public reload() {
-        this.memory = Memory.objective;
+        this.memory = Memory.roomObjectives[this.roomName];
     }
 
     public toString() {
@@ -33,4 +40,10 @@ export abstract class BaseObjective implements IObjective {
     }
 }
 
-export type OBJECTIVE_TYPE = "REACH_RCL1";
+export class IdleObjective extends BaseObjective {
+    public name: ObjectiveType = "IDLE";
+
+    public execute(agentStore: IAgentStore) {
+        logger.warning(`Room ${this.name} is idle`);
+    }
+}

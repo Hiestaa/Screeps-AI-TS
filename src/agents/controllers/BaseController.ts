@@ -2,12 +2,14 @@ import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("controllers.BaseController", COLORS.controllers);
 
+export type Controllable = RoomObject | Room;
+
 /**
  * Base class for any controller
  * A controller is a low-level wrapper around a room object of any kind.
  * It offers additional methods to facilitate the manipulation of that room object.
  */
-export abstract class BaseController<RoomObjectType extends RoomObject> {
+export abstract class BaseController<RoomObjectType extends Controllable> {
     public abstract roomObject: RoomObjectType;
 
     public toString() {
@@ -29,7 +31,7 @@ export abstract class BaseController<RoomObjectType extends RoomObject> {
 export class ReturnCodeSwitcher<Code extends ScreepsReturnCode> {
     public code: Code;
     public checkedValues: Set<ScreepsReturnCode>;
-    public failCallback?: (code: Code) => void;
+    public failCallback: Array<(code: Code) => void> = [];
 
     constructor(code: Code) {
         this.code = code;
@@ -39,6 +41,7 @@ export class ReturnCodeSwitcher<Code extends ScreepsReturnCode> {
     /**
      * Add a handler function for a particular response code
      * As many callback as desired can be added to the same response code. Each callback is executed immediately.
+     * Once a particular response code value is checked, it won't trigger a call to the failure callbacks.
      *
      * @param code return code of the executed action
      * @param callback callback to execute if the executed action return code matches the provided one
@@ -86,15 +89,18 @@ export class ReturnCodeSwitcher<Code extends ScreepsReturnCode> {
      * @param callback callback to execute in case of failure
      */
     public failure(callback: (code: Code) => void) {
-        this.failCallback = callback;
+        this.failCallback.push(callback);
         return this;
     }
 
+    /**
+     * Trigger the failure callback calls.
+     */
     public logFailure() {
         if (this.code !== OK && !this.checkedValues.has(this.code)) {
-            if (this.failCallback) {
-                this.failCallback(this.code);
-            }
+            this.failCallback.forEach(cb => {
+                cb(this.code);
+            });
         }
     }
 }

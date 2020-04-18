@@ -4,21 +4,29 @@
 		{
 			"type": "npm",
 			"script": "test-unit",
-			"group": "build",
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
 			"problemMatcher": [],
 			"label": "npm: test-unit",
 			"detail": "rollup -c rollup.test-unit-config.js && echo 'done' && mocha dist/test-unit.bundle.js"
 		},
 		{
 			"type": "npm",
+			"script": "build",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: build only",
+			"detail": "rollup -c && echo 'done'"
+		},
+		{
+			"type": "npm",
 			"script": "push-sim",
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
+			"group": "build",
 			"problemMatcher": [],
 			"label": "npm: push-sim",
-			"detail": "rollup -c --environment DEST:sim"
+			"detail": "rollup -c --environment DEST:sim && echo 'done'"
 		},
 		{
 			"type": "npm",
@@ -26,7 +34,15 @@
 			"group": "build",
 			"problemMatcher": [],
 			"label": "npm: push-main",
-			"detail": "rollup -c --environment DEST:main"
-		}
+			"detail": "rollup -c --environment DEST:main && echo 'done'"
+		},
+		{
+			"type": "npm",
+			"script": "build-test-unit",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: build-test-unit",
+			"detail": "rollup -c rollup.test-unit-config.js && echo 'done'"
+		},
 	]
 }

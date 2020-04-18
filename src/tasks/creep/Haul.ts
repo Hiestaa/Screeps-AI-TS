@@ -102,11 +102,6 @@ export class Haul extends BaseCreepTask {
         return "👜";
     }
 
-    public reload(memory: HaulTaskMemory) {
-        super.reload(memory);
-        this.deliveryTargets = memory.deliveryTargets;
-    }
-
     public toJSON(): HaulTaskMemory {
         const json = super.toJSON();
         const memory: HaulTaskMemory = { deliveryTargets: this.deliveryTargets, ...json };

@@ -7,7 +7,7 @@ export function mainLoop() {
     // tslint:disable-next-line:no-debugger
     // debugger;
     initialize();
-    const [controllerStore, objective] = reload();
-    const newObjective = act(controllerStore, objective);
-    save(controllerStore, newObjective);
+    const agentStoreCollection = reload();
+    act(agentStoreCollection);
+    save(agentStoreCollection);
 }
