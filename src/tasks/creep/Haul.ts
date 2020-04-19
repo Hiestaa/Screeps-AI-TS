@@ -42,6 +42,9 @@ export class Haul extends BaseCreepTask {
             .on(ERR_NOT_IN_RANGE, () => {
                 creepCtl.moveTo(targets[0]).logFailure();
             })
+            .on(ERR_NOT_ENOUGH_ENERGY, () => {
+                logger.debug(`${creepCtl}: No more energy - task is completed.`);
+            })
             .on(ERR_FULL, () => {
                 logger.debug(`${creepCtl}: Attempt #${attempt}: target ${targets[0]} is full.`);
                 this.transferToTargets(creepCtl, targets.slice(1), attempt + 1);
@@ -59,12 +62,16 @@ export class Haul extends BaseCreepTask {
                 const controller = creepCtl.creep.room.controller;
                 return controller ? [controller] : [];
             case STRUCTURE_CONTAINER:
+                return creepCtl.creep.room.find(FIND_STRUCTURES, {
+                    filter: structure =>
+                        structure.structureType === STRUCTURE_CONTAINER &&
+                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+                });
             case STRUCTURE_EXTENSION:
                 return creepCtl.creep.room.find(FIND_STRUCTURES, {
                     filter: structure =>
-                        (structure.structureType === STRUCTURE_CONTAINER ||
-                            structure.structureType === STRUCTURE_EXTENSION) &&
-                        structure.store[RESOURCE_ENERGY] > 0,
+                        structure.structureType === STRUCTURE_EXTENSION &&
+                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
                 });
         }
     }

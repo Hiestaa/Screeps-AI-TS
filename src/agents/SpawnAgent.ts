@@ -10,6 +10,7 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
     public memoryLocation: "spawns" = "spawns";
     public memory: SpawnMemory = {
         tasks: [],
+        idleTime: 0,
     };
 
     constructor(name: string) {

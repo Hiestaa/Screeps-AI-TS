@@ -26,7 +26,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
         const energyStructures = this.getEnergyStructures(spawnCtl);
         spawnCtl
             .spawnCreep(this.maxCreepProfile(spawnCtl, energyStructures), name, { energyStructures })
-            .on(ERR_NOT_ENOUGH_ENERGY, () => logger.debug("Not enough energy to produce creep"))
+            .on(ERR_NOT_ENOUGH_ENERGY, () => logger.warning("Not enough energy to produce creep"))
             .logFailure();
     }
 
@@ -41,7 +41,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
             parts = newParts.slice(); // copy
             newParts.push(this.nextBodyPart(level));
         }
-        logger.debug(`Energy available: ${energy}. Estimated cost: ${this.computeBuildCost(parts)}.`);
+        logger.info(`Energy available: ${energy}. Estimated cost: ${this.computeBuildCost(parts)}.`);
         if (this.computeBuildCost(parts) <= energy) {
             logger.info(`Spawning creep level ${level} with body parts: ${parts.join(",")}`);
         }
@@ -49,7 +49,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     }
 
     private computeAvailableEnergy(energyStructures: Array<StructureSpawn | StructureExtension>) {
-        return energyStructures.reduce((acc, structure) => structure.store[RESOURCE_ENERGY], 0);
+        return energyStructures.reduce((acc, structure) => acc + structure.store[RESOURCE_ENERGY], 0);
     }
 
     private computeBuildCost(parts: BodyPartConstant[]) {
@@ -68,7 +68,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
 
     private getEnergyStructures(spawnCtl: SpawnController): Array<StructureExtension | StructureSpawn> {
         const extensions = spawnCtl.spawn.room.find(FIND_MY_STRUCTURES, {
-            filter: structure => structure.structureType === STRUCTURE_EXTENSION,
+            filter: structure => structure.structureType === STRUCTURE_EXTENSION && structure.isActive(),
         }) as StructureExtension[];
         const otherSpawns = spawnCtl.spawn.room.find(FIND_MY_STRUCTURES, {
             filter: structure => structure.structureType === STRUCTURE_SPAWN && structure.id !== spawnCtl.spawn.id,

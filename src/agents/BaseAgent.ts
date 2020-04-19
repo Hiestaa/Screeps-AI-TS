@@ -7,6 +7,7 @@ import { SpawnTask } from "tasks/Spawn";
 import { COLORS, getLogger, Logger } from "utils/Logger";
 
 const logger = getLogger("controllers.agents.BaseAgent", COLORS.controllers);
+const WARN_IDLE_PERIOD = 100;
 
 /**
  * Base class for any agent.
@@ -25,8 +26,9 @@ export abstract class BaseAgent<
     public taskQueue: TaskType[] = [];
     public abstract memoryLocation: "creeps" | "spawns" | "rooms";
     public name: string;
-    public memory: { tasks: TaskMemory[] } = {
+    public memory: BaseMemory = {
         tasks: [],
+        idleTime: 0,
     };
     public logger: Logger = logger;
 
@@ -43,15 +45,16 @@ export abstract class BaseAgent<
      * Throws an error if the reload process couldn't complete (memory wipe, agent death, etc...)
      */
     public reload() {
-        const tasks = this.reloadTasks();
+        const mem = Memory[this.memoryLocation][this.name];
+        const tasks = this.reloadTasks(mem);
         if (tasks) {
             this.memory.tasks = tasks;
+            this.memory.idleTime = mem.idleTime;
         }
         this.reloadControllers();
     }
 
-    protected reloadTasks(): TaskMemory[] | void {
-        const mem = Memory[this.memoryLocation][this.name];
+    protected reloadTasks(mem: BaseMemory): TaskMemory[] | void {
         if (mem && mem.tasks) {
             this.taskQueue = mem.tasks.map(taskMemory => this._createTaskInstance(taskMemory));
             return mem.tasks;
@@ -81,23 +84,22 @@ export abstract class BaseAgent<
     }
 
     public save() {
-        const mem: { tasks: TaskMemory[] } = { tasks: [] };
+        const mem: BaseMemory = { tasks: [], idleTime: this.memory.idleTime || 0 };
         this.saveTasks(mem);
-        // if we don't allow overriding the memory here, whatever task scheduled
-        // during this game loop won't be saved to memory for the next loop.
-        // if (!Memory[this.memoryLocation][this.name]) {
         Memory[this.memoryLocation][this.name] = mem;
-        // }
     }
 
-    private saveTasks(mem: { tasks: TaskMemory[] }) {
+    private saveTasks(mem: BaseMemory) {
         mem.tasks = this.taskQueue.map(t => t.toJSON());
     }
 
     public execute() {
         const controller = this.getController();
         if (this.taskQueue.length === 0) {
-            this.logger.warning(`${controller}: No task to perform`);
+            this.memory.idleTime += 1;
+            if (this.memory.idleTime > 0 && this.memory.idleTime % WARN_IDLE_PERIOD === 0) {
+                this.logger.warning(`${controller}: No task to perform (idle time: ${this.memory.idleTime})`);
+            }
             return;
         }
 
@@ -115,7 +117,7 @@ export abstract class BaseAgent<
         }
         this.executeTask(currentTask, controller);
 
-        // re-check if task has completed, saves some memory in case the task doesn'taskMemoryt need to be saved
+        // re-check if task has completed, saves some memory in case the task Memory doesn't need to be saved
         this.hasTaskCompleted(currentTask, controller);
     }
 

@@ -44,6 +44,6 @@ export class IdleObjective extends BaseObjective {
     public name: ObjectiveType = "IDLE";
 
     public execute(agentStore: IAgentStore) {
-        logger.warning(`Room ${this.name} is idle`);
+        logger.warning(`Room ${agentStore.room.name} is idle`);
     }
 }

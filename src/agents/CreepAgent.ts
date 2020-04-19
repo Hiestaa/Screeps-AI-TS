@@ -13,6 +13,7 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask>
     public memoryLocation: "creeps" = "creeps";
     public memory: CreepMemory = {
         tasks: [],
+        idleTime: 0,
     };
 
     constructor(name: string) {

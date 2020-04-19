@@ -32,7 +32,7 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
         }
 
         if (this.scheduledBuildUnits.length === 0) {
-            this.scheduledBuildUnits = gridFortress(this.position);
+            this.scheduledBuildUnits = gridFortress(this.position, _.get(roomCtl, "room.controller.level", 0));
         }
         if (!this.scheduledBuildUnits.length) {
             logger.info("Layout rendering did not produce any construction unit.");

@@ -42,16 +42,21 @@ interface PlaceConstructionSitesMemory extends RoomTaskMemory {
 
 type TaskMemory = SpawnTaskMemory | CreepTaskMemory | PlaceConstructionSitesMemory;
 
+interface BaseMemory {
+    tasks: TaskMemory[];
+    idleTime: number;
+}
+
 // memory extension samples
-interface CreepMemory {
+interface CreepMemory extends BaseMemory {
     tasks: TaskMemory[];
 }
 
-interface SpawnMemory {
+interface SpawnMemory extends BaseMemory {
     tasks: TaskMemory[];
 }
 
-interface RoomMemory {
+interface RoomMemory extends BaseMemory {
     tasks: PlaceConstructionSitesMemory[];
 }
 

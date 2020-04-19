@@ -10,6 +10,7 @@ export class RoomAgent extends BaseAgent<Room, RoomController, PlaceConstruction
     public memoryLocation: "rooms" = "rooms";
     public memory: SpawnMemory = {
         tasks: [],
+        idleTime: 0,
     };
 
     constructor(name: string) {
