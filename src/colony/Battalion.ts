@@ -1,6 +1,7 @@
 import { CreepAgent } from "agents/CreepAgent";
 import { RoomAgent } from "agents/RoomAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
+import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
 import { BaseObjective, IdleObjective } from "objectives/IObjective";
 import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
@@ -44,6 +45,8 @@ export class Battalion {
                     return ReachRCL2;
                 case "REACH_RCL3":
                     return ReachRCL3;
+                case "CONTINUOUS_HARVESTING":
+                    return ContinuousHarvesting;
                 case "IDLE":
                     return IdleObjective;
             }
@@ -73,7 +76,7 @@ export class Battalion {
      * Spawn and room agents are not executed as multiple battalion may be referencing the same spawn and room.
      */
     public execute() {
-        this.objective.execute(this.creeps);
+        this.objective.execute(this.creeps, this.room, this.spawn);
 
         for (const creep of this.creeps) {
             creep.execute();
@@ -86,9 +89,17 @@ export class Battalion {
         const pendingSpawnRequests = this.spawn.pendingSpawnRequests(this.name);
         const pendingCount = pendingSpawnRequests.reduce((acc, req) => acc + req.count, 0);
         const creepCount = this.creeps.length;
+        // TODO: do a pending + count < desired for each creep profile
+        const desired = this.objective.estimateRequiredWorkForce(this.room);
+        const desiredCount = desired.reduce((acc, r) => acc + r.count, 0);
 
-        if (pendingCount + creepCount < DESIRED_CREEP_COUNT) {
-            this.spawn.requestSpawn(this.name, DESIRED_CREEP_COUNT - pendingCount - creepCount);
+        if (pendingCount + creepCount < desiredCount) {
+            const requestCount = desiredCount - pendingCount - creepCount;
+            logger.info(
+                `${this}: requesting spawn of ${requestCount} creeps ` +
+                    `(desired: ${desiredCount}, existing:${creepCount}, pending: ${pendingCount})`,
+            );
+            this.spawn.requestSpawn(this.name, requestCount);
         }
     }
 

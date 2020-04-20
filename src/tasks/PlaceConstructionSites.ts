@@ -11,8 +11,7 @@ const logger = getLogger("tasks.PlaceConstructionSites", COLORS.tasks);
  * The task is complete when the layout is fully built.
  * For now only one layout is available so the task doesn't need to remember which is assigned,
  * when more layouts are available the type will need to be saved in task memory
- * TODO: Implement a RoomPlanner that has an overview of the room, plan for the long-term evolution,
- * and assign PlaceConstructionSites with specific layouts at the appropriate locations.
+ * TODO: have this task take the layout as param, or other more dynamic form of building mechanism
  */
 export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
     private position: RoomPosition;
@@ -65,6 +64,14 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
                             roomCtl,
                             unit,
                         )}: invalid target. Removing from build list.`,
+                    );
+                })
+                .on(ERR_RCL_NOT_ENOUGH, () => {
+                    logger.warning(
+                        `Unable to place ${this.renderUnitStr(
+                            roomCtl,
+                            unit,
+                        )}: RCL is not enough. Removing from build list.`,
                     );
                 })
                 .failure(() => {

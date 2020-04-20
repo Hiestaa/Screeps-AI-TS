@@ -5,7 +5,7 @@ const RCL_LAYOUTS: { [key: number]: string } = {
    X
    C`,
     2: `
-E E X ETE
+E E X E E
     C
     E   `,
     3: `

@@ -1,11 +1,12 @@
 import { RoomAgent } from "agents/RoomAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
+import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
 import { IdleObjective } from "objectives/IObjective";
 import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
-import { PlaceConstructionSites } from "tasks/PlaceConstructionSites";
 import { COLORS, getLogger } from "utils/Logger";
 import { Battalion } from "./Battalion";
+import { RoomPlanner } from "./RoomPlanner";
 
 const logger = getLogger("colony.Colony", COLORS.colony);
 
@@ -20,6 +21,7 @@ export class Colony {
     public room: RoomAgent;
     public spawns: { [key: string]: SpawnAgent };
     public battalions: { [key in keyof ColonyBattalionsMemory]: Battalion };
+    public roomPlanner: RoomPlanner;
 
     public constructor(room: Room) {
         this.battalions = {};
@@ -27,6 +29,8 @@ export class Colony {
         this.room = new RoomAgent(room.name);
 
         this.reload();
+
+        this.roomPlanner = new RoomPlanner(this.room, this.spawns);
     }
 
     /**
@@ -59,12 +63,22 @@ export class Colony {
                 this.battalions[battalionId] = new Battalion(battalionId, firstSpawn, this.room);
             }
 
-            if (!this.battalions.allPurposeReserve) {
-                logger.info(`All Purpose Reserve battalion not found in ${this}. Initializing.`);
-                this.battalions.allPurposeReserve = new Battalion("allPurposeReserve", firstSpawn, this.room);
-            }
+            this.initializeBattalions(firstSpawn);
         } else {
             logger.warning(`No spawn in ${this.room} - not reloading / initializing any battalion`);
+        }
+    }
+
+    private initializeBattalions(spawn: SpawnAgent) {
+        if (!this.battalions.allPurposeReserve) {
+            logger.info(`All Purpose Reserve battalion not found in ${this}. Initializing.`);
+            this.battalions.allPurposeReserve = new Battalion("allPurposeReserve", spawn, this.room);
+        }
+
+        const level = this.room.roomController?.room.controller?.level;
+        if (level && level >= 2 && !this.battalions.harvesters) {
+            this.battalions.harvesters = new Battalion("harvesters", spawn, this.room);
+            this.battalions.harvesters.objective = new ContinuousHarvesting("harvesters");
         }
     }
 
@@ -103,8 +117,6 @@ export class Colony {
      * * Spawns, to execute spawn requests
      */
     public execute() {
-        this.assignRoomTasks();
-
         logger.debug(`Executing ${this.room}`);
         this.room.execute();
 
@@ -125,24 +137,6 @@ export class Colony {
         }
 
         this.transitionObjectives();
-    }
-
-    // TODO: use a room planner for smarter construction site placement
-    private assignRoomTasks() {
-        if (this.room.hasTaskScheduled("TASK_PLACE_CONSTRUCTION_SITES")) {
-            return;
-        }
-
-        for (const spawnName in this.spawns) {
-            if (!this.spawns.hasOwnProperty(spawnName)) {
-                continue;
-            }
-
-            const spawnAgent = this.spawns[spawnName];
-            if (spawnAgent.spawnController) {
-                this.room.scheduleTask(new PlaceConstructionSites(spawnAgent.spawnController.spawn.pos));
-            }
-        }
     }
 
     /**
@@ -166,10 +160,14 @@ export class Colony {
             if (controllerLevel <= 1 && battalion.objective.name !== "REACH_RCL2") {
                 logger.warning("Controller reached or downgraded to level 1. ");
                 battalion.objective = new ReachRCL2(name);
+                // only create it once when we reach a new RCL
+                this.roomPlanner.createSpawnFortress();
             }
             if (controllerLevel === 2 && battalion.objective.name !== "REACH_RCL3") {
                 logger.warning("Controller reached or downgraded to level 2. ");
                 battalion.objective = new ReachRCL3(name);
+                // only create it once when we reach a new RCL
+                this.roomPlanner.createSpawnFortress();
             }
         } else if (battalion.objective.name !== "IDLE") {
             logger.warning(`No room controller for room: ${this.room.name} - assigning idle objective to ${battalion}`);

@@ -1,6 +1,6 @@
 import { CreepAgent } from "agents/CreepAgent";
 import { Build } from "tasks/creep/Build";
-import { Harvest } from "tasks/creep/Harvest";
+import { Fetch } from "tasks/creep/Fetch";
 import { Haul } from "tasks/creep/Haul";
 import { COLORS, getLogger } from "utils/Logger";
 import { ReachRCL2 } from "./ReachRCL2";
@@ -25,7 +25,7 @@ export class ReachRCL3 extends ReachRCL2 {
         for (const creepAgent of creepAgents) {
             logger.debug(`${this}: ensuring ${creepAgent} has all creep tasks scheduled`);
             if (!creepAgent.taskQueue.length) {
-                creepAgent.scheduleTask(new Harvest());
+                creepAgent.scheduleTask(new Fetch());
                 this.assignUpgradeControllerIfNecessary(creepAgent);
                 creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_EXTENSION]));
                 creepAgent.scheduleTask(
@@ -48,5 +48,9 @@ export class ReachRCL3 extends ReachRCL2 {
                 creepAgent.scheduleTask(new Haul([STRUCTURE_CONTROLLER]));
             }
         }
+    }
+
+    public estimateRequiredWorkForce(): SpawnRequest[] {
+        return [{ count: 6, battalion: this.battalionId }];
     }
 }

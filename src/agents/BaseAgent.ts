@@ -32,7 +32,10 @@ export abstract class BaseAgent<
             this.logger = _logger;
         }
 
-        this.memory = memoryLocation[name];
+        this.memory = memoryLocation[name] || {
+            tasks: [],
+            idleTime: 0,
+        };
         this.reload();
     }
 

@@ -21,7 +21,7 @@ interface SpawnTaskMemory extends BaseTaskMemory {
     requests: SpawnRequest[];
 }
 
-type CREEP_TASK = "TASK_HARVEST" | "TASK_HAUL" | "TASK_BUILD";
+type CREEP_TASK = "TASK_HARVEST" | "TASK_HAUL" | "TASK_BUILD" | "TASK_HARVEST_NON_STOP" | "TASK_FETCH";
 
 interface CreepTaskMemory extends BaseTaskMemory {
     type: CREEP_TASK;
@@ -33,6 +33,10 @@ interface HaulTaskMemory extends CreepTaskMemory {
 
 interface BuildTaskMemory extends CreepTaskMemory {
     buildPriority: STRUCTURE_X[];
+}
+
+interface HarvestTaskMemory extends CreepTaskMemory {
+    sourceId: string;
 }
 
 type ROOM_TASK = "TASK_PLACE_CONSTRUCTION_SITES";
@@ -68,7 +72,7 @@ interface RoomMemory extends BaseMemory {
     tasks: PlaceConstructionSitesMemory[];
 }
 
-type ObjectiveType = "REACH_RCL2" | "REACH_RCL3" | "IDLE";
+type ObjectiveType = "REACH_RCL2" | "REACH_RCL3" | "IDLE" | "CONTINUOUS_HARVESTING";
 
 interface ObjectiveMemory {
     name: ObjectiveType;
@@ -86,6 +90,8 @@ interface ColonyBattalionsMemory {
 }
 
 interface Memory {
+    Memory: any;
+    [x: string]: any;
     loggers: any;
     loggerLevelEnabled: { [key in LOG_LEVEL]: boolean };
     globalCount: number;

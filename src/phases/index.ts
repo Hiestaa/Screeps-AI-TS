@@ -14,4 +14,23 @@ function initialize() {
     if (!Memory.battalions) {
         Memory.battalions = {};
     }
+    if (!Memory.spawns) {
+        Memory.spawns = {};
+    }
+    if (!Memory.creeps) {
+        Memory.creeps = {};
+    }
+    if (!Memory.rooms) {
+        Memory.rooms = {};
+    }
+    for (const room in Game.rooms) {
+        if (Game.rooms.hasOwnProperty(room)) {
+            if (!Memory.rooms[room]) {
+                Memory.rooms[room] = {
+                    tasks: [],
+                    idleTime: 0,
+                };
+            }
+        }
+    }
 }
