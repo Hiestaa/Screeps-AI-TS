@@ -5,22 +5,21 @@ import { RoomController } from "./controllers/RoomController";
 
 const logger = getLogger("controllers.agents.RoomAgent", COLORS.controllers);
 
-export class RoomAgent extends BaseAgent<Room, RoomController, PlaceConstructionSites> {
+export class RoomAgent extends BaseAgent<Room, RoomController, PlaceConstructionSites, RoomMemory> {
     public roomController?: RoomController;
-    public memoryLocation: "rooms" = "rooms";
-    public memory: SpawnMemory = {
+    public memory: RoomMemory = {
         tasks: [],
         idleTime: 0,
     };
 
     constructor(name: string) {
-        super(name, logger);
+        super(name, Memory.rooms, logger);
     }
 
     protected reloadControllers() {
-        const spawn = Game.rooms[this.name];
-        if (spawn) {
-            this.roomController = new RoomController(spawn);
+        const room = Game.rooms[this.name];
+        if (room) {
+            this.roomController = new RoomController(room);
         }
     }
 
@@ -33,6 +32,14 @@ export class RoomAgent extends BaseAgent<Room, RoomController, PlaceConstruction
     }
 
     protected createTaskInstance(taskMemory: PlaceConstructionSitesMemory): PlaceConstructionSites {
-        return new PlaceConstructionSites(taskMemory.anchor, taskMemory.scheduledBuildUnits);
+        return new PlaceConstructionSites(
+            taskMemory.anchor,
+            taskMemory.scheduledBuildUnits,
+            taskMemory.buildUnitsInProgress,
+        );
+    }
+
+    protected commitToMemory(memory: RoomMemory) {
+        Memory.rooms[this.name] = memory;
     }
 }

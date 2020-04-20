@@ -70,6 +70,7 @@ const CODE_TO_ERROR = {
 // https://coolors.co/7c7800-d600c4-0078ce-b51200-422100
 export const COLORS = {
     tasks: "#5B9300",
+    colony: "#E4B101",
     controllers: "#D600C4",
     objectives: "#0078CE",
     phases: "#B51200",
@@ -167,7 +168,7 @@ export class Logger {
     }
 
     private _log(level: LOG_LEVEL, message: string, highlight?: boolean) {
-        levelLogger[level](`[${this.filename.toUpperCase()}] ${message}`, this.color, highlight);
+        levelLogger[level](`[${this.filename}] ${message}`, this.color, highlight);
     }
 
     public log = (level: LOG_LEVEL, message: string, highlight?: boolean) => {
@@ -304,6 +305,7 @@ export function enableLogger(scope: string, color: string): number {
     foundLoggers.forEach(logger => {
         logger._enable(color);
     });
+    myLogger.warning(`Loggers in scope: '${scope}' enabled`);
     return foundLoggers.length;
 }
 
@@ -317,6 +319,7 @@ export function disableLogger(scope: string): number {
     foundLoggers.forEach(logger => {
         logger._disable();
     });
+    myLogger.warning(`Loggers in scope: '${scope}' disabled`);
     return foundLoggers.length;
 }
 

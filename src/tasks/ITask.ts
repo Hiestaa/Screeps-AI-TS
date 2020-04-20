@@ -14,6 +14,15 @@ export type TASK_TYPE = "TASK_SPAWN" | CREEP_TASK | "TASK_PLACE_CONSTRUCTION_SIT
 export abstract class BaseTask<RO extends Controllable, Controller extends BaseController<RO>> {
     public executionStarted: boolean = false;
 
+    /**
+     * Indicate whether the given controller can execute the task.
+     * By default this returns true all the time, but the method can be overridden
+     * to save some unnecessary start/execute/complete cycles
+     * @param controller controller executing the task
+     */
+    public canBeExecuted(controller: Controller) {
+        return true;
+    }
     public execute(controller: Controller) {
         this.executionStarted = true;
     }

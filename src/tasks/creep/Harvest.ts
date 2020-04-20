@@ -13,6 +13,10 @@ export class Harvest extends BaseCreepTask {
         super("TASK_HARVEST");
     }
 
+    public canBeExecuted(creepCtl: CreepController) {
+        return creepCtl.creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+    }
+
     public execute(creepCtl: CreepController) {
         const sources = creepCtl.creep.room.find(FIND_SOURCES);
         if (sources.length <= 0) {

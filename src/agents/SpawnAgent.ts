@@ -5,16 +5,16 @@ import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("controllers.agents.SpawnAgent", COLORS.controllers);
 
-export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, SpawnTask> {
+export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, SpawnTask, SpawnMemory> {
     public spawnController?: SpawnController;
-    public memoryLocation: "spawns" = "spawns";
     public memory: SpawnMemory = {
         tasks: [],
         idleTime: 0,
     };
+    public newSpawnRequests: SpawnRequest[] = [];
 
     constructor(name: string) {
-        super(name, logger);
+        super(name, Memory.spawns, logger);
     }
 
     protected reloadControllers() {
@@ -29,10 +29,37 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
     }
 
     public toString() {
-        return `agents for ${this.spawnController}`;
+        return `agent for ${this.spawnController}`;
     }
 
     protected createTaskInstance(taskMemory: SpawnTaskMemory): SpawnTask {
-        return new SpawnTask(taskMemory.creepCountTarget);
+        return new SpawnTask(taskMemory.requests);
+    }
+
+    public requestSpawn(battalion: string, count: number) {
+        this.newSpawnRequests.push({ battalion, count });
+    }
+
+    public execute() {
+        if (this.newSpawnRequests.length > 0) {
+            this.scheduleTask(new SpawnTask(this.newSpawnRequests.splice(0)));
+        }
+        super.execute();
+    }
+
+    protected commitToMemory(memory: SpawnMemory) {
+        Memory.spawns[this.name] = memory;
+    }
+
+    public pendingSpawnRequests(battalion: string) {
+        const requests = this.newSpawnRequests.filter(({ battalion: battalionId }) => battalionId === battalion);
+        for (const task of this.taskQueue) {
+            for (const request of task.requests) {
+                if (request.battalion === battalion) {
+                    requests.push(request);
+                }
+            }
+        }
+        return requests;
     }
 }

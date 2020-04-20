@@ -8,16 +8,11 @@ import { BaseAgent } from "./BaseAgent";
 
 const logger = getLogger("controllers.agents.CreepAgent", COLORS.controllers);
 
-export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask> {
+export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask, CreepMemory> {
     public creepController?: CreepController;
-    public memoryLocation: "creeps" = "creeps";
-    public memory: CreepMemory = {
-        tasks: [],
-        idleTime: 0,
-    };
 
     constructor(name: string) {
-        super(name, logger);
+        super(name, Memory.creeps, logger);
     }
 
     protected reloadControllers() {
@@ -53,5 +48,9 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask>
         if (creepCtl) {
             creepCtl.creep.say(task.description());
         }
+    }
+
+    protected commitToMemory(memory: CreepMemory) {
+        Memory.creeps[this.name] = memory;
     }
 }

@@ -6,32 +6,49 @@ import { COLORS, getLogger } from "utils/Logger";
 const logger = getLogger("tasks.Spawn", COLORS.tasks);
 
 /**
+ * TODO: take battalion id as parameter for spawn task and assign the battalion in creep memory when spawning it
  */
 export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
-    public creepCountTarget: number;
+    public requests: SpawnRequest[];
 
-    constructor(creepCountTarget: number) {
+    constructor(requests: SpawnRequest[]) {
         super();
-        this.creepCountTarget = creepCountTarget;
+        this.requests = requests;
     }
 
     public execute(spawnCtl: SpawnController) {
         const name = gun("H:CMW");
-        const creepCount = Object.keys(Game.creeps).length;
-        if (creepCount >= this.creepCountTarget) {
-            logger.debug(`Not spawning any creep - reached desired count ${creepCount}/${this.creepCountTarget}`);
+        if (this.requests.length === 0) {
+            return;
+        }
+        const currentRequest = this.requests[0];
+        if (currentRequest.count === 0) {
+            logger.debug(`Not spawning any creep - all requested creeps have been spawned.`);
             return;
         }
 
         const energyStructures = this.getEnergyStructures(spawnCtl);
         spawnCtl
-            .spawnCreep(this.maxCreepProfile(spawnCtl, energyStructures), name, { energyStructures })
+            .spawnCreep(this.maxCreepProfile(energyStructures), name, {
+                energyStructures,
+                memory: {
+                    battalion: currentRequest.battalion,
+                    tasks: [],
+                    idleTime: 0,
+                },
+            })
+            .on(OK, () => {
+                currentRequest.count -= 1;
+                if (currentRequest.count === 0) {
+                    this.requests.shift();
+                }
+            })
             .on(ERR_NOT_ENOUGH_ENERGY, () => logger.warning("Not enough energy to produce creep"))
             .logFailure();
     }
 
     // TODO: maybe hard-code a few levels instead to make it more predictable?
-    private maxCreepProfile(spawnCtl: SpawnController, energyStructures: Array<StructureSpawn | StructureExtension>) {
+    private maxCreepProfile(energyStructures: Array<StructureSpawn | StructureExtension>) {
         const energy = this.computeAvailableEnergy(energyStructures);
         let parts = [CARRY, WORK, MOVE];
         const newParts = parts.slice();
@@ -77,12 +94,12 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     }
 
     public completed() {
-        return false;
+        return this.requests.length === 0;
     }
 
     public toJSON(): TaskMemory {
         return {
-            creepCountTarget: this.creepCountTarget,
+            requests: this.requests,
             type: "TASK_SPAWN",
             executionStarted: this.executionStarted,
         };

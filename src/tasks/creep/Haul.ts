@@ -17,6 +17,10 @@ export class Haul extends BaseCreepTask {
         this.deliveryTargets = deliveryTargets;
     }
 
+    public canBeExecuted(creepCtl: CreepController) {
+        return creepCtl.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0;
+    }
+
     public execute(creepCtl: CreepController) {
         const emptyTargets: Structure[] = [];
         const targets = emptyTargets.concat.apply(

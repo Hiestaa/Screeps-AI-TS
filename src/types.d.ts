@@ -10,9 +10,15 @@ interface BaseTaskMemory {
     executionStarted: boolean;
 }
 
+interface SpawnRequest {
+    count: number;
+    battalion: string;
+    // TODO: type - creep profile (string)
+}
+
 interface SpawnTaskMemory extends BaseTaskMemory {
     type: "TASK_SPAWN";
-    creepCountTarget: number;
+    requests: SpawnRequest[];
 }
 
 type CREEP_TASK = "TASK_HARVEST" | "TASK_HAUL" | "TASK_BUILD";
@@ -38,6 +44,7 @@ interface RoomTaskMemory extends BaseTaskMemory {
 interface PlaceConstructionSitesMemory extends RoomTaskMemory {
     anchor: RoomPosition;
     scheduledBuildUnits: IBuildUnit[];
+    buildUnitsInProgress: IBuildUnit[];
 }
 
 type TaskMemory = SpawnTaskMemory | CreepTaskMemory | PlaceConstructionSitesMemory;
@@ -49,6 +56,7 @@ interface BaseMemory {
 
 // memory extension samples
 interface CreepMemory extends BaseMemory {
+    battalion: string;
     tasks: TaskMemory[];
 }
 
@@ -66,12 +74,24 @@ interface ObjectiveMemory {
     name: ObjectiveType;
 }
 
+interface BattalionMemory {
+    objective: ObjectiveMemory; // current objective for this battalion
+}
+
+interface ColonyBattalionsMemory {
+    allPurposeReserve?: BattalionMemory;
+    builders?: BattalionMemory;
+    haulers?: BattalionMemory;
+    harvesters?: BattalionMemory;
+}
+
 interface Memory {
     loggers: any;
     loggerLevelEnabled: { [key in LOG_LEVEL]: boolean };
     globalCount: number;
     nameCount: [number, number, number];
     roomObjectives: { [key: string]: ObjectiveMemory };
+    battalions: ColonyBattalionsMemory;
 }
 declare interface RoomPosition {
     toString: (htmlLink?: boolean, id?: string, memWatch?: string) => string;
@@ -114,3 +134,4 @@ type STRUCTURE_X =
     | STRUCTURE_INVADER_CORE;
 
 type DeliveryTarget = STRUCTURE_SPAWN | STRUCTURE_CONTAINER | STRUCTURE_CONTROLLER | STRUCTURE_EXTENSION;
+type IConstructable<T> = new (...args: any) => T;

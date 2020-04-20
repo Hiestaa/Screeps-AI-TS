@@ -22,6 +22,10 @@ export class Build extends BaseCreepTask {
         this.buildPriority = buildPriority || [];
     }
 
+    public canBeExecuted(creepCtl: CreepController) {
+        return creepCtl.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0;
+    }
+
     public execute(creepCtl: CreepController) {
         const targets = creepCtl.creep.room.find(FIND_MY_CONSTRUCTION_SITES); // TODO: filter the ones that are full (if that makes sense)
         if (targets.length <= 0) {
@@ -49,6 +53,9 @@ export class Build extends BaseCreepTask {
             .on(ERR_INVALID_TARGET, () => {
                 logger.debug(`${creepCtl}: Attempt #${attempt}: target ${targets[0]} is fully built.`);
                 this.buildTargets(creepCtl, targets.slice(1), attempt + 1);
+            })
+            .on(ERR_NOT_ENOUGH_RESOURCES, () => {
+                logger.debug(`${creepCtl}: No more energy - task is completed.`);
             })
             .logFailure();
     }

@@ -37,7 +37,7 @@ describe("Logger", () => {
                 logger.info("test message");
                 expect(consoleLogMock.called).to.eq(true);
                 expect(consoleLogMock).to.be.calledOnceWithExactly(
-                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][TEST] test message</font>',
+                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][test] test message</font>',
                 );
             });
 
@@ -45,7 +45,7 @@ describe("Logger", () => {
                 logger.warning("test message");
                 expect(consoleLogMock.called).to.eq(true);
                 expect(consoleLogMock).to.be.calledOnceWithExactly(
-                    '<font style="font-size: 16px; style: italic; color: #000" color="#000" severity="3">[WARNING][TEST] test message</font>',
+                    '<font style="font-size: 16px; style: italic; color: #000" color="#000" severity="3">[WARNING][test] test message</font>',
                 );
             });
 
@@ -53,7 +53,7 @@ describe("Logger", () => {
                 logger.error("test message");
                 expect(consoleLogMock.called).to.eq(true);
                 expect(consoleLogMock).to.be.calledOnceWithExactly(
-                    '<font style="font-size: 18px; font-weight: bold; color: #000" color="#000" severity="4">[ERROR][TEST] test message</font>',
+                    '<font style="font-size: 18px; font-weight: bold; color: #000" color="#000" severity="4">[ERROR][test] test message</font>',
                 );
             });
 
@@ -61,7 +61,7 @@ describe("Logger", () => {
                 logger.fatal("test message");
                 expect(consoleLogMock.called).to.eq(true);
                 expect(consoleLogMock).to.be.calledOnceWithExactly(
-                    '<font style="font-size: 20px; font-weight: bold; style: italic; color: #000" color="#000" severity="5">[FATAL][TEST] test message</font>',
+                    '<font style="font-size: 20px; font-weight: bold; style: italic; color: #000" color="#000" severity="5">[FATAL][test] test message</font>',
                 );
             });
 
@@ -69,7 +69,7 @@ describe("Logger", () => {
                 logger.failure(-1, "oops");
                 expect(consoleLogMock.called).to.eq(true);
                 expect(consoleLogMock).to.be.calledOnceWithExactly(
-                    '<font style="font-size: 16px; style: italic; color: #000" color="#000" severity="3">[FAILURE][TEST] [Failure: ERR_NOT_OWNER] oops</font>',
+                    '<font style="font-size: 16px; style: italic; color: #000" color="#000" severity="3">[FAILURE][test] [Failure: ERR_NOT_OWNER] oops</font>',
                 );
             });
 
@@ -77,7 +77,7 @@ describe("Logger", () => {
                 logger.info("highlighted message", true);
                 expect(consoleLogMock.called).to.eq(true);
                 expect(consoleLogMock).to.be.calledOnceWithExactly(
-                    '<font style="font-size: 14px; color: #000" type="highlight" color="#000" severity="2">[INFO][TEST] highlighted message</font>',
+                    '<font style="font-size: 14px; color: #000" type="highlight" color="#000" severity="2">[INFO][test] highlighted message</font>',
                 );
             });
         });
@@ -89,7 +89,7 @@ describe("Logger", () => {
                     logger.info("test message");
                     expect(consoleLogMock.called).to.eq(true);
                     expect(consoleLogMock).to.be.calledOnceWithExactly(
-                        `<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][${k.toUpperCase()}] test message</font>`,
+                        `<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][${k}] test message</font>`,
                     );
                 });
             });
@@ -107,19 +107,20 @@ describe("Logger", () => {
                 logger.info("test message");
                 expect(consoleLogMock.called).to.eq(true);
                 expect(consoleLogMock).to.be.calledOnceWithExactly(
-                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][TEST] test message</font>',
+                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][test] test message</font>',
                 );
 
-                consoleLogMock.resetHistory();
                 disableLogger("test");
+                consoleLogMock.resetHistory();
                 logger.info("test message 2");
                 expect(consoleLogMock.notCalled).to.eq(true);
 
                 enableLogger("test", "#ccc");
+                consoleLogMock.resetHistory();
                 logger.info("test message 3");
                 expect(consoleLogMock.called).to.eq(true);
                 expect(consoleLogMock).to.be.calledOnceWithExactly(
-                    '<font style="font-size: 14px; color: #ccc" color="#ccc" severity="2">[INFO][TEST] test message 3</font>',
+                    '<font style="font-size: 14px; color: #ccc" color="#ccc" severity="2">[INFO][test] test message 3</font>',
                 );
             });
         });
@@ -138,6 +139,7 @@ describe("Logger", () => {
 
             it("disabling/enabling a should affect all descendant of a", () => {
                 disableLogger("a");
+                consoleLogMock.resetHistory();
 
                 loggerA.info("test message a");
                 loggerAB.info("test message a.b");
@@ -146,27 +148,29 @@ describe("Logger", () => {
                 expect(consoleLogMock.notCalled).to.eq(true);
 
                 enableLogger("a", "#000");
+                consoleLogMock.resetHistory();
                 loggerA.info("test message a");
                 loggerAB.info("test message a.b");
                 loggerABCD.info("test message a.b.c.d");
                 loggerABXY.info("test message a.b.x.y");
                 expect(consoleLogMock.called).to.eq(true);
                 expect(consoleLogMock).to.be.calledWithExactly(
-                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A] test message a</font>',
+                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a] test message a</font>',
                 );
                 expect(consoleLogMock).to.be.calledWithExactly(
-                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A.B] test message a.b</font>',
+                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a.b] test message a.b</font>',
                 );
                 expect(consoleLogMock).to.be.calledWithExactly(
-                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A.B.C.D] test message a.b.c.d</font>',
+                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a.b.c.d] test message a.b.c.d</font>',
                 );
                 expect(consoleLogMock).to.be.calledWithExactly(
-                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A.B.X.Y] test message a.b.x.y</font>',
+                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a.b.x.y] test message a.b.x.y</font>',
                 );
             });
 
             it("disabling/enabling a.b should only affect descendants of a.b", () => {
                 disableLogger("a.b");
+                consoleLogMock.resetHistory();
 
                 loggerA.info("test message a");
                 loggerAB.info("test message a.b");
@@ -174,26 +178,27 @@ describe("Logger", () => {
                 loggerABXY.info("test message a.b.x.y");
                 expect(consoleLogMock.called).to.eq(true);
                 expect(consoleLogMock).to.be.calledOnceWithExactly(
-                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A] test message a</font>',
+                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a] test message a</font>',
                 );
 
                 enableLogger("a.b", "#000");
+                consoleLogMock.resetHistory();
                 loggerA.info("test message a");
                 loggerAB.info("test message a.b");
                 loggerABCD.info("test message a.b.c.d");
                 loggerABXY.info("test message a.b.x.y");
                 expect(consoleLogMock.called).to.eq(true);
                 expect(consoleLogMock).to.be.calledWithExactly(
-                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A] test message a</font>',
+                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a] test message a</font>',
                 );
                 expect(consoleLogMock).to.be.calledWithExactly(
-                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A.B] test message a.b</font>',
+                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a.b] test message a.b</font>',
                 );
                 expect(consoleLogMock).to.be.calledWithExactly(
-                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A.B.C.D] test message a.b.c.d</font>',
+                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a.b.c.d] test message a.b.c.d</font>',
                 );
                 expect(consoleLogMock).to.be.calledWithExactly(
-                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A.B.X.Y] test message a.b.x.y</font>',
+                    '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a.b.x.y] test message a.b.x.y</font>',
                 );
             });
         });
@@ -230,16 +235,16 @@ describe("Logger", () => {
 
             expect(consoleLogMock.called).to.eq(true);
             expect(consoleLogMock).to.be.calledWithExactly(
-                '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A] test message a</font>',
+                '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a] test message a</font>',
             );
             expect(consoleLogMock).to.be.calledWithExactly(
-                '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A.B] test message a.b</font>',
+                '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a.b] test message a.b</font>',
             );
             expect(consoleLogMock).to.be.calledWithExactly(
-                '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A.B.C.D] test message a.b.c.d</font>',
+                '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a.b.c.d] test message a.b.c.d</font>',
             );
             expect(consoleLogMock).to.be.calledWithExactly(
-                '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A.B.X.Y] test message a.b.x.y</font>',
+                '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a.b.x.y] test message a.b.x.y</font>',
             );
         });
 
@@ -256,16 +261,16 @@ describe("Logger", () => {
             expect(consoleLogMock.called).to.eq(true);
             expect(consoleLogMock.callCount).to.eq(3);
             // expect(consoleLogMock).to.be.calledWithExactly(
-            //     '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][A.B.X.Y] test message a.b.x.y</font>',
+            //     '<font style="font-size: 14px; color: #000" color="#000" severity="2">[INFO][a.b.x.y] test message a.b.x.y</font>',
             // );
             expect(consoleLogMock).to.be.calledWithExactly(
-                '<font style="font-size: 16px; style: italic; color: #000" color="#000" severity="3">[WARNING][A.B.C.D] test message a.b.c.d</font>',
+                '<font style="font-size: 16px; style: italic; color: #000" color="#000" severity="3">[WARNING][a.b.c.d] test message a.b.c.d</font>',
             );
             expect(consoleLogMock).to.be.calledWithExactly(
-                '<font style="font-size: 18px; font-weight: bold; color: #000" color="#000" severity="4">[ERROR][A.B] test message a.b</font>',
+                '<font style="font-size: 18px; font-weight: bold; color: #000" color="#000" severity="4">[ERROR][a.b] test message a.b</font>',
             );
             expect(consoleLogMock).to.be.calledWithExactly(
-                '<font style="font-size: 11px; color: #000" color="#000" severity="1">[DEBUG][A] test message a</font>',
+                '<font style="font-size: 11px; color: #000" color="#000" severity="1">[DEBUG][a] test message a</font>',
             );
         });
     });

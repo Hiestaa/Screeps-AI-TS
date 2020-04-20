@@ -1,38 +1,38 @@
-import { IAgentStore } from "phases/IAgentStore";
+import { CreepAgent } from "agents/CreepAgent";
 import { COLORS, getLogger } from "utils/Logger";
 
-const logger = getLogger("objectives.IOBjective", COLORS.objectives);
+const logger = getLogger("objectives.IObjective", COLORS.objectives);
 
 export interface IObjective {
     /**
      * Execute the operations for this objective
      * @param agentStore an access to the existing controllers after reload
      */
-    execute(agentStore: IAgentStore): void;
+    execute(agents: CreepAgent[]): void;
 
-    save(): void;
-    reload(): void;
+    save(): ObjectiveMemory;
+    reload(memory: ObjectiveMemory): void;
 }
 
 export abstract class BaseObjective implements IObjective {
     public abstract name: ObjectiveType;
     protected memory?: ObjectiveMemory;
-    public roomName: string;
+    public battalionId: string;
 
-    constructor(roomName: string) {
-        this.roomName = roomName;
+    constructor(battalionId: string) {
+        this.battalionId = battalionId;
     }
 
-    public abstract execute(agentStore: IAgentStore): void;
+    public abstract execute(agents: CreepAgent[]): void;
 
-    public save() {
-        Memory.roomObjectives[this.roomName] = {
+    public save(): ObjectiveMemory {
+        return {
             name: this.name,
         };
     }
 
-    public reload() {
-        this.memory = Memory.roomObjectives[this.roomName];
+    public reload(memory: ObjectiveMemory) {
+        this.memory = memory;
     }
 
     public toString() {
@@ -43,7 +43,7 @@ export abstract class BaseObjective implements IObjective {
 export class IdleObjective extends BaseObjective {
     public name: ObjectiveType = "IDLE";
 
-    public execute(agentStore: IAgentStore) {
-        logger.warning(`Room ${agentStore.room.name} is idle`);
+    public execute() {
+        logger.warning(`Battalion ${this.battalionId} is idle`);
     }
 }

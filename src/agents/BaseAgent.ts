@@ -1,9 +1,5 @@
 import { BaseController, Controllable } from "agents/controllers/BaseController";
-import { BaseCreepTask } from "tasks/creep/BaseCreepTask";
-import { Harvest } from "tasks/creep/Harvest";
-import { Haul } from "tasks/creep/Haul";
 import { BaseTask, TASK_TYPE } from "tasks/ITask";
-import { SpawnTask } from "tasks/Spawn";
 import { COLORS, getLogger, Logger } from "utils/Logger";
 
 const logger = getLogger("controllers.agents.BaseAgent", COLORS.controllers);
@@ -21,43 +17,37 @@ const WARN_IDLE_PERIOD = 100;
 export abstract class BaseAgent<
     ControlledRoomObjectType extends Controllable,
     ControllerType extends BaseController<ControlledRoomObjectType>,
-    TaskType extends BaseTask<ControlledRoomObjectType, ControllerType>
+    TaskType extends BaseTask<ControlledRoomObjectType, ControllerType>,
+    MemoryType extends BaseMemory
 > {
     public taskQueue: TaskType[] = [];
-    public abstract memoryLocation: "creeps" | "spawns" | "rooms";
     public name: string;
-    public memory: BaseMemory = {
-        tasks: [],
-        idleTime: 0,
-    };
+    public memory: MemoryType;
     public logger: Logger = logger;
 
-    constructor(name: string, _logger?: Logger) {
+    constructor(name: string, memoryLocation: { [key: string]: MemoryType }, _logger?: Logger) {
         this.name = name;
 
         if (_logger) {
             this.logger = _logger;
         }
+
+        this.memory = memoryLocation[name];
+        this.reload();
     }
 
     /**
      * Reload the agent and its associated tasks from the memory assigned to this particular name
      * Throws an error if the reload process couldn't complete (memory wipe, agent death, etc...)
      */
-    public reload() {
-        const mem = Memory[this.memoryLocation][this.name];
-        const tasks = this.reloadTasks(mem);
-        if (tasks) {
-            this.memory.tasks = tasks;
-            this.memory.idleTime = mem.idleTime;
-        }
+    private reload(): void {
+        this.reloadTasks(this.memory);
         this.reloadControllers();
     }
 
-    protected reloadTasks(mem: BaseMemory): TaskMemory[] | void {
+    protected reloadTasks(mem: MemoryType): TaskMemory[] | void {
         if (mem && mem.tasks) {
             this.taskQueue = mem.tasks.map(taskMemory => this._createTaskInstance(taskMemory));
-            return mem.tasks;
         }
     }
     private _createTaskInstance(taskMemory: TaskMemory): TaskType {
@@ -84,14 +74,12 @@ export abstract class BaseAgent<
     }
 
     public save() {
-        const mem: BaseMemory = { tasks: [], idleTime: this.memory.idleTime || 0 };
-        this.saveTasks(mem);
-        Memory[this.memoryLocation][this.name] = mem;
+        const mem: MemoryType = this.memory;
+        mem.tasks = this.taskQueue.map(t => t.toJSON());
+        this.commitToMemory(mem);
     }
 
-    private saveTasks(mem: BaseMemory) {
-        mem.tasks = this.taskQueue.map(t => t.toJSON());
-    }
+    protected abstract commitToMemory(memory: MemoryType): void;
 
     public execute() {
         const controller = this.getController();
@@ -103,12 +91,23 @@ export abstract class BaseAgent<
             return;
         }
 
-        const currentTask = this.taskQueue[0];
+        let currentTask = this.taskQueue[0];
+        while (!this.canExecuteTask(currentTask, controller)) {
+            this.logger.debug(`${controller}: Cannot execute task: ${currentTask} - discarding.`);
+            this.taskQueue.shift();
+
+            if (!this.taskQueue.length) {
+                return;
+            }
+
+            currentTask = this.taskQueue[0];
+        }
+
         if (this.hasTaskCompleted(currentTask, controller)) {
             if (this.taskQueue.length > 0) {
                 this.onTaskExecutionStarts(this.taskQueue[0], controller);
+                this.execute();
             }
-            this.execute();
             return;
         }
 
@@ -131,6 +130,10 @@ export abstract class BaseAgent<
             return true;
         }
         return false;
+    }
+
+    private canExecuteTask(currentTask: TaskType, controller: ControllerType | undefined) {
+        return controller && currentTask.canBeExecuted(controller);
     }
 
     private executeTask(task: TaskType, controller: ControllerType | undefined) {
