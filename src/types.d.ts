@@ -10,9 +10,12 @@ interface BaseTaskMemory {
     executionStarted: boolean;
 }
 
+type CREEP_PROFILE = "Harvester" | "Hauler" | "Worker";
+
 interface SpawnRequest {
     count: number;
     battalion: string;
+    creepProfile?: CREEP_PROFILE;
     // TODO: type - creep profile (string)
 }
 
@@ -61,11 +64,12 @@ interface BaseMemory {
 // memory extension samples
 interface CreepMemory extends BaseMemory {
     battalion: string;
-    tasks: TaskMemory[];
+    tasks: CreepTaskMemory[];
+    profile?: CREEP_PROFILE;
 }
 
 interface SpawnMemory extends BaseMemory {
-    tasks: TaskMemory[];
+    tasks: SpawnTaskMemory[];
 }
 
 interface RoomMemory extends BaseMemory {

@@ -124,6 +124,6 @@ export class ContinuousHarvesting extends BaseObjective {
 
     public estimateRequiredWorkForce(room: RoomAgent): SpawnRequest[] {
         this.getMiningSpotsPerSource(room);
-        return [{ count: this.totalMiningSpots, battalion: this.battalionId }];
+        return [{ count: this.totalMiningSpots, battalion: this.battalionId, creepProfile: "Harvester" }];
     }
 }

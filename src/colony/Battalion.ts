@@ -86,20 +86,37 @@ export class Battalion {
     }
 
     public requestNewCreepsIfNecessary() {
+        // debugger;
         const pendingSpawnRequests = this.spawn.pendingSpawnRequests(this.name);
-        const pendingCount = pendingSpawnRequests.reduce((acc, req) => acc + req.count, 0);
-        const creepCount = this.creeps.length;
+        const pendingCount = pendingSpawnRequests.reduce((acc, r) => {
+            acc[r.creepProfile || "undefined"] = (acc[r.creepProfile || "undefined"] || 0) + r.count;
+            return acc;
+        }, {} as { [key in CREEP_PROFILE | "undefined"]: number });
+
+        const creepCount = this.creeps.reduce((acc, r) => {
+            acc[r.memory.profile || "undefined"] = (acc[r.memory.profile || "undefined"] || 0) + 1;
+            return acc;
+        }, {} as { [key in CREEP_PROFILE | "undefined"]: number });
         // TODO: do a pending + count < desired for each creep profile
         const desired = this.objective.estimateRequiredWorkForce(this.room);
-        const desiredCount = desired.reduce((acc, r) => acc + r.count, 0);
+        const desiredCount = desired.reduce((acc, r) => {
+            acc[r.creepProfile || "undefined"] = (acc[r.creepProfile || "undefined"] || 0) + r.count;
+            return acc;
+        }, {} as { [key in CREEP_PROFILE | "undefined"]: number });
 
-        if (pendingCount + creepCount < desiredCount) {
-            const requestCount = desiredCount - pendingCount - creepCount;
-            logger.info(
-                `${this}: requesting spawn of ${requestCount} creeps ` +
-                    `(desired: ${desiredCount}, existing:${creepCount}, pending: ${pendingCount})`,
-            );
-            this.spawn.requestSpawn(this.name, requestCount);
+        const profiles = Object.keys(desiredCount) as Array<CREEP_PROFILE | "undefined">;
+        for (const profile of profiles) {
+            const profilePendingCount = pendingCount[profile] || 0;
+            const profileCreepCount = creepCount[profile] || 0;
+            const profileDesiredCount = desiredCount[profile] || 0;
+            if (profilePendingCount + profileCreepCount < profileDesiredCount) {
+                const requestCount = profileDesiredCount - profilePendingCount - profileCreepCount;
+                logger.info(
+                    `${this}: requesting spawn of ${requestCount} creeps ` +
+                        `(desired: ${profileCreepCount}, existing:${profilePendingCount}, pending: ${profileDesiredCount})`,
+                );
+                this.spawn.requestSpawn(this.name, requestCount, profile === "undefined" ? undefined : profile);
+            }
         }
     }
 

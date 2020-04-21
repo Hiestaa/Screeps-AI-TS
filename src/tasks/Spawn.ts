@@ -1,4 +1,5 @@
 import { SpawnController } from "agents/controllers/SpawnController";
+import { makeCreepProfileInstance } from "colony/creepProfiles";
 import { BaseTask } from "tasks/ITask";
 import { gun } from "utils/id";
 import { COLORS, getLogger } from "utils/Logger";
@@ -17,7 +18,6 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     }
 
     public execute(spawnCtl: SpawnController) {
-        const name = gun("H:CMW");
         if (this.requests.length === 0) {
             return;
         }
@@ -27,14 +27,16 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
             return;
         }
 
+        const name = gun((currentRequest.creepProfile || "Harvest").slice(0, 4));
         const energyStructures = this.getEnergyStructures(spawnCtl);
         spawnCtl
-            .spawnCreep(this.maxCreepProfile(energyStructures), name, {
+            .spawnCreep(this.maxCreepProfile(energyStructures, currentRequest.creepProfile), name, {
                 energyStructures,
                 memory: {
                     battalion: currentRequest.battalion,
                     tasks: [],
                     idleTime: 0,
+                    profile: currentRequest.creepProfile,
                 },
             })
             .on(OK, () => {
@@ -48,8 +50,15 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     }
 
     // TODO: maybe hard-code a few levels instead to make it more predictable?
-    private maxCreepProfile(energyStructures: Array<StructureSpawn | StructureExtension>) {
+    private maxCreepProfile(
+        energyStructures: Array<StructureSpawn | StructureExtension>,
+        creepProfile: CREEP_PROFILE | undefined,
+    ) {
         const energy = this.computeAvailableEnergy(energyStructures);
+        const profile = makeCreepProfileInstance(creepProfile, energy);
+        if (profile) {
+            return profile.bodyParts;
+        }
         let parts = [CARRY, WORK, MOVE];
         const newParts = parts.slice();
         let level = 3;

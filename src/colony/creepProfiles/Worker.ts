@@ -5,7 +5,7 @@ import { _cost, BaseCreepProfile } from "./BaseCreepProfile";
  * The worker is not a very efficient energy carrier, and is best used when energy container is available nearby
  * in relatively large quantities.
  */
-export class Harvester extends BaseCreepProfile {
+export class Worker extends BaseCreepProfile {
     constructor(availableEnergy: number) {
         const bodyParts = [CARRY, WORK, MOVE, MOVE];
         let level = 1;
@@ -14,6 +14,6 @@ export class Harvester extends BaseCreepProfile {
             bodyParts.push(CARRY);
             level += 1;
         }
-        super("Harvester", level - 1, bodyParts.slice(0, -2));
+        super("Worker", level - 1, bodyParts.slice(0, -2));
     }
 }
