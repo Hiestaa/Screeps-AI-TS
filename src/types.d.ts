@@ -70,6 +70,7 @@ interface SpawnMemory extends BaseMemory {
 
 interface RoomMemory extends BaseMemory {
     tasks: PlaceConstructionSitesMemory[];
+    controllerLevel: number;
 }
 
 type ObjectiveType = "REACH_RCL2" | "REACH_RCL3" | "IDLE" | "CONTINUOUS_HARVESTING";

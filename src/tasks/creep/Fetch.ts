@@ -22,15 +22,6 @@ export class Fetch extends BaseCreepTask {
             this.moveToIfFail(creep, creep.withdraw(tombstone, RESOURCE_ENERGY), tombstone);
         }
 
-        const droppedResource = creep.creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
-            filter: item => item.resourceType === RESOURCE_ENERGY,
-        });
-        if (droppedResource) {
-            logger.debug(`${creep}: picking up ${droppedResource}`);
-            this.moveToIfFail(creep, creep.pickup(droppedResource), droppedResource);
-            return;
-        }
-
         const ruin = creep.creep.pos.findClosestByRange(FIND_RUINS);
         if (ruin) {
             logger.debug(`${creep}: picking up ${ruin}`);
@@ -39,11 +30,21 @@ export class Fetch extends BaseCreepTask {
 
         const container = creep.creep.pos.findClosestByRange(FIND_STRUCTURES, {
             filter: structure =>
-                structure.structureType === STRUCTURE_CONTAINER && structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0,
+                structure.structureType === STRUCTURE_CONTAINER &&
+                structure.store.getUsedCapacity(RESOURCE_ENERGY) > creep.creep.store.getFreeCapacity(),
         });
         if (container) {
             logger.debug(`${creep}: picking up ${container}`);
             this.moveToIfFail(creep, creep.withdraw(container, RESOURCE_ENERGY), container);
+        }
+
+        const droppedResource = creep.creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
+            filter: item => item.resourceType === RESOURCE_ENERGY && item.amount > creep.creep.store.getFreeCapacity(),
+        });
+        if (droppedResource) {
+            logger.debug(`${creep}: picking up ${droppedResource}`);
+            this.moveToIfFail(creep, creep.pickup(droppedResource), droppedResource);
+            return;
         }
 
         const source = creep.creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE);

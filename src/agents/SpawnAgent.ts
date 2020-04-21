@@ -7,10 +7,6 @@ const logger = getLogger("controllers.agents.SpawnAgent", COLORS.controllers);
 
 export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, SpawnTask, SpawnMemory> {
     public spawnController?: SpawnController;
-    public memory: SpawnMemory = {
-        tasks: [],
-        idleTime: 0,
-    };
     public newSpawnRequests: SpawnRequest[] = [];
 
     constructor(name: string) {

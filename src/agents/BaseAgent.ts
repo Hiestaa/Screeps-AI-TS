@@ -68,6 +68,16 @@ export abstract class BaseAgent<
         this.taskQueue.push(task);
     }
 
+    public replaceTask(task: TaskType) {
+        if (this.taskQueue.length === 0) {
+            this.taskQueue.push(task);
+            this.logger.info(`${this}: replacing current task with ${task}`);
+        } else {
+            this.logger.info(`${this}: replacing ${this.taskQueue[0]} with ${task}`);
+            this.taskQueue[0] = task;
+        }
+    }
+
     public hasTaskScheduled(task: TASK_TYPE): boolean {
         return this.taskQueue.some(t => t.getType() === task);
     }

@@ -11,6 +11,13 @@ export class RoomPlanner {
         this.spawns = spawns;
     }
 
+    public execute() {
+        const controllerLevel = this.room.hasControllerLevelChanged();
+        if (controllerLevel) {
+            this.createSpawnFortress();
+        }
+    }
+
     public createSpawnFortress() {
         for (const spawnName in this.spawns) {
             if (!this.spawns.hasOwnProperty(spawnName)) {

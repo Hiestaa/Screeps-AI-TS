@@ -7,10 +7,6 @@ const logger = getLogger("controllers.agents.RoomAgent", COLORS.controllers);
 
 export class RoomAgent extends BaseAgent<Room, RoomController, PlaceConstructionSites, RoomMemory> {
     public roomController?: RoomController;
-    public memory: RoomMemory = {
-        tasks: [],
-        idleTime: 0,
-    };
 
     constructor(name: string) {
         super(name, Memory.rooms, logger);
@@ -21,6 +17,19 @@ export class RoomAgent extends BaseAgent<Room, RoomController, PlaceConstruction
         if (room) {
             this.roomController = new RoomController(room);
         }
+    }
+
+    /**
+     * Indicates whether the controller level changed at the beginning of this turn.
+     * @return the new controller level, or undefined if it hasn't changed.
+     */
+    public hasControllerLevelChanged(): number | undefined {
+        const controllerLevel = this.roomController?.room.controller?.level || 0;
+        const prevLevel = this.memory.controllerLevel || 0;
+        if (prevLevel !== controllerLevel) {
+            return controllerLevel;
+        }
+        return undefined;
     }
 
     public getController() {
@@ -40,6 +49,8 @@ export class RoomAgent extends BaseAgent<Room, RoomController, PlaceConstruction
     }
 
     protected commitToMemory(memory: RoomMemory) {
+        const controllerLevel = this.roomController?.room.controller?.level;
+        memory.controllerLevel = controllerLevel || 0;
         Memory.rooms[this.name] = memory;
     }
 }

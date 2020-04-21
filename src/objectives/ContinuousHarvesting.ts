@@ -34,13 +34,15 @@ export class ContinuousHarvesting extends BaseObjective {
             } else {
                 const taskCount = creepAgent
                     .getScheduledTasks("TASK_HARVEST_NON_STOP")
-                    .filter(task => (task as HarvestNonStop).sourceId).length;
+                    .filter(task => (task as HarvestNonStop).sourceId === sourceId).length;
                 if (taskCount > 0) {
                     creepPerSource[sourceId] = (creepPerSource[sourceId] || 0) + 1;
+                } else {
+                    creepAgent.replaceTask(new HarvestNonStop(sourceId));
                 }
             }
 
-            if (creepPerSource[sourceId] > miningSpotsPerSource[sourceId]) {
+            if (creepPerSource[sourceId] >= miningSpotsPerSource[sourceId]) {
                 i += 1;
             }
 
@@ -63,25 +65,39 @@ export class ContinuousHarvesting extends BaseObjective {
             return this.miningSpotsPerSource;
         }
 
+        const hostiles = ([] as Array<{ pos: RoomPosition }>).concat(
+            room.roomController?.room.find(FIND_HOSTILE_SPAWNS) || [],
+            room.roomController?.room.find(FIND_HOSTILE_CREEPS) || [],
+            room.roomController?.room.find(FIND_HOSTILE_STRUCTURES) || [],
+        );
+
         this.totalMiningSpots = 0;
         for (const source of sources) {
-            this.miningSpotsPerSource[source.id] = this.getAvailableMiningSpots(room, source);
-            this.totalMiningSpots += this.miningSpotsPerSource[source.id];
+            const availableMiningSpots = this.getAvailableMiningSpots(room, source, hostiles);
+            this.totalMiningSpots += availableMiningSpots;
         }
         return this.miningSpotsPerSource;
     }
 
-    private getAvailableMiningSpots(room: RoomAgent, source: Source) {
+    private getAvailableMiningSpots(room: RoomAgent, source: Source, hostiles: Array<{ pos: RoomPosition }>) {
         if (this.miningSpotsPerSource[source.id]) {
             return this.miningSpotsPerSource[source.id];
         }
-        this.miningSpotsPerSource[source.id] = this.estimateAvailableMiningSpots(room, source);
-        return this.miningSpotsPerSource[source.id];
+        const availableMiningSpots = this.estimateAvailableMiningSpots(room, source, hostiles);
+        if (availableMiningSpots > 0) {
+            this.miningSpotsPerSource[source.id] = availableMiningSpots;
+        }
+        return availableMiningSpots;
     }
 
-    private estimateAvailableMiningSpots(room: RoomAgent, source: Source) {
+    private estimateAvailableMiningSpots(room: RoomAgent, source: Source, hostiles: Array<{ pos: RoomPosition }>) {
         // TODO: when creeps are powerful enough, one will drain the source entirely by himself before the source replenishes
         const { pos } = source;
+        if (hostiles.some(hostile => Math.abs(hostile.pos.x - pos.x) < 5 && Math.abs(hostile.pos.y - pos.y) < 5)) {
+            logger.debug(`Found hostile nearby position ${pos}`);
+            return 0;
+        }
+
         const surroundings = room.roomController?.room.lookAtArea(pos.y - 1, pos.x - 1, pos.y + 1, pos.x + 1, true);
         if (!surroundings) {
             return 0;
@@ -96,11 +112,14 @@ export class ContinuousHarvesting extends BaseObjective {
             if (item.type === "terrain" && item.terrain === "wall") {
                 available[sign] = false;
             }
+            if (item.type === "creep" && !item.creep?.my) {
+                return 0; // avoid enemy creep...
+            }
             // TODO: more type of unavailable items;
         }
 
         const spots = Object.keys(available).filter(k => available[k]).length;
-        return Math.max(spots - 1, 0);
+        return Math.max(spots, 0);
     }
 
     public estimateRequiredWorkForce(room: RoomAgent): SpawnRequest[] {

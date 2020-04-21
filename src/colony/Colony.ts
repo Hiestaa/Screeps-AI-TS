@@ -118,6 +118,7 @@ export class Colony {
      */
     public execute() {
         logger.debug(`Executing ${this.room}`);
+        this.roomPlanner.execute();
         this.room.execute();
 
         const battalionIds = Object.keys(this.battalions) as Array<keyof ColonyBattalionsMemory>;
@@ -155,23 +156,16 @@ export class Colony {
             return;
         }
 
-        const controllerLevel = this.room.roomController?.room.controller?.level;
+        const controllerLevel = this.room.hasControllerLevelChanged();
         if (controllerLevel !== undefined) {
-            if (controllerLevel <= 1 && battalion.objective.name !== "REACH_RCL2") {
+            if (controllerLevel <= 1) {
                 logger.warning("Controller reached or downgraded to level 1. ");
                 battalion.objective = new ReachRCL2(name);
-                // only create it once when we reach a new RCL
-                this.roomPlanner.createSpawnFortress();
             }
-            if (controllerLevel === 2 && battalion.objective.name !== "REACH_RCL3") {
+            if (controllerLevel >= 2) {
                 logger.warning("Controller reached or downgraded to level 2. ");
                 battalion.objective = new ReachRCL3(name);
-                // only create it once when we reach a new RCL
-                this.roomPlanner.createSpawnFortress();
             }
-        } else if (battalion.objective.name !== "IDLE") {
-            logger.warning(`No room controller for room: ${this.room.name} - assigning idle objective to ${battalion}`);
-            battalion.objective = new IdleObjective(name);
         }
     }
 

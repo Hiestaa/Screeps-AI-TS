@@ -29,6 +29,7 @@ function initialize() {
                 Memory.rooms[room] = {
                     tasks: [],
                     idleTime: 0,
+                    controllerLevel: 0,
                 };
             }
         }

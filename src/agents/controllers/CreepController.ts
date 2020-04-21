@@ -24,13 +24,13 @@ export class CreepController extends BaseController<Creep> {
         opts?: MoveToOpts,
     ): ReturnCodeSwitcher<CreepMoveReturnCode | ERR_NO_PATH | ERR_INVALID_TARGET | ERR_NOT_FOUND> {
         if (typeof x === "number" && typeof y === "number") {
-            const _opts = Object.assign({}, opts, { visualizePathStyle: "#ffffff" });
+            const _opts = Object.assign({}, opts, { visualizePathStyle: { stroke: "#FFEA00" } });
             return this.doSwitch<CreepMoveReturnCode | ERR_NO_PATH | ERR_INVALID_TARGET | ERR_NOT_FOUND>(
                 this.creep.moveTo(x, y, _opts),
                 "moveTo",
             );
         } else if (typeof x !== "number" && typeof y !== "number") {
-            const _opts = Object.assign({}, y, { visualizePathStyle: "#ffffff" });
+            const _opts = Object.assign({}, y, { visualizePathStyle: { stroke: "#FFEA00" } });
             return this.doSwitch<CreepMoveReturnCode | ERR_NO_PATH | ERR_INVALID_TARGET | ERR_NOT_FOUND>(
                 this.creep.moveTo(x, _opts),
                 "moveTo",
