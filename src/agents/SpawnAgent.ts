@@ -32,13 +32,13 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
         return new SpawnTask(taskMemory.requests);
     }
 
-    public requestSpawn(battalion: string, count: number, profile?: CREEP_PROFILE) {
+    public requestSpawn(battalion: string, count: number, profile: CREEP_PROFILE) {
         this.newSpawnRequests.push({ battalion, count, creepProfile: profile });
     }
 
     public execute() {
         if (this.newSpawnRequests.length > 0) {
-            this.scheduleTask(new SpawnTask(this.newSpawnRequests.splice(0)));
+            this.scheduleTask(new SpawnTask(this.newSpawnRequests.slice()));
         }
         super.execute();
     }

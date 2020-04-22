@@ -10,13 +10,12 @@ interface BaseTaskMemory {
     executionStarted: boolean;
 }
 
-type CREEP_PROFILE = "Harvester" | "Hauler" | "Worker";
+type CREEP_PROFILE = "GeneralPurpose" | "Harvester" | "Hauler" | "Worker";
 
 interface SpawnRequest {
     count: number;
     battalion: string;
-    creepProfile?: CREEP_PROFILE;
-    // TODO: type - creep profile (string)
+    creepProfile: CREEP_PROFILE;
 }
 
 interface SpawnTaskMemory extends BaseTaskMemory {
@@ -49,7 +48,6 @@ interface RoomTaskMemory extends BaseTaskMemory {
 }
 
 interface PlaceConstructionSitesMemory extends RoomTaskMemory {
-    anchor: RoomPosition;
     scheduledBuildUnits: IBuildUnit[];
     buildUnitsInProgress: IBuildUnit[];
 }
@@ -65,7 +63,7 @@ interface BaseMemory {
 interface CreepMemory extends BaseMemory {
     battalion: string;
     tasks: CreepTaskMemory[];
-    profile?: CREEP_PROFILE;
+    profile: CREEP_PROFILE;
 }
 
 interface SpawnMemory extends BaseMemory {
@@ -81,6 +79,10 @@ type ObjectiveType = "REACH_RCL2" | "REACH_RCL3" | "IDLE" | "CONTINUOUS_HARVESTI
 
 interface ObjectiveMemory {
     name: ObjectiveType;
+}
+
+interface ContinuousHarvestingMemory extends ObjectiveMemory {
+    miningSpotsPerSource: { [key: string]: number };
 }
 
 interface BattalionMemory {
@@ -104,6 +106,7 @@ interface Memory {
     roomObjectives: { [key: string]: ObjectiveMemory };
     battalions: ColonyBattalionsMemory;
 }
+
 declare interface RoomPosition {
     toString: (htmlLink?: boolean, id?: string, memWatch?: string) => string;
 }

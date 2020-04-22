@@ -1,6 +1,5 @@
 import { RoomController } from "agents/controllers/RoomController";
 import { BaseTask } from "tasks/ITask";
-import { gridFortress } from "utils/layouts/gridFortress";
 import { IBuildUnit } from "utils/layouts/renderer";
 import { COLORS, getLogger } from "utils/Logger";
 
@@ -14,19 +13,18 @@ const logger = getLogger("tasks.PlaceConstructionSites", COLORS.tasks);
  * TODO: have this task take the layout as param, or other more dynamic form of building mechanism
  */
 export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
-    private position: RoomPosition;
     private scheduledBuildUnits: IBuildUnit[] = [];
     private buildUnitsInProgress: IBuildUnit[] = [];
 
-    constructor(position: RoomPosition, scheduledBuildUnits?: IBuildUnit[], buildUnitsInProgress?: IBuildUnit[]) {
+    constructor(scheduledBuildUnits: IBuildUnit[], buildUnitsInProgress?: IBuildUnit[]) {
         super();
-        this.position = position;
         this.scheduledBuildUnits = scheduledBuildUnits || [];
         this.buildUnitsInProgress = buildUnitsInProgress || [];
     }
 
     public execute(roomCtl: RoomController) {
         super.execute(roomCtl);
+
         const constructionSites = roomCtl.room.find(FIND_MY_CONSTRUCTION_SITES);
         if (constructionSites.length) {
             logger.debug("Not creating any construction sites: waiting for existing ones to be completed");
@@ -35,14 +33,6 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
                 y: site.pos.y,
                 structureType: site.structureType,
             }));
-            return;
-        }
-
-        if (this.scheduledBuildUnits.length === 0) {
-            this.scheduledBuildUnits = gridFortress(this.position, _.get(roomCtl, "room.controller.level", 0));
-        }
-        if (!this.scheduledBuildUnits.length) {
-            logger.info("Layout rendering did not produce any construction unit.");
             return;
         }
 
@@ -104,7 +94,6 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
         return {
             type: "TASK_PLACE_CONSTRUCTION_SITES",
             executionStarted: this.executionStarted,
-            anchor: this.position,
             scheduledBuildUnits: this.scheduledBuildUnits,
             buildUnitsInProgress: this.buildUnitsInProgress,
         };

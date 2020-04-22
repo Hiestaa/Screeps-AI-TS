@@ -31,6 +31,6 @@ export class ReachRCL2 extends BaseObjective {
     }
 
     public estimateRequiredWorkForce(): SpawnRequest[] {
-        return [{ count: 5, battalion: this.battalionId }];
+        return [{ count: 5, battalion: this.battalionId, creepProfile: "GeneralPurpose" }];
     }
 }

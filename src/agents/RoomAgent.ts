@@ -41,11 +41,7 @@ export class RoomAgent extends BaseAgent<Room, RoomController, PlaceConstruction
     }
 
     protected createTaskInstance(taskMemory: PlaceConstructionSitesMemory): PlaceConstructionSites {
-        return new PlaceConstructionSites(
-            taskMemory.anchor,
-            taskMemory.scheduledBuildUnits,
-            taskMemory.buildUnitsInProgress,
-        );
+        return new PlaceConstructionSites(taskMemory.scheduledBuildUnits, taskMemory.buildUnitsInProgress);
     }
 
     protected commitToMemory(memory: RoomMemory) {

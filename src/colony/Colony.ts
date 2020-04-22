@@ -6,7 +6,7 @@ import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
 import { COLORS, getLogger } from "utils/Logger";
 import { Battalion } from "./Battalion";
-import { RoomPlanner } from "./RoomPlanner";
+import { AvailableSpotsFinder, RoomPlanner } from "./RoomPlanner";
 
 const logger = getLogger("colony.Colony", COLORS.colony);
 
@@ -78,7 +78,10 @@ export class Colony {
         const level = this.room.roomController?.room.controller?.level;
         if (level && level >= 2 && !this.battalions.harvesters) {
             this.battalions.harvesters = new Battalion("harvesters", spawn, this.room);
-            this.battalions.harvesters.objective = new ContinuousHarvesting("harvesters");
+            this.battalions.harvesters.objective = new ContinuousHarvesting(
+                "harvesters",
+                AvailableSpotsFinder.countMiningSpotsPerSource(this.room),
+            );
         }
     }
 

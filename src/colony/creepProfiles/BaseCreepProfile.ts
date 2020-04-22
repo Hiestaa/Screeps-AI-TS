@@ -2,22 +2,32 @@ export abstract class BaseCreepProfile {
     public name: CREEP_PROFILE;
     public bodyParts: BodyPartConstant[];
     public level: number;
-    public _cost: number | undefined;
 
-    constructor(name: CREEP_PROFILE, level: number, bodyParts: BodyPartConstant[]) {
+    constructor(name: CREEP_PROFILE, initialBodyParts: BodyPartConstant[]) {
         this.name = name;
-        this.level = level;
-        this.bodyParts = bodyParts;
+        this.level = 1;
+        this.bodyParts = initialBodyParts;
     }
+
+    /**
+     * Add 1 level worth of body parts to this creep profile
+     */
+    public abstract incrementLevel(): void;
+    /**
+     * Remove 1` level worth of body parts from this creep profile
+     */
+    public abstract decrementLevel(): void;
 
     public cost(): number {
-        this._cost = this._cost || _cost(this.bodyParts);
-        return this._cost;
+        return this.bodyParts.reduce((acc, bp) => {
+            return acc + BODYPART_COST[bp];
+        }, 0);
     }
-}
 
-export function _cost(bodyParts: BodyPartConstant[]) {
-    return bodyParts.reduce((acc, bp) => {
-        return acc + BODYPART_COST[bp];
-    }, 0);
+    public toString() {
+        return (
+            `${this.name} creep profile, level ${this.level} with body parts: ` +
+            `${this.bodyParts.join(",")} (cost: ${this.cost()})`
+        );
+    }
 }

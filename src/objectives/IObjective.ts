@@ -13,7 +13,6 @@ export interface IObjective {
     execute(agents: CreepAgent[], room: RoomAgent, spawn: SpawnAgent): void;
 
     save(): ObjectiveMemory;
-    reload(memory: ObjectiveMemory): void;
 
     /**
      * Provide an estimation of the required ideal workforce that can be used to execute this objective.
@@ -44,10 +43,6 @@ export abstract class BaseObjective implements IObjective {
         return {
             name: this.name,
         };
-    }
-
-    public reload(memory: ObjectiveMemory) {
-        this.memory = memory;
     }
 
     public toString() {

@@ -64,7 +64,7 @@ export abstract class BaseAgent<
     public abstract getController(): ControllerType | undefined;
 
     public scheduleTask(task: TaskType) {
-        this.logger.info(`${this}: scheduling ${task}`);
+        this.logger.debug(`${this}: scheduling ${task}`);
         this.taskQueue.push(task);
     }
 

@@ -9,10 +9,6 @@ import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("colony.Battalion", COLORS.colony);
 
-type ReloadableObjective = IConstructable<BaseObjective>;
-
-const DESIRED_CREEP_COUNT = 7;
-
 /**
  * Controls a group of agents collaborating to achieve an objective.
  */
@@ -39,23 +35,21 @@ export class Battalion {
     }
 
     private reloadObjective() {
-        const getObjectiveClass = (objectiveType: ObjectiveType): ReloadableObjective => {
-            switch (objectiveType) {
-                case "REACH_RCL2":
-                    return ReachRCL2;
-                case "REACH_RCL3":
-                    return ReachRCL3;
-                case "CONTINUOUS_HARVESTING":
-                    return ContinuousHarvesting;
-                case "IDLE":
-                    return IdleObjective;
-            }
-        };
+        const objectiveMemory = this.memory.objective;
 
-        const Objective = getObjectiveClass(this.memory.objective.name);
-        const objective = new Objective(this.room.name);
-        objective.reload(this.memory.objective);
-        return objective;
+        switch (objectiveMemory.name) {
+            case "REACH_RCL2":
+                return new ReachRCL2(this.name);
+            case "REACH_RCL3":
+                return new ReachRCL3(this.name);
+            case "CONTINUOUS_HARVESTING":
+                return new ContinuousHarvesting(
+                    this.name,
+                    (objectiveMemory as ContinuousHarvestingMemory).miningSpotsPerSource,
+                );
+            case "IDLE":
+                return new IdleObjective(this.name);
+        }
     }
 
     /**
@@ -86,25 +80,23 @@ export class Battalion {
     }
 
     public requestNewCreepsIfNecessary() {
-        // debugger;
         const pendingSpawnRequests = this.spawn.pendingSpawnRequests(this.name);
         const pendingCount = pendingSpawnRequests.reduce((acc, r) => {
-            acc[r.creepProfile || "undefined"] = (acc[r.creepProfile || "undefined"] || 0) + r.count;
+            acc[r.creepProfile] = (acc[r.creepProfile] || 0) + r.count;
             return acc;
-        }, {} as { [key in CREEP_PROFILE | "undefined"]: number });
+        }, {} as { [key in CREEP_PROFILE]: number });
 
         const creepCount = this.creeps.reduce((acc, r) => {
-            acc[r.memory.profile || "undefined"] = (acc[r.memory.profile || "undefined"] || 0) + 1;
+            acc[r.memory.profile] = (acc[r.memory.profile] || 0) + 1;
             return acc;
-        }, {} as { [key in CREEP_PROFILE | "undefined"]: number });
-        // TODO: do a pending + count < desired for each creep profile
+        }, {} as { [key in CREEP_PROFILE]: number });
         const desired = this.objective.estimateRequiredWorkForce(this.room);
         const desiredCount = desired.reduce((acc, r) => {
-            acc[r.creepProfile || "undefined"] = (acc[r.creepProfile || "undefined"] || 0) + r.count;
+            acc[r.creepProfile] = (acc[r.creepProfile] || 0) + r.count;
             return acc;
-        }, {} as { [key in CREEP_PROFILE | "undefined"]: number });
+        }, {} as { [key in CREEP_PROFILE]: number });
 
-        const profiles = Object.keys(desiredCount) as Array<CREEP_PROFILE | "undefined">;
+        const profiles = Object.keys(desiredCount) as CREEP_PROFILE[];
         for (const profile of profiles) {
             const profilePendingCount = pendingCount[profile] || 0;
             const profileCreepCount = creepCount[profile] || 0;
@@ -115,7 +107,7 @@ export class Battalion {
                     `${this}: requesting spawn of ${requestCount} creeps ` +
                         `(desired: ${profileCreepCount}, existing:${profilePendingCount}, pending: ${profileDesiredCount})`,
                 );
-                this.spawn.requestSpawn(this.name, requestCount, profile === "undefined" ? undefined : profile);
+                this.spawn.requestSpawn(this.name, requestCount, profile);
             }
         }
     }

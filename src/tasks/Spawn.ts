@@ -52,44 +52,53 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     // TODO: maybe hard-code a few levels instead to make it more predictable?
     private maxCreepProfile(
         energyStructures: Array<StructureSpawn | StructureExtension>,
-        creepProfile: CREEP_PROFILE | undefined,
-    ) {
+        creepProfile: CREEP_PROFILE,
+    ): BodyPartConstant[] {
         const energy = this.computeAvailableEnergy(energyStructures);
-        const profile = makeCreepProfileInstance(creepProfile, energy);
-        if (profile) {
-            return profile.bodyParts;
+        const potentialEnergy = this.computePotentialEnergy(energyStructures);
+        const profile = makeCreepProfileInstance(creepProfile);
+        let partsCost = profile.cost();
+        const initialPartsCost = partsCost;
+        // if (partsCost <= energy) {
+        //     debugger;
+        // }
+        if (partsCost <= energy || partsCost < 0.8 * potentialEnergy) {
+            while (partsCost <= energy || partsCost < 0.8 * potentialEnergy) {
+                profile.incrementLevel();
+                partsCost = profile.cost();
+            }
+            profile.decrementLevel();
+            partsCost = profile.cost();
         }
-        let parts = [CARRY, WORK, MOVE];
-        const newParts = parts.slice();
-        let level = 3;
-        while (this.computeBuildCost(newParts) <= energy) {
-            level += 1;
-            parts = newParts.slice(); // copy
-            newParts.push(this.nextBodyPart(level));
+
+        if (partsCost <= energy) {
+            logger.info(`Spawning ${profile}`);
+        } else {
+            if (initialPartsCost >= energy) {
+                logger.info(
+                    `Unable to spawn ${profile}: ${
+                        partsCost === initialPartsCost ? "" : `cost min: ${initialPartsCost}`
+                    }energy available: ${energy} (potential for: ${potentialEnergy}).`,
+                );
+            } else {
+                logger.info(`Delaying spawn of ${profile} until ${potentialEnergy} energy is available.`);
+            }
         }
-        logger.info(`Energy available: ${energy}. Estimated cost: ${this.computeBuildCost(parts)}.`);
-        if (this.computeBuildCost(parts) <= energy) {
-            logger.info(`Spawning creep level ${level} with body parts: ${parts.join(",")}`);
-        }
-        return parts;
+        return profile.bodyParts;
     }
 
     private computeAvailableEnergy(energyStructures: Array<StructureSpawn | StructureExtension>) {
         return energyStructures.reduce((acc, structure) => acc + structure.store[RESOURCE_ENERGY], 0);
     }
 
-    private computeBuildCost(parts: BodyPartConstant[]) {
-        return parts.reduce((acc, p) => acc + BODYPART_COST[p], 0);
-    }
-
-    private nextBodyPart(level: number) {
-        if ([0, 3, 6, 8].includes(level % 10)) {
-            return CARRY;
-        } else if ([1, 4, 7, 9].includes(level % 10)) {
-            return WORK;
-        } else {
-            return MOVE;
-        }
+    public computePotentialEnergy(energyStructures: Array<StructureSpawn | StructureExtension>) {
+        return energyStructures.reduce(
+            (acc, structure) =>
+                acc +
+                structure.store.getUsedCapacity(RESOURCE_ENERGY) +
+                structure.store.getFreeCapacity(RESOURCE_ENERGY),
+            0,
+        );
     }
 
     private getEnergyStructures(spawnCtl: SpawnController): Array<StructureExtension | StructureSpawn> {
