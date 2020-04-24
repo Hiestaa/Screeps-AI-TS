@@ -28,11 +28,12 @@ export class RoomPlanner {
      * @param controllerLevel new controller level
      */
     private planNextLevel(controllerLevel: number) {
-        this.createSpawnFortress(controllerLevel);
+        // this.createSpawnFortress(controllerLevel);
         if (controllerLevel >= 2) {
             this.createSinkAndSourceContainers();
         }
-        if (controllerLevel >= 3) {
+        if (controllerLevel >= 2) {
+            // TODO change to 2
             this.createRoadsBetweenContainers();
             this.createExitRamparts();
         }
@@ -91,6 +92,8 @@ export class RoomPlanner {
                 continue;
             }
         }
+
+        this.room.scheduleTask(new PlaceConstructionSites(buildUnits));
     }
 
     /**
@@ -181,7 +184,7 @@ export class AvailableSpotsFinder {
 
         return Object.keys(available)
             .filter(k => available[k])
-            .map(k => k.split(",").map(parseInt))
+            .map(k => k.split(",").map(n => parseInt(n, 10)))
             .map(([x, y]) => ({ x, y }));
     }
 }

@@ -1,5 +1,5 @@
 import { RoomController } from "agents/controllers/RoomController";
-import { BaseTask } from "tasks/ITask";
+import { BaseTask } from "tasks/BaseTask";
 import { IBuildUnit } from "utils/layouts/renderer";
 import { COLORS, getLogger } from "utils/Logger";
 
@@ -15,6 +15,7 @@ const logger = getLogger("tasks.PlaceConstructionSites", COLORS.tasks);
 export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
     private scheduledBuildUnits: IBuildUnit[] = [];
     private buildUnitsInProgress: IBuildUnit[] = [];
+    public executionPeriod = 10;
 
     constructor(scheduledBuildUnits: IBuildUnit[], buildUnitsInProgress?: IBuildUnit[]) {
         super();

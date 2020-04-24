@@ -1,8 +1,8 @@
 import { CreepAgent } from "agents/CreepAgent";
 import { RoomAgent } from "agents/RoomAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
+import { BaseObjective, IdleObjective } from "objectives/BaseObjective";
 import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
-import { BaseObjective, IdleObjective } from "objectives/IObjective";
 import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
 import { COLORS, getLogger } from "utils/Logger";

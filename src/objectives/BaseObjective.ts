@@ -3,7 +3,7 @@ import { RoomAgent } from "agents/RoomAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
 import { COLORS, getLogger } from "utils/Logger";
 
-const logger = getLogger("objectives.IObjective", COLORS.objectives);
+const logger = getLogger("objectives.BaseObjective", COLORS.objectives);
 
 export interface IObjective {
     /**

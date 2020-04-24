@@ -1,5 +1,5 @@
 import { BaseController, Controllable } from "agents/controllers/BaseController";
-import { BaseTask, TASK_TYPE } from "tasks/ITask";
+import { BaseTask, TASK_TYPE } from "tasks/BaseTask";
 import { COLORS, getLogger, Logger } from "utils/Logger";
 
 const logger = getLogger("controllers.agents.BaseAgent", COLORS.controllers);
@@ -118,13 +118,14 @@ export abstract class BaseAgent<
 
         if (this.hasTaskCompleted(currentTask, controller)) {
             if (this.taskQueue.length > 0) {
-                this.onTaskExecutionStarts(this.taskQueue[0], controller);
+                // the task hasn't been started yet, but we'll call `onExecutionStart` in the `execute` call
+                // this.onTaskExecutionStarts(this.taskQueue[0], controller);
                 this.execute();
             }
             return;
         }
 
-        if (!currentTask.executionStarted) {
+        if (!currentTask.executionStarted && Game.time % currentTask.executionPeriod === 0) {
             this.onTaskExecutionStarts(currentTask, controller);
         }
         this.executeTask(currentTask, controller);
@@ -134,6 +135,9 @@ export abstract class BaseAgent<
     }
 
     private hasTaskCompleted(currentTask: TaskType, controller: ControllerType | undefined) {
+        if (Game.time % currentTask.executionPeriod !== 0) {
+            return false;
+        }
         const hasTaskCompleted = currentTask.executionStarted && controller && currentTask.completed(controller);
         if (hasTaskCompleted) {
             this.onTaskExecutionCompletes(currentTask, controller);
@@ -150,7 +154,10 @@ export abstract class BaseAgent<
     }
 
     private executeTask(task: TaskType, controller: ControllerType | undefined) {
-        if (controller) {
+        const period = Game.time % task.executionPeriod;
+        if (period !== 0) {
+            logger.debug(`Not executing ${task} - ${task.executionPeriod - period} ticks left on execution period.`);
+        } else if (controller) {
             this.logger.debug(`${controller} is executing ${task}`);
             task.executionStarted = true;
             return task.execute(controller);

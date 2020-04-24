@@ -1,6 +1,6 @@
 import { SpawnController } from "agents/controllers/SpawnController";
 import { makeCreepProfileInstance } from "colony/creepProfiles";
-import { BaseTask } from "tasks/ITask";
+import { BaseTask } from "tasks/BaseTask";
 import { gun } from "utils/id";
 import { COLORS, getLogger } from "utils/Logger";
 
@@ -11,6 +11,7 @@ const logger = getLogger("tasks.Spawn", COLORS.tasks);
  */
 export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     public requests: SpawnRequest[];
+    public executionPeriod = 10;
 
     constructor(requests: SpawnRequest[]) {
         super();
@@ -57,34 +58,35 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
         const energy = this.computeAvailableEnergy(energyStructures);
         const potentialEnergy = this.computePotentialEnergy(energyStructures);
         const profile = makeCreepProfileInstance(creepProfile);
-        let partsCost = profile.cost();
-        const initialPartsCost = partsCost;
-        // if (partsCost <= energy) {
-        //     debugger;
-        // }
-        if (partsCost <= energy || partsCost < 0.8 * potentialEnergy) {
-            while (partsCost <= energy || partsCost < 0.8 * potentialEnergy) {
-                profile.incrementLevel();
-                partsCost = profile.cost();
-            }
-            profile.decrementLevel();
-            partsCost = profile.cost();
+        const initialCost = profile.cost();
+
+        let profileWithCurrentEnergy = profile.clone();
+        while (profile.cost() <= energy) {
+            profileWithCurrentEnergy = profile.clone();
+            profile.incrementLevel();
         }
 
-        if (partsCost <= energy) {
-            logger.info(`Spawning ${profile}`);
-        } else {
-            if (initialPartsCost >= energy) {
-                logger.info(
-                    `Unable to spawn ${profile}: ${
-                        partsCost === initialPartsCost ? "" : `cost min: ${initialPartsCost}`
-                    }energy available: ${energy} (potential for: ${potentialEnergy}).`,
-                );
-            } else {
-                logger.info(`Delaying spawn of ${profile} until ${potentialEnergy} energy is available.`);
-            }
+        let profileWithMaxPotentialEnergy = profileWithCurrentEnergy;
+        while (profile.cost() <= potentialEnergy) {
+            profileWithMaxPotentialEnergy = profile.clone();
+            profile.incrementLevel();
         }
-        return profile.bodyParts;
+        const maxedPotentialCost = profileWithMaxPotentialEnergy.cost();
+
+        const suffix = `(potential for: ${potentialEnergy}, cost min: ${initialCost}, available: ${energy})`;
+        if (maxedPotentialCost <= energy) {
+            logger.info(`Spawning '${profileWithMaxPotentialEnergy}' ${suffix}.`);
+        } else if (initialCost >= energy) {
+            logger.info(`Unable to spawn '${profileWithMaxPotentialEnergy}' ${suffix}.`);
+        } else {
+            // TODO: count the number of cycles where we're delaying and stop delaying when this exceeds a threshold
+            // in which case spawn `profileWithCurrentEnergy`
+            logger.info(
+                `Delaying spawn of '${profileWithMaxPotentialEnergy}' until ${maxedPotentialCost} ` +
+                    `energy is available ${suffix}.`,
+            );
+        }
+        return profileWithMaxPotentialEnergy.bodyParts;
     }
 
     private computeAvailableEnergy(energyStructures: Array<StructureSpawn | StructureExtension>) {

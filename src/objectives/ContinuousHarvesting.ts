@@ -2,7 +2,7 @@ import { CreepAgent } from "agents/CreepAgent";
 import { RoomAgent } from "agents/RoomAgent";
 import { HarvestNonStop } from "tasks/creep/Harvest";
 import { COLORS, getLogger } from "utils/Logger";
-import { BaseObjective } from "./IObjective";
+import { BaseObjective } from "./BaseObjective";
 
 const logger = getLogger("objectives.ContinuousHarvesting", COLORS.objectives);
 

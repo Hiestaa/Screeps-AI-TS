@@ -52,6 +52,6 @@ export class ReachRCL3 extends ReachRCL2 {
 
     public estimateRequiredWorkForce(): SpawnRequest[] {
         // TODO: this should be a 0 - at this point we should transition to dedicated battalion instead of general purpose creeps
-        return [{ count: 3, battalion: this.battalionId, creepProfile: "GeneralPurpose" }];
+        return [{ count: 10, battalion: this.battalionId, creepProfile: "GeneralPurpose" }];
     }
 }

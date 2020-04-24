@@ -13,6 +13,7 @@ export type TASK_TYPE = "TASK_SPAWN" | CREEP_TASK | "TASK_PLACE_CONSTRUCTION_SIT
  */
 export abstract class BaseTask<RO extends Controllable, Controller extends BaseController<RO>> {
     public executionStarted: boolean = false;
+    public executionPeriod: number = 1;
 
     /**
      * Indicate whether the given controller can execute the task.

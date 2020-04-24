@@ -13,10 +13,12 @@ export abstract class BaseCreepProfile {
      * Add 1 level worth of body parts to this creep profile
      */
     public abstract incrementLevel(): void;
-    /**
-     * Remove 1` level worth of body parts from this creep profile
-     */
-    public abstract decrementLevel(): void;
+
+    public clone(): BaseCreepProfile {
+        const copy = new (this.constructor as new () => BaseCreepProfile)();
+        Object.assign(copy, this, { bodyParts: this.bodyParts.slice() });
+        return copy;
+    }
 
     public cost(): number {
         return this.bodyParts.reduce((acc, bp) => {

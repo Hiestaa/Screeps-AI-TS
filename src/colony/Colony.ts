@@ -1,7 +1,6 @@
 import { RoomAgent } from "agents/RoomAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
 import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
-import { IdleObjective } from "objectives/IObjective";
 import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
 import { COLORS, getLogger } from "utils/Logger";

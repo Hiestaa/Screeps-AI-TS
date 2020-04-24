@@ -5,7 +5,7 @@ import { Build } from "tasks/creep/Build";
 import { Harvest } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
 import { COLORS, getLogger } from "utils/Logger";
-import { BaseObjective } from "./IObjective";
+import { BaseObjective } from "./BaseObjective";
 
 const logger = getLogger("objectives.ReachRCL2", COLORS.objectives);
 
@@ -31,6 +31,6 @@ export class ReachRCL2 extends BaseObjective {
     }
 
     public estimateRequiredWorkForce(): SpawnRequest[] {
-        return [{ count: 5, battalion: this.battalionId, creepProfile: "GeneralPurpose" }];
+        return [{ count: 7, battalion: this.battalionId, creepProfile: "GeneralPurpose" }];
     }
 }

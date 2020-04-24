@@ -1,5 +1,5 @@
 import { CreepController } from "agents/controllers/CreepController";
-import { BaseTask } from "tasks/ITask";
+import { BaseTask } from "tasks/BaseTask";
 import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("tasks.BaseCreepTask", COLORS.tasks);
