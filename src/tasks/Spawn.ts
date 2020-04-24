@@ -91,7 +91,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
             logger.info(`Unable to spawn '${profileWithMaxPotentialEnergy}' ${suffix}.`);
             return;
         } else if (this.spawnDelay > maxSpawnDelay) {
-            logger.info(`Spawning ${profileWithCurrentEnergy} after delay of ${this.spawnDelay} cycle ${suffix}.`);
+            logger.info(`Spawning '${profileWithCurrentEnergy}' after delay of ${this.spawnDelay} cycle ${suffix}.`);
             this.spawnDelay = 0;
             return profileWithCurrentEnergy.bodyParts;
         } else {

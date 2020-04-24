@@ -61,7 +61,9 @@ export class ContinuousHarvesting extends BaseObjective {
     }
 
     public estimateRequiredWorkForce(): SpawnRequest[] {
-        return [{ count: this.totalMiningSpots, battalion: this.battalionId, creepProfile: "Harvester" }];
+        return [
+            { count: Math.max(0, this.totalMiningSpots - 2), battalion: this.battalionId, creepProfile: "Harvester" },
+        ];
     }
 
     public save(): ContinuousHarvestingMemory {

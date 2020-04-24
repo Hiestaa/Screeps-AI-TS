@@ -87,7 +87,7 @@ export class RoomPlanner {
             const spots = AvailableSpotsFinder.estimateAvailableSpots(this.room, pos);
             if (spots.length > 0) {
                 buildUnits.push({ structureType: "container", ...spots[0] });
-                this.roomPlan.addSinkContainer(spots[0].x, spots[0].x);
+                this.roomPlan.addSinkContainer(spots[0].x, spots[0].y);
             }
         }
 
@@ -100,7 +100,7 @@ export class RoomPlanner {
                 const spot = spots[0];
 
                 buildUnits.push({ structureType: "container", ...spot });
-                this.roomPlan.addSourceContainer(spot.x, spot.x);
+                this.roomPlan.addSourceContainer(spot.x, spot.y);
                 continue;
             }
         }

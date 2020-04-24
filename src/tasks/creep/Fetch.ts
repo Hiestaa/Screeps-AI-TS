@@ -36,6 +36,14 @@ export class Fetch extends BaseCreepTask {
             return this.moveToIfFail(creep, creep.withdraw(ruin, RESOURCE_ENERGY), ruin);
         }
 
+        const droppedResource = creep.creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
+            filter: item => item.resourceType === RESOURCE_ENERGY && item.amount > creep.creep.store.getFreeCapacity(),
+        });
+        if (droppedResource) {
+            logger.debug(`${creep}: picking up ${droppedResource}`);
+            return this.moveToIfFail(creep, creep.pickup(droppedResource), droppedResource);
+        }
+
         const container = creep.creep.pos.findClosestByRange(FIND_STRUCTURES, {
             filter: structure =>
                 structure.structureType === STRUCTURE_CONTAINER &&
@@ -45,14 +53,6 @@ export class Fetch extends BaseCreepTask {
         if (container) {
             logger.debug(`${creep}: picking up ${container}`);
             return this.moveToIfFail(creep, creep.withdraw(container, RESOURCE_ENERGY), container);
-        }
-
-        const droppedResource = creep.creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
-            filter: item => item.resourceType === RESOURCE_ENERGY && item.amount > creep.creep.store.getFreeCapacity(),
-        });
-        if (droppedResource) {
-            logger.debug(`${creep}: picking up ${droppedResource}`);
-            return this.moveToIfFail(creep, creep.pickup(droppedResource), droppedResource);
         }
 
         if (creep.creep.memory.profile !== "Hauler") {

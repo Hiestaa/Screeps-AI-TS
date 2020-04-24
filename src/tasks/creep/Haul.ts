@@ -30,8 +30,15 @@ export class Haul extends BaseCreepTask {
             this.deliveryTargets.map(target => this.findTargets(creepCtl, target)),
         );
         if (targets.length <= 0) {
-            logger.debug(`No ${this.deliveryTargets.join("/")} available in the current creep room`);
+            logger.debug(
+                `No ${this.deliveryTargets.join("/")} available in the current creep room - pausing for 20 ticks.`,
+            );
             this.noMoreTarget = true;
+            const spawns = creepCtl.creep.room.find(FIND_MY_SPAWNS);
+            if (spawns.length > 0) {
+                creepCtl.moveTo(spawns[0]);
+            }
+            this.pause(10);
             return;
         }
         return this.transferToTargets(creepCtl, this.sortTargets(creepCtl, targets));
