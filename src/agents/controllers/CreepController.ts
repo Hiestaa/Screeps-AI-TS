@@ -1,4 +1,7 @@
+import { COLORS, getLogger } from "utils/Logger";
 import { BaseController, ReturnCodeSwitcher } from "./BaseController";
+
+const logger = getLogger("agents.controllers.CreepController", COLORS.controllers);
 
 export class CreepController extends BaseController<Creep> {
     public roomObject: Creep;
@@ -28,13 +31,17 @@ export class CreepController extends BaseController<Creep> {
             return this.doSwitch<CreepMoveReturnCode | ERR_NO_PATH | ERR_INVALID_TARGET | ERR_NOT_FOUND>(
                 this.creep.moveTo(x, y, _opts),
                 "moveTo",
-            );
+            ).on(ERR_NO_PATH, () => {
+                logger.debug(`${this}: no path to target: ${x}, ${y}`);
+            });
         } else if (typeof x !== "number" && typeof y !== "number") {
             const _opts = Object.assign({}, y, { visualizePathStyle: { stroke: "#FFEA00" } });
             return this.doSwitch<CreepMoveReturnCode | ERR_NO_PATH | ERR_INVALID_TARGET | ERR_NOT_FOUND>(
                 this.creep.moveTo(x, _opts),
                 "moveTo",
-            );
+            ).on(ERR_NO_PATH, () => {
+                logger.debug(`${this}: no path to target: ${x}`);
+            });
         } else {
             throw new Error("CreepController.moveTo: Invalid Argument Types");
         }
@@ -67,12 +74,16 @@ export class CreepController extends BaseController<Creep> {
     // public rangedAttack(target: Creep | PowerCreep | Structure<StructureConstant>): ReturnCodeSwitcher<CreepActionReturnCode> {};
     // public rangedHeal(target: AnyCreep): ReturnCodeSwitcher<CreepActionReturnCode> {};
     // public rangedMassAttack(): ReturnCodeSwitcher<0 | -1 | -4 | -12> {};
-    // public repair(target: Structure<StructureConstant>): ReturnCodeSwitcher<0 | -1 | -4 | -6 | -7 | -9 | -11 | -12> {};
+    public repair(target: Structure<StructureConstant>): ReturnCodeSwitcher<0 | -1 | -4 | -6 | -7 | -9 | -11 | -12> {
+        return this.doSwitch<0 | -1 | -4 | -6 | -7 | -9 | -11 | -12>(this.creep.repair(target), "repair");
+    }
     // public reserveController(target: StructureController): ReturnCodeSwitcher<CreepActionReturnCode> {};
     // public say(message: string, toPublic?: boolean | undefined): ReturnCodeSwitcher<0 | -1 | -4> {};
     // public signController(target: StructureController, text: string): ReturnCodeSwitcher<0 | -4 | -7 | -9> {};
     // public suicide(): ReturnCodeSwitcher<0 | -1 | -4> {};
-    // public upgradeController(target: StructureController): ReturnCodeSwitcher<ScreepsReturnCode> {};
+    public upgradeController(target: StructureController): ReturnCodeSwitcher<ScreepsReturnCode> {
+        return this.doSwitch<ScreepsReturnCode>(this.creep.upgradeController(target), "upgradeController");
+    }
     public withdraw(
         target: Structure<StructureConstant> | Tombstone | Ruin,
         resourceType: ResourceConstant,

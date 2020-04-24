@@ -29,7 +29,7 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
     }
 
     protected createTaskInstance(taskMemory: SpawnTaskMemory): SpawnTask {
-        return new SpawnTask(taskMemory.requests);
+        return new SpawnTask(taskMemory.requests, taskMemory.spawnDelay);
     }
 
     public requestSpawn(battalion: string, count: number, profile: CREEP_PROFILE) {

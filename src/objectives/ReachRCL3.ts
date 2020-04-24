@@ -7,7 +7,7 @@ import { ReachRCL2 } from "./ReachRCL2";
 
 const logger = getLogger("objectives.ReachRCL3", COLORS.objectives);
 
-const CONTROLLER_DOWNGRADE_TIMER_LEVEL: { [key: number]: number } = {
+export const CONTROLLER_DOWNGRADE_TIMER_LEVEL: { [key: number]: number } = {
     1: 20000,
     2: 10000,
     3: 20000,
@@ -29,7 +29,7 @@ export class ReachRCL3 extends ReachRCL2 {
                 this.assignUpgradeControllerIfNecessary(creepAgent);
                 creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_EXTENSION]));
                 creepAgent.scheduleTask(
-                    new Build([STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_RAMPART, STRUCTURE_TOWER]),
+                    new Build([STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_RAMPART, STRUCTURE_CONTAINER]),
                 );
                 creepAgent.scheduleTask(
                     new Haul([STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_CONTROLLER, STRUCTURE_CONTAINER]),
@@ -52,6 +52,6 @@ export class ReachRCL3 extends ReachRCL2 {
 
     public estimateRequiredWorkForce(): SpawnRequest[] {
         // TODO: this should be a 0 - at this point we should transition to dedicated battalion instead of general purpose creeps
-        return [{ count: 10, battalion: this.battalionId, creepProfile: "GeneralPurpose" }];
+        return [{ count: 1, battalion: this.battalionId, creepProfile: "GeneralPurpose" }];
     }
 }

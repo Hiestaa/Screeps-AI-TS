@@ -14,6 +14,7 @@ export type TASK_TYPE = "TASK_SPAWN" | CREEP_TASK | "TASK_PLACE_CONSTRUCTION_SIT
 export abstract class BaseTask<RO extends Controllable, Controller extends BaseController<RO>> {
     public executionStarted: boolean = false;
     public executionPeriod: number = 1;
+    public executionPaused: number = 0;
 
     /**
      * Indicate whether the given controller can execute the task.
@@ -24,6 +25,12 @@ export abstract class BaseTask<RO extends Controllable, Controller extends BaseC
     public canBeExecuted(controller: Controller) {
         return true;
     }
+    public pause(duration: number) {
+        this.executionPaused = Game.time + duration;
+    }
+    public isPaused(): boolean {
+        return Game.time < this.executionPaused || Game.time % this.executionPeriod !== 0;
+    }
     public execute(controller: Controller) {
         this.executionStarted = true;
     }
@@ -32,6 +39,6 @@ export abstract class BaseTask<RO extends Controllable, Controller extends BaseC
     public abstract toJSON(): TaskMemory;
     public abstract getType(): TASK_TYPE;
     public toString() {
-        return `task ${JSON.stringify(this.toJSON())}`;
+        return `task ${this.getType()} ${JSON.stringify(this.toJSON())}`;
     }
 }

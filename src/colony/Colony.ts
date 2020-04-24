@@ -1,6 +1,7 @@
-import { RoomAgent } from "agents/RoomAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
 import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
+import { ContainersExtensionsRefill } from "objectives/KeepContainersExtensionsFull";
+import { MaintainBuildings } from "objectives/MaintainBuildings";
 import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
 import { COLORS, getLogger } from "utils/Logger";
@@ -17,7 +18,6 @@ const logger = getLogger("colony.Colony", COLORS.colony);
  * applicable to the current room control level.
  */
 export class Colony {
-    public room: RoomAgent;
     public spawns: { [key: string]: SpawnAgent };
     public battalions: { [key in keyof ColonyBattalionsMemory]: Battalion };
     public roomPlanner: RoomPlanner;
@@ -25,11 +25,9 @@ export class Colony {
     public constructor(room: Room) {
         this.battalions = {};
         this.spawns = {};
-        this.room = new RoomAgent(room.name);
+        this.roomPlanner = new RoomPlanner(room.name);
 
-        this.reload();
-
-        this.roomPlanner = new RoomPlanner(this.room, this.spawns);
+        this.reload(room);
     }
 
     /**
@@ -37,12 +35,8 @@ export class Colony {
      * May raise an error if the room is not controlled anymore, or if no spawn can be found in this room.
      * (mechanism for recovering the room in case of destroy to be improved)
      */
-    private reload() {
-        if (!this.room.roomController) {
-            return;
-        }
-
-        const spawns = this.room.roomController.room.find(FIND_MY_SPAWNS);
+    private reload(room: Room) {
+        const spawns = room.find(FIND_MY_SPAWNS);
         let firstSpawn: SpawnAgent | null = null;
 
         for (const spawn of spawns) {
@@ -53,34 +47,46 @@ export class Colony {
             }
         }
 
+        this.roomPlanner.reloadSpawns(this.spawns);
+
         // TODO: in case of multiple spawn available, better battalion / spawn dispatch
         // than assigning the first spawn to every battalion
         if (firstSpawn) {
             const battalionIds = Object.keys(Memory.battalions) as Array<keyof ColonyBattalionsMemory>;
             for (const battalionId of battalionIds) {
                 logger.debug(`Reloading battalion ${battalionId} in ${this}`);
-                this.battalions[battalionId] = new Battalion(battalionId, firstSpawn, this.room);
+                this.battalions[battalionId] = new Battalion(battalionId, firstSpawn, this.roomPlanner);
             }
 
             this.initializeBattalions(firstSpawn);
         } else {
-            logger.warning(`No spawn in ${this.room} - not reloading / initializing any battalion`);
+            logger.warning(`No spawn in ${room} - not reloading / initializing any battalion`);
         }
     }
 
     private initializeBattalions(spawn: SpawnAgent) {
         if (!this.battalions.allPurposeReserve) {
             logger.info(`All Purpose Reserve battalion not found in ${this}. Initializing.`);
-            this.battalions.allPurposeReserve = new Battalion("allPurposeReserve", spawn, this.room);
+            this.battalions.allPurposeReserve = new Battalion("allPurposeReserve", spawn, this.roomPlanner);
         }
 
-        const level = this.room.roomController?.room.controller?.level;
-        if (level && level >= 2 && !this.battalions.harvesters) {
-            this.battalions.harvesters = new Battalion("harvesters", spawn, this.room);
-            this.battalions.harvesters.objective = new ContinuousHarvesting(
-                "harvesters",
-                AvailableSpotsFinder.countMiningSpotsPerSource(this.room),
-            );
+        const level = this.roomPlanner.room.roomController?.room.controller?.level;
+        if (level && level >= 2) {
+            if (!this.battalions.harvesters) {
+                this.battalions.harvesters = new Battalion("harvesters", spawn, this.roomPlanner);
+                this.battalions.harvesters.objective = new ContinuousHarvesting(
+                    "harvesters",
+                    AvailableSpotsFinder.countMiningSpotsPerSource(this.roomPlanner.room),
+                );
+            }
+            if (!this.battalions.haulers) {
+                this.battalions.haulers = new Battalion("haulers", spawn, this.roomPlanner);
+                this.battalions.haulers.objective = new ContainersExtensionsRefill("haulers");
+            }
+            if (!this.battalions.builders) {
+                this.battalions.builders = new Battalion("builders", spawn, this.roomPlanner);
+                this.battalions.builders.objective = new MaintainBuildings("builders");
+            }
         }
     }
 
@@ -119,9 +125,8 @@ export class Colony {
      * * Spawns, to execute spawn requests
      */
     public execute() {
-        logger.debug(`Executing ${this.room}`);
+        logger.debug(`Executing ${this}`);
         this.roomPlanner.execute();
-        this.room.execute();
 
         const battalionIds = Object.keys(this.battalions) as Array<keyof ColonyBattalionsMemory>;
         for (const battalionId of battalionIds) {
@@ -158,7 +163,7 @@ export class Colony {
             return;
         }
 
-        const controllerLevel = this.room.hasControllerLevelChanged();
+        const controllerLevel = this.roomPlanner.room.hasControllerLevelChanged();
         if (controllerLevel !== undefined) {
             if (controllerLevel <= 1) {
                 logger.warning("Controller reached or downgraded to level 1. ");
@@ -172,8 +177,8 @@ export class Colony {
     }
 
     public save() {
-        logger.debug(`Saving ${this.room}`);
-        this.room.save();
+        logger.debug(`Saving ${this.roomPlanner.room}`);
+        this.roomPlanner.room.save();
 
         const battalionIds = Object.keys(this.battalions) as Array<keyof ColonyBattalionsMemory>;
         for (const battalionId of battalionIds) {
@@ -193,6 +198,6 @@ export class Colony {
     }
 
     public toString() {
-        return `Colony in ${this.room}`;
+        return `Colony in ${this.roomPlanner.room}`;
     }
 }

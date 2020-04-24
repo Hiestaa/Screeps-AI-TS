@@ -1,6 +1,6 @@
 import { CreepAgent } from "agents/CreepAgent";
-import { RoomAgent } from "agents/RoomAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
+import { RoomPlanner } from "colony/RoomPlanner";
 import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("objectives.BaseObjective", COLORS.objectives);
@@ -10,7 +10,7 @@ export interface IObjective {
      * Execute the operations for this objective
      * @param agentStore an access to the existing controllers after reload
      */
-    execute(agents: CreepAgent[], room: RoomAgent, spawn: SpawnAgent): void;
+    execute(agents: CreepAgent[], room: RoomPlanner, spawn: SpawnAgent): void;
 
     save(): ObjectiveMemory;
 
@@ -19,7 +19,7 @@ export interface IObjective {
      * This should not account for existing creeps or pending creep requests.
      * @return Array of spawn requests. Battalion will do best effort to satisfy them all in a timely manner
      */
-    estimateRequiredWorkForce(room: RoomAgent): SpawnRequest[];
+    estimateRequiredWorkForce(room: RoomPlanner): SpawnRequest[];
 }
 
 export abstract class BaseObjective implements IObjective {
@@ -37,7 +37,7 @@ export abstract class BaseObjective implements IObjective {
      * @param room room in which the objective is executed
      * @param spawn spawn the battalion executing is related to
      */
-    public abstract execute(agents: CreepAgent[], room: RoomAgent, spawn: SpawnAgent): void;
+    public abstract execute(agents: CreepAgent[], room: RoomPlanner, spawn: SpawnAgent): void;
 
     public save(): ObjectiveMemory {
         return {
@@ -49,7 +49,7 @@ export abstract class BaseObjective implements IObjective {
         return `objective ${this.name}`;
     }
 
-    public abstract estimateRequiredWorkForce(room: RoomAgent): SpawnRequest[];
+    public abstract estimateRequiredWorkForce(room: RoomPlanner): SpawnRequest[];
 }
 
 export class IdleObjective extends BaseObjective {

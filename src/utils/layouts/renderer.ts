@@ -147,6 +147,6 @@ export function render(layout: string, anchor: string, anchorPosition: { x: numb
             }));
     };
 
-    const lines = layout.split("\n").filter(l => l.trim().length > 0);
+    const lines = layout.split("\n");
     return sortAndConvert(applyAnchorOffset(([] as IUnitInternal[]).concat.apply([], lines.map(tokenizeLine))));
 }

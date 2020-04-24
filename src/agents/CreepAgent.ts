@@ -4,6 +4,8 @@ import { Build } from "tasks/creep/Build";
 import { Fetch } from "tasks/creep/Fetch";
 import { Harvest, HarvestNonStop } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
+import { Repair } from "tasks/creep/Repair";
+import { UpgradeController } from "tasks/creep/UpgradeController";
 import { COLORS, getLogger } from "utils/Logger";
 import { BaseAgent } from "./BaseAgent";
 
@@ -36,7 +38,8 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
     protected createTaskInstance(taskMemory: CreepTaskMemory): BaseCreepTask {
         switch (taskMemory.type) {
             case "TASK_HAUL":
-                return new Haul((taskMemory as HaulTaskMemory).deliveryTargets);
+                const mem = taskMemory as HaulTaskMemory;
+                return new Haul(mem.deliveryTargets, mem.excludedPositions);
             case "TASK_HARVEST":
                 return new Harvest((taskMemory as HarvestTaskMemory).sourceId);
             case "TASK_HARVEST_NON_STOP":
@@ -44,15 +47,24 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
             case "TASK_BUILD":
                 return new Build((taskMemory as BuildTaskMemory).buildPriority);
             case "TASK_FETCH":
-                return new Fetch();
+                return new Fetch((taskMemory as FetchTaskMemory).excludedPositions);
+            case "TASK_REPAIR":
+                return new Repair();
+            case "TASK_UPGRADE_CONTROLLER":
+                return new UpgradeController();
         }
     }
 
     protected onTaskExecutionStarts(task: BaseCreepTask, creepCtl: CreepController | undefined) {
-        super.onTaskExecutionStarts(task, creepCtl);
+        this.logger.debug(`${creepCtl}: Started execution of task: ${task}`);
         if (creepCtl) {
             creepCtl.creep.say(task.description());
         }
+    }
+
+    protected onTaskExecutionCompletes(task: BaseCreepTask, creepCtl: CreepController | undefined) {
+        this.logger.debug(`${creepCtl}: Completed execution of task: ${task}`);
+        return;
     }
 
     protected commitToMemory(memory: CreepMemory) {

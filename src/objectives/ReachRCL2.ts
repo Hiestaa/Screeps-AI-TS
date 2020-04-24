@@ -1,6 +1,6 @@
 import { CreepAgent } from "agents/CreepAgent";
-import { RoomAgent } from "agents/RoomAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
+import { RoomPlanner } from "colony/RoomPlanner";
 import { Build } from "tasks/creep/Build";
 import { Harvest } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
@@ -12,8 +12,8 @@ const logger = getLogger("objectives.ReachRCL2", COLORS.objectives);
 export class ReachRCL2 extends BaseObjective {
     public name: ObjectiveType = "REACH_RCL2";
 
-    public execute(creepAgents: CreepAgent[], room: RoomAgent, spawn: SpawnAgent) {
-        const sources = room.roomController?.room.find(FIND_SOURCES_ACTIVE);
+    public execute(creepAgents: CreepAgent[], roomPlanner: RoomPlanner, spawn: SpawnAgent) {
+        const sources = roomPlanner.room.roomController?.room.find(FIND_SOURCES_ACTIVE);
         for (const creepAgent of creepAgents) {
             logger.debug(`${this}: ensuring ${creepAgent} has all creep tasks scheduled`);
             if (!creepAgent.taskQueue.length) {
@@ -31,6 +31,6 @@ export class ReachRCL2 extends BaseObjective {
     }
 
     public estimateRequiredWorkForce(): SpawnRequest[] {
-        return [{ count: 7, battalion: this.battalionId, creepProfile: "GeneralPurpose" }];
+        return [{ count: 2, battalion: this.battalionId, creepProfile: "GeneralPurpose" }];
     }
 }

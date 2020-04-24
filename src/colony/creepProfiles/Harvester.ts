@@ -14,9 +14,4 @@ export class Harvester extends BaseCreepProfile {
         this.bodyParts.push(WORK);
         this.level += 1;
     }
-
-    public decrementLevel(): void {
-        this.level -= 1;
-        this.bodyParts = this.bodyParts.slice(0, -1);
-    }
 }

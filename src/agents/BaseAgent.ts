@@ -56,6 +56,7 @@ export abstract class BaseAgent<
     private _createTaskInstance(taskMemory: TaskMemory): TaskType {
         const taskInstance = this.createTaskInstance(taskMemory);
         taskInstance.executionStarted = taskMemory.executionStarted;
+        taskInstance.executionPaused = taskMemory.executionPaused;
         return taskInstance;
     }
 
@@ -125,7 +126,7 @@ export abstract class BaseAgent<
             return;
         }
 
-        if (!currentTask.executionStarted && Game.time % currentTask.executionPeriod === 0) {
+        if (!currentTask.executionStarted && !currentTask.isPaused()) {
             this.onTaskExecutionStarts(currentTask, controller);
         }
         this.executeTask(currentTask, controller);
@@ -135,7 +136,7 @@ export abstract class BaseAgent<
     }
 
     private hasTaskCompleted(currentTask: TaskType, controller: ControllerType | undefined) {
-        if (Game.time % currentTask.executionPeriod !== 0) {
+        if (currentTask.isPaused()) {
             return false;
         }
         const hasTaskCompleted = currentTask.executionStarted && controller && currentTask.completed(controller);
@@ -154,9 +155,8 @@ export abstract class BaseAgent<
     }
 
     private executeTask(task: TaskType, controller: ControllerType | undefined) {
-        const period = Game.time % task.executionPeriod;
-        if (period !== 0) {
-            logger.debug(`Not executing ${task} - ${task.executionPeriod - period} ticks left on execution period.`);
+        if (task.isPaused()) {
+            logger.debug(`Not executing ${task} - task is currently on pause.`);
         } else if (controller) {
             this.logger.debug(`${controller} is executing ${task}`);
             task.executionStarted = true;

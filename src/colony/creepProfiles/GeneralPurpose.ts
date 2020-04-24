@@ -24,9 +24,4 @@ export class GeneralPurpose extends BaseCreepProfile {
         this.bodyParts.push(this.nextPartForLevel(this.level));
         this.level += 1;
     }
-
-    public decrementLevel(): void {
-        this.bodyParts = this.bodyParts.slice(0, -1);
-        this.level -= 1;
-    }
 }

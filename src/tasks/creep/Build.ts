@@ -2,7 +2,7 @@ import { CreepController } from "agents/controllers/CreepController";
 import { BaseCreepTask } from "tasks/creep/BaseCreepTask";
 import { COLORS, getLogger } from "utils/Logger";
 
-const logger = getLogger("tasks.creep.Haul", COLORS.tasks);
+const logger = getLogger("tasks.creep.Build", COLORS.tasks);
 
 /**
  * Simple Haul task - go Haul resources to the first available spawn
@@ -65,7 +65,8 @@ export class Build extends BaseCreepTask {
      * 1. Prefer a target of the type seen earlier in the deliveryTarget array
      * 2. Prefer a target of closer distance
      * It is assumed that all targets should have available capacity.
-     * TODO: Test me
+     * TODO[OPTIMIZATION]: instead of sorting all possible target by distance, make a `getClosestInRange`
+     * with filter for each priority type so we don't compute distance as many times (I guess)
      * @param creepCtl creep controller used to compute distances
      * @param targets targets to sort
      */

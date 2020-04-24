@@ -1,5 +1,4 @@
 import { CreepAgent } from "agents/CreepAgent";
-import { RoomAgent } from "agents/RoomAgent";
 import { HarvestNonStop } from "tasks/creep/Harvest";
 import { COLORS, getLogger } from "utils/Logger";
 import { BaseObjective } from "./BaseObjective";
@@ -27,7 +26,7 @@ export class ContinuousHarvesting extends BaseObjective {
         }
     }
 
-    public execute(creepAgents: CreepAgent[], room: RoomAgent) {
+    public execute(creepAgents: CreepAgent[]) {
         logger.debug(`Executing ${this}`);
 
         const sourceIds = Object.keys(this.miningSpotsPerSource).filter(k => this.miningSpotsPerSource[k] > 0);
@@ -61,7 +60,7 @@ export class ContinuousHarvesting extends BaseObjective {
         }
     }
 
-    public estimateRequiredWorkForce(room: RoomAgent): SpawnRequest[] {
+    public estimateRequiredWorkForce(): SpawnRequest[] {
         return [{ count: this.totalMiningSpots, battalion: this.battalionId, creepProfile: "Harvester" }];
     }
 

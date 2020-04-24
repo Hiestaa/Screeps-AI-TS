@@ -3,7 +3,7 @@ import { IBuildUnit, render } from "./renderer";
 const RCL_LAYOUTS: { [key: number]: string } = {
     1: `
    X
-   C`,
+    `,
     2: `
 E E X E E
     C

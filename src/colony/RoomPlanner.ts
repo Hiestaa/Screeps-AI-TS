@@ -9,9 +9,15 @@ const logger = getLogger("colony.RoomPlanner", COLORS.colony);
 export class RoomPlanner {
     public room: RoomAgent;
     public spawns: { [key: string]: SpawnAgent };
+    public roomPlan: RoomPlan;
 
-    constructor(room: RoomAgent, spawns: { [key: string]: SpawnAgent }) {
-        this.room = room;
+    constructor(roomName: string) {
+        this.room = new RoomAgent(roomName);
+        this.spawns = {};
+        this.roomPlan = new RoomPlan(roomName);
+    }
+
+    public reloadSpawns(spawns: { [key: string]: SpawnAgent }) {
         this.spawns = spawns;
     }
 
@@ -20,6 +26,7 @@ export class RoomPlanner {
         if (controllerLevel) {
             this.planNextLevel(controllerLevel);
         }
+        this.room.execute();
     }
 
     /**
@@ -28,12 +35,11 @@ export class RoomPlanner {
      * @param controllerLevel new controller level
      */
     private planNextLevel(controllerLevel: number) {
-        // this.createSpawnFortress(controllerLevel);
+        this.createSpawnFortress(controllerLevel);
         if (controllerLevel >= 2) {
             this.createSinkAndSourceContainers();
         }
         if (controllerLevel >= 2) {
-            // TODO change to 2
             this.createRoadsBetweenContainers();
             this.createExitRamparts();
         }
@@ -55,6 +61,11 @@ export class RoomPlanner {
             const spawnAgent = this.spawns[spawnName];
             if (spawnAgent.spawnController) {
                 const buildUnits = gridFortress(spawnAgent.spawnController.spawn.pos, controllerLevel);
+                const container = buildUnits.find(b => b.structureType === STRUCTURE_CONTAINER);
+                if (container) {
+                    this.roomPlan.addSinkContainer(container.x, container.y);
+                    this.roomPlan.addSpawnContainer(container.x, container.y);
+                }
                 this.room.scheduleTask(new PlaceConstructionSites(buildUnits));
             }
         }
@@ -76,6 +87,7 @@ export class RoomPlanner {
             const spots = AvailableSpotsFinder.estimateAvailableSpots(this.room, pos);
             if (spots.length > 0) {
                 buildUnits.push({ structureType: "container", ...spots[0] });
+                this.roomPlan.addSinkContainer(spots[0].x, spots[0].x);
             }
         }
 
@@ -88,7 +100,7 @@ export class RoomPlanner {
                 const spot = spots[0];
 
                 buildUnits.push({ structureType: "container", ...spot });
-
+                this.roomPlan.addSourceContainer(spot.x, spot.x);
                 continue;
             }
         }
@@ -100,14 +112,82 @@ export class RoomPlanner {
      * Place construction sites to link sink and source containers with roads.
      */
     private createRoadsBetweenContainers() {
-        return;
+        for (const spawn of this.roomPlan.plan.containers?.spawns || []) {
+            for (const source of this.roomPlan.plan.containers?.sources || []) {
+                this.buildRoadsBetweenPositions(spawn, source);
+            }
+            for (const sink of this.roomPlan.plan.containers?.sinks || []) {
+                // spawn is a sink as well :)
+                if (sink.x !== spawn.x && sink.y !== spawn.y) {
+                    this.buildRoadsBetweenPositions(spawn, sink);
+                }
+            }
+        }
+    }
+
+    private buildRoadsBetweenPositions(p1: { x: number; y: number }, p2: { x: number; y: number }) {
+        const room = this.room.roomController?.room;
+        if (!room) {
+            logger.warning("Unable to build roads because room controller is undefined");
+            return;
+        }
+        const rp1 = room.getPositionAt(p1.x, p1.y);
+        const rp2 = room.getPositionAt(p2.x, p2.y);
+        if (rp1 && rp2) {
+            const pendingConstructionSites = this.room.taskQueue
+                .filter(t => t.getType() === "TASK_PLACE_CONSTRUCTION_SITES")
+                .map(t => t.scheduledBuildUnits.concat(t.buildUnitsInProgress));
+            const avoidPositions = ([] as IBuildUnit[]).concat
+                .apply([], pendingConstructionSites)
+                // exclude source and destination
+                .filter(({ x, y }) => (p1.x !== x || p1.y !== y) && (p2.x !== x || p2.y !== y))
+                .map(({ x, y }) => room.getPositionAt(x, y));
+            const path = room.findPath(rp1, rp2, {
+                ignoreCreeps: true,
+                ignoreRoads: true,
+                costCallback: (roomName, costMatrix) => {
+                    for (const pos of avoidPositions) {
+                        if (pos) {
+                            costMatrix.set(pos.x, pos.y, 255);
+                        }
+                    }
+                    return costMatrix;
+                },
+            });
+            if (!path || !path.length) {
+                logger.warning(`Unable to find path from position ${p1.x},${p1.y} to ${p2.x},${p2.y}`);
+                return;
+            }
+            this.room.scheduleTask(
+                new PlaceConstructionSites(
+                    path
+                        // exclude source and destination
+                        .filter(({ x, y }) => (p1.x !== x && p1.y !== y) || (p2.x !== x && p2.y !== y))
+                        .map(({ x, y }) => ({
+                            x,
+                            y,
+                            structureType: STRUCTURE_ROAD,
+                        })),
+                ),
+            );
+        } else {
+            logger.warning(`Unable to build roads from position ${p1.x},${p1.y} to ${p2.x},${p2.y}`);
+        }
     }
 
     /**
      * Create ramparts to shield all exit to bunker the room.
      */
     private createExitRamparts() {
-        return;
+        const exits = this.room.roomController?.room.find(FIND_EXIT);
+        const ramparts = (exits || []).map(exit => AvailableSpotsFinder.estimateAvailableSpots(this.room, exit));
+        this.room.scheduleTask(
+            new PlaceConstructionSites(
+                ([] as Array<{ x: number; y: number }>).concat
+                    .apply([], ramparts)
+                    .map(({ x, y }) => ({ x, y, structureType: STRUCTURE_RAMPART })),
+            ),
+        );
     }
 }
 
@@ -149,6 +229,13 @@ export class AvailableSpotsFinder {
         return miningSpotsPerSource;
     }
 
+    /**
+     * Find available spots at 1 distance from the given position
+     * Available spots are non-wall and non-hostile creep essentially
+     * @param room agent for related room
+     * @param pos relevant position
+     * @param hostiles optional hostiles position array to avoid (at 5 position distance)
+     */
     public static estimateAvailableSpots(
         room: RoomAgent,
         pos: RoomPosition,
@@ -186,5 +273,42 @@ export class AvailableSpotsFinder {
             .filter(k => available[k])
             .map(k => k.split(",").map(n => parseInt(n, 10)))
             .map(([x, y]) => ({ x, y }));
+    }
+}
+
+class RoomPlan {
+    public roomId: string;
+    public plan: RoomPlanMemory;
+    constructor(roomId: string) {
+        this.roomId = roomId;
+        this.plan = Memory.roomPlans[this.roomId] || { sources: [], sinks: [], spawns: [] };
+        Memory.roomPlans[this.roomId] = this.plan;
+    }
+
+    public addSourceContainer(x: number, y: number) {
+        this.plan.containers = this.plan.containers || { sources: [], sinks: [], spawns: [] };
+        this.plan.containers.sources = this.plan.containers.sources || [];
+        const existing = this.plan.containers.sources.find(c => c.x === x && c.y === y);
+        if (!existing) {
+            this.plan.containers.sources.push({ x, y });
+        }
+    }
+
+    public addSinkContainer(x: number, y: number) {
+        this.plan.containers = this.plan.containers || { sources: [], sinks: [], spawns: [] };
+        this.plan.containers.sinks = this.plan.containers.sinks || [];
+        const existing = this.plan.containers.sinks.find(c => c.x === x && c.y === y);
+        if (!existing) {
+            this.plan.containers.sinks.push({ x, y });
+        }
+    }
+
+    public addSpawnContainer(x: number, y: number) {
+        this.plan.containers = this.plan.containers || { sources: [], sinks: [], spawns: [] };
+        this.plan.containers.spawns = this.plan.containers.spawns || [];
+        const existing = this.plan.containers.spawns.find(c => c.x === x && c.y === y);
+        if (!existing) {
+            this.plan.containers.spawns.push({ x, y });
+        }
     }
 }

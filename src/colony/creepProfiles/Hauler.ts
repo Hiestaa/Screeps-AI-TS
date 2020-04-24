@@ -15,9 +15,4 @@ export class Hauler extends BaseCreepProfile {
         this.bodyParts.push(MOVE);
         this.level += 1;
     }
-
-    public decrementLevel(): void {
-        this.level -= 1;
-        this.bodyParts = this.bodyParts.slice(0, -2);
-    }
 }

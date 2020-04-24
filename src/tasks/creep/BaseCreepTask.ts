@@ -24,6 +24,7 @@ export abstract class BaseCreepTask extends BaseTask<Creep, CreepController> {
         return {
             type: this.type,
             executionStarted: this.executionStarted,
+            executionPaused: this.executionPaused,
         };
     }
 

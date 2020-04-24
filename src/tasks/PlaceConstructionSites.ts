@@ -13,8 +13,8 @@ const logger = getLogger("tasks.PlaceConstructionSites", COLORS.tasks);
  * TODO: have this task take the layout as param, or other more dynamic form of building mechanism
  */
 export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
-    private scheduledBuildUnits: IBuildUnit[] = [];
-    private buildUnitsInProgress: IBuildUnit[] = [];
+    public scheduledBuildUnits: IBuildUnit[] = [];
+    public buildUnitsInProgress: IBuildUnit[] = [];
     public executionPeriod = 10;
 
     constructor(scheduledBuildUnits: IBuildUnit[], buildUnitsInProgress?: IBuildUnit[]) {
@@ -95,6 +95,7 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
         return {
             type: "TASK_PLACE_CONSTRUCTION_SITES",
             executionStarted: this.executionStarted,
+            executionPaused: this.executionPaused,
             scheduledBuildUnits: this.scheduledBuildUnits,
             buildUnitsInProgress: this.buildUnitsInProgress,
         };

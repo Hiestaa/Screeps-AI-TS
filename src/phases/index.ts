@@ -23,6 +23,9 @@ function initialize() {
     if (!Memory.rooms) {
         Memory.rooms = {};
     }
+    if (!Memory.roomPlans) {
+        Memory.roomPlans = {};
+    }
     for (const room in Game.rooms) {
         if (Game.rooms.hasOwnProperty(room)) {
             if (!Memory.rooms[room]) {
@@ -30,6 +33,9 @@ function initialize() {
                     tasks: [],
                     idleTime: 0,
                     controllerLevel: 0,
+                };
+                Memory.roomPlans[room] = {
+                    containers: { sinks: [], sources: [], spawns: [] },
                 };
             }
         }

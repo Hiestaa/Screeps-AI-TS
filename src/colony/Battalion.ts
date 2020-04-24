@@ -3,9 +3,12 @@ import { RoomAgent } from "agents/RoomAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
 import { BaseObjective, IdleObjective } from "objectives/BaseObjective";
 import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
+import { ContainersExtensionsRefill } from "objectives/KeepContainersExtensionsFull";
+import { MaintainBuildings } from "objectives/MaintainBuildings";
 import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
 import { COLORS, getLogger } from "utils/Logger";
+import { RoomPlanner } from "./RoomPlanner";
 
 const logger = getLogger("colony.Battalion", COLORS.colony);
 
@@ -15,14 +18,14 @@ const logger = getLogger("colony.Battalion", COLORS.colony);
 export class Battalion {
     public creeps: CreepAgent[] = [];
     public spawn: SpawnAgent;
-    public room: RoomAgent;
+    public roomPlanner: RoomPlanner;
     public objective: BaseObjective;
     public memory: BattalionMemory;
     public name: keyof ColonyBattalionsMemory;
 
-    constructor(name: keyof ColonyBattalionsMemory, spawn: SpawnAgent, room: RoomAgent) {
+    constructor(name: keyof ColonyBattalionsMemory, spawn: SpawnAgent, roomPlanner: RoomPlanner) {
         this.spawn = spawn;
-        this.room = room;
+        this.roomPlanner = roomPlanner;
         this.name = name;
 
         this.memory = Memory.battalions[name] || {
@@ -34,7 +37,7 @@ export class Battalion {
         this.objective = this.reloadObjective();
     }
 
-    private reloadObjective() {
+    private reloadObjective(): BaseObjective {
         const objectiveMemory = this.memory.objective;
 
         switch (objectiveMemory.name) {
@@ -47,8 +50,12 @@ export class Battalion {
                     this.name,
                     (objectiveMemory as ContinuousHarvestingMemory).miningSpotsPerSource,
                 );
+            case "KEEP_CONT_EXT_FULL":
+                return new ContainersExtensionsRefill(this.name);
             case "IDLE":
                 return new IdleObjective(this.name);
+            case "MAINTAIN_BUILDINGS":
+                return new MaintainBuildings(this.name);
         }
     }
 
@@ -70,7 +77,7 @@ export class Battalion {
      * Spawn and room agents are not executed as multiple battalion may be referencing the same spawn and room.
      */
     public execute() {
-        this.objective.execute(this.creeps, this.room, this.spawn);
+        this.objective.execute(this.creeps, this.roomPlanner, this.spawn);
 
         for (const creep of this.creeps) {
             creep.execute();
@@ -90,7 +97,7 @@ export class Battalion {
             acc[r.memory.profile] = (acc[r.memory.profile] || 0) + 1;
             return acc;
         }, {} as { [key in CREEP_PROFILE]: number });
-        const desired = this.objective.estimateRequiredWorkForce(this.room);
+        const desired = this.objective.estimateRequiredWorkForce(this.roomPlanner);
         const desiredCount = desired.reduce((acc, r) => {
             acc[r.creepProfile] = (acc[r.creepProfile] || 0) + r.count;
             return acc;

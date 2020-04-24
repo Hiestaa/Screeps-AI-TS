@@ -31,6 +31,12 @@ export class Harvest extends BaseCreepTask {
             .on(ERR_NOT_IN_RANGE, () => {
                 creepCtl.moveTo(source).logFailure();
             })
+            .on(ERR_NOT_ENOUGH_RESOURCES, () => {
+                logger.warning(
+                    `Source: ${source} depleted - pausing harvesting for ${source.ticksToRegeneration} ticks.`,
+                );
+                this.pause(source.ticksToRegeneration);
+            })
             .logFailure();
     }
 

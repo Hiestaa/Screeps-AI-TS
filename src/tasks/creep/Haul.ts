@@ -10,11 +10,13 @@ const logger = getLogger("tasks.creep.Haul", COLORS.tasks);
  */
 export class Haul extends BaseCreepTask {
     private deliveryTargets: DeliveryTarget[];
+    private excludedPositions: Array<{ x: number; y: number }>;
     private noMoreTarget: boolean = false;
 
-    constructor(deliveryTargets: DeliveryTarget[]) {
+    constructor(deliveryTargets: DeliveryTarget[], excludedPositions?: Array<{ x: number; y: number }>) {
         super("TASK_HAUL");
         this.deliveryTargets = deliveryTargets;
+        this.excludedPositions = excludedPositions || [];
     }
 
     public canBeExecuted(creepCtl: CreepController) {
@@ -57,25 +59,31 @@ export class Haul extends BaseCreepTask {
     }
 
     private findTargets(creepCtl: CreepController, target: DeliveryTarget): Structure[] {
+        const excPosFilter = ({ pos }: { pos: RoomPosition }) => {
+            return !this.excludedPositions.includes({ x: pos.x, y: pos.x });
+        };
+
         switch (target) {
             case STRUCTURE_SPAWN:
                 return creepCtl.creep.room.find(FIND_MY_SPAWNS, {
-                    filter: spawn => spawn.energy < spawn.energyCapacity,
+                    filter: spawn => spawn.energy < spawn.energyCapacity && excPosFilter(spawn),
                 });
             case STRUCTURE_CONTROLLER:
                 const controller = creepCtl.creep.room.controller;
-                return controller ? [controller] : [];
+                return controller && excPosFilter(controller) ? [controller] : [];
             case STRUCTURE_CONTAINER:
                 return creepCtl.creep.room.find(FIND_STRUCTURES, {
                     filter: structure =>
                         structure.structureType === STRUCTURE_CONTAINER &&
-                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
+                        excPosFilter(structure),
                 });
             case STRUCTURE_EXTENSION:
                 return creepCtl.creep.room.find(FIND_STRUCTURES, {
                     filter: structure =>
                         structure.structureType === STRUCTURE_EXTENSION &&
-                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
+                        excPosFilter(structure),
                 });
         }
     }
@@ -119,7 +127,11 @@ export class Haul extends BaseCreepTask {
 
     public toJSON(): HaulTaskMemory {
         const json = super.toJSON();
-        const memory: HaulTaskMemory = { deliveryTargets: this.deliveryTargets, ...json };
+        const memory: HaulTaskMemory = {
+            deliveryTargets: this.deliveryTargets,
+            excludedPositions: this.excludedPositions,
+            ...json,
+        };
         return memory;
     }
 }

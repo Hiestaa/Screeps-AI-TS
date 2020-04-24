@@ -8,6 +8,7 @@ declare interface IBuildUnit {
 
 interface BaseTaskMemory {
     executionStarted: boolean;
+    executionPaused: number;
 }
 
 type CREEP_PROFILE = "GeneralPurpose" | "Harvester" | "Hauler" | "Worker";
@@ -21,9 +22,17 @@ interface SpawnRequest {
 interface SpawnTaskMemory extends BaseTaskMemory {
     type: "TASK_SPAWN";
     requests: SpawnRequest[];
+    spawnDelay: number;
 }
 
-type CREEP_TASK = "TASK_HARVEST" | "TASK_HAUL" | "TASK_BUILD" | "TASK_HARVEST_NON_STOP" | "TASK_FETCH";
+type CREEP_TASK =
+    | "TASK_HARVEST"
+    | "TASK_HAUL"
+    | "TASK_BUILD"
+    | "TASK_HARVEST_NON_STOP"
+    | "TASK_FETCH"
+    | "TASK_REPAIR"
+    | "TASK_UPGRADE_CONTROLLER";
 
 interface CreepTaskMemory extends BaseTaskMemory {
     type: CREEP_TASK;
@@ -31,6 +40,11 @@ interface CreepTaskMemory extends BaseTaskMemory {
 
 interface HaulTaskMemory extends CreepTaskMemory {
     deliveryTargets: DeliveryTarget[];
+    excludedPositions: Array<{ x: number; y: number }>;
+}
+
+interface FetchTaskMemory extends CreepTaskMemory {
+    excludedPositions: Array<{ x: number; y: number }>;
 }
 
 interface BuildTaskMemory extends CreepTaskMemory {
@@ -75,7 +89,13 @@ interface RoomMemory extends BaseMemory {
     controllerLevel: number;
 }
 
-type ObjectiveType = "REACH_RCL2" | "REACH_RCL3" | "IDLE" | "CONTINUOUS_HARVESTING";
+type ObjectiveType =
+    | "REACH_RCL2"
+    | "REACH_RCL3"
+    | "IDLE"
+    | "CONTINUOUS_HARVESTING"
+    | "KEEP_CONT_EXT_FULL"
+    | "MAINTAIN_BUILDINGS";
 
 interface ObjectiveMemory {
     name: ObjectiveType;
@@ -96,6 +116,14 @@ interface ColonyBattalionsMemory {
     harvesters?: BattalionMemory;
 }
 
+interface RoomPlanMemory {
+    containers?: {
+        sources: Array<{ x: number; y: number }>;
+        sinks: Array<{ x: number; y: number }>;
+        spawns: Array<{ x: number; y: number }>;
+    };
+}
+
 interface Memory {
     Memory: any;
     [x: string]: any;
@@ -105,6 +133,7 @@ interface Memory {
     nameCount: [number, number, number];
     roomObjectives: { [key: string]: ObjectiveMemory };
     battalions: ColonyBattalionsMemory;
+    roomPlans: { [key: string]: RoomPlanMemory };
 }
 
 declare interface RoomPosition {
