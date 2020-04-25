@@ -59,6 +59,21 @@ const TESTS: Array<{
     },
     {
         layout: `
+     S
+     C
+
+
+     C`,
+        anchor: "S",
+        anchorPosition: { x: 0, y: 0 },
+        rendered: [
+            { x: 0, y: 0, structureType: "spawn" },
+            { x: 0, y: 1, structureType: "container" },
+            { x: 0, y: 4, structureType: "container" },
+        ],
+    },
+    {
+        layout: `
      SCC
      CCC`,
         anchor: "S",

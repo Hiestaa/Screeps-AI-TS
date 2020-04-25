@@ -128,7 +128,7 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
                     opacity: 0.1,
                 });
             } else {
-                roomVisual.rect(buildUnit.x, buildUnit.y, 0.4, 0.4, {
+                roomVisual.rect(buildUnit.x - 0.2, buildUnit.y - 0.2, 0.4, 0.4, {
                     fill: COLOR,
                     opacity: 0.2,
                 });
