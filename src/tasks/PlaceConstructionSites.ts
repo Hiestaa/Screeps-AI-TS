@@ -104,4 +104,36 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
     public getType(): "TASK_PLACE_CONSTRUCTION_SITES" {
         return "TASK_PLACE_CONSTRUCTION_SITES";
     }
+
+    public visualize(roomName: string) {
+        const COLOR = "orange";
+        let prevBuildUnit = null;
+        for (const buildUnit of this.scheduledBuildUnits) {
+            const roomVisual = new RoomVisual(roomName);
+            if (
+                prevBuildUnit !== null &&
+                (prevBuildUnit.structureType === STRUCTURE_ROAD || buildUnit.structureType === STRUCTURE_ROAD)
+            ) {
+                roomVisual.line(prevBuildUnit.x, prevBuildUnit.y, buildUnit.x, buildUnit.y, {
+                    color: COLOR,
+                    width: 0.15,
+                    lineStyle: "dotted",
+                    opacity: 0.1,
+                });
+            }
+            if (buildUnit.structureType === STRUCTURE_ROAD) {
+                roomVisual.circle(buildUnit.x, buildUnit.y, {
+                    radius: 0.1,
+                    fill: COLOR,
+                    opacity: 0.1,
+                });
+            } else {
+                roomVisual.rect(buildUnit.x, buildUnit.y, 0.4, 0.4, {
+                    fill: COLOR,
+                    opacity: 0.2,
+                });
+            }
+            prevBuildUnit = buildUnit;
+        }
+    }
 }

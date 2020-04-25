@@ -181,13 +181,16 @@ export class RoomPlanner {
     private createExitRamparts() {
         const exits = this.room.roomController?.room.find(FIND_EXIT);
         const ramparts = (exits || []).map(exit => AvailableSpotsFinder.estimateAvailableSpots(this.room, exit));
-        this.room.scheduleTask(
-            new PlaceConstructionSites(
-                ([] as Array<{ x: number; y: number }>).concat
-                    .apply([], ramparts)
-                    .map(({ x, y }) => ({ x, y, structureType: STRUCTURE_RAMPART })),
-            ),
-        );
+
+        const sites: IBuildUnit[] = [];
+        for (const _ramparts of ramparts) {
+            for (const pos of _ramparts) {
+                if (!sites.find(item => item.x === pos.x && item.y === pos.y)) {
+                    sites.push({ x: pos.x, y: pos.y, structureType: STRUCTURE_RAMPART });
+                }
+            }
+        }
+        this.room.scheduleTask(new PlaceConstructionSites(sites));
     }
 }
 

@@ -112,7 +112,7 @@ export class Battalion {
                 const requestCount = profileDesiredCount - profilePendingCount - profileCreepCount;
                 logger.info(
                     `${this}: requesting spawn of ${requestCount} creeps ` +
-                        `(desired: ${profileCreepCount}, existing:${profilePendingCount}, pending: ${profileDesiredCount})`,
+                        `(desired: ${profileDesiredCount}, existing:${profileCreepCount}, pending: ${profilePendingCount})`,
                 );
                 this.spawn.requestSpawn(this.name, requestCount, profile);
             }

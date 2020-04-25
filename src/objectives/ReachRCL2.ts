@@ -13,7 +13,6 @@ export class ReachRCL2 extends BaseObjective {
     public name: ObjectiveType = "REACH_RCL2";
 
     public execute(creepAgents: CreepAgent[], roomPlanner: RoomPlanner, spawn: SpawnAgent) {
-        const sources = roomPlanner.room.roomController?.room.find(FIND_SOURCES_ACTIVE);
         for (const creepAgent of creepAgents) {
             logger.debug(`${this}: ensuring ${creepAgent} has all creep tasks scheduled`);
             if (!creepAgent.taskQueue.length) {

@@ -19,6 +19,19 @@ export class RoomAgent extends BaseAgent<Room, RoomController, PlaceConstruction
         }
     }
 
+    public execute() {
+        super.execute();
+        const roomName = this.roomController?.room.name;
+        if (!roomName) {
+            return;
+        }
+        for (const task of this.taskQueue) {
+            if (task.getType() === "TASK_PLACE_CONSTRUCTION_SITES") {
+                task.visualize(roomName);
+            }
+        }
+    }
+
     /**
      * Indicates whether the controller level changed at the beginning of this turn.
      * @return the new controller level, or undefined if it hasn't changed.
