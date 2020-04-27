@@ -37,11 +37,9 @@ export class RoomPlanner {
     private planNextLevel(controllerLevel: number) {
         this.createSpawnFortress(controllerLevel);
         if (controllerLevel >= 2) {
-            this.createSinkAndSourceContainers();
-        }
-        if (controllerLevel >= 2) {
-            this.createRoadsBetweenContainers();
             this.createExitRamparts();
+            this.createSinkAndSourceContainers();
+            this.createRoadsBetweenContainers();
         }
     }
 
@@ -180,7 +178,9 @@ export class RoomPlanner {
      */
     private createExitRamparts() {
         const exits = this.room.roomController?.room.find(FIND_EXIT);
-        const ramparts = (exits || []).map(exit => AvailableSpotsFinder.estimateAvailableSpots(this.room, exit));
+        const ramparts = (exits || []).map(exit =>
+            AvailableSpotsFinder.estimateAvailableSpots(this.room, exit, [], { min: 2, max: 3 }),
+        );
 
         const sites: IBuildUnit[] = [];
         for (const _ramparts of ramparts) {
@@ -243,6 +243,7 @@ export class AvailableSpotsFinder {
         room: RoomAgent,
         pos: RoomPosition,
         hostiles?: Array<{ pos: RoomPosition }>,
+        range: { min: number; max: number } = { min: 0, max: 2 },
     ): Array<{ x: number; y: number }> {
         if (
             hostiles &&
@@ -252,7 +253,13 @@ export class AvailableSpotsFinder {
             return [];
         }
 
-        const surroundings = room.roomController?.room.lookAtArea(pos.y - 1, pos.x - 1, pos.y + 1, pos.x + 1, true);
+        const surroundings = room.roomController?.room.lookAtArea(
+            pos.y - (range.max - 1),
+            pos.x - (range.max - 1),
+            pos.y + (range.max - 1),
+            pos.x + (range.max - 1),
+            true,
+        );
         if (!surroundings) {
             return [];
         }
@@ -266,6 +273,9 @@ export class AvailableSpotsFinder {
             if (item.type === "terrain" && item.terrain === "wall") {
                 available[sign] = false;
             }
+            if (Math.abs(item.x - pos.x) < range.min && Math.abs(item.y - pos.y) < range.min) {
+                available[sign] = false;
+            }
             if (item.type === "creep" && !item.creep?.my) {
                 return []; // avoid enemy creep...
             }
@@ -275,6 +285,7 @@ export class AvailableSpotsFinder {
         return Object.keys(available)
             .filter(k => available[k])
             .map(k => k.split(",").map(n => parseInt(n, 10)))
+            .filter(([x, y]) => Math.abs(x - pos.x) >= range.min || Math.abs(y - pos.y) >= range.min)
             .map(([x, y]) => ({ x, y }));
     }
 }

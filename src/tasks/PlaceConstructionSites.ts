@@ -65,6 +65,14 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
                         )}: RCL is not enough. Removing from build list.`,
                     );
                 })
+                .on(ERR_INVALID_ARGS, () => {
+                    logger.warning(
+                        `Unable to place ${this.renderUnitStr(
+                            roomCtl,
+                            unit,
+                        )}: Invalid arguments. Removing from build list.`,
+                    );
+                })
                 .failure(() => {
                     failedBuildUnits.push(unit!); // can't be undefined we just called while() on it
                 })
