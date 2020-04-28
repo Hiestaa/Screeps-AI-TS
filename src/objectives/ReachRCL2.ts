@@ -4,6 +4,7 @@ import { RoomPlanner } from "colony/RoomPlanner";
 import { Build } from "tasks/creep/Build";
 import { Harvest } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
+import { Repair } from "tasks/creep/Repair";
 import { COLORS, getLogger } from "utils/Logger";
 import { BaseObjective } from "./BaseObjective";
 
@@ -21,9 +22,11 @@ export class ReachRCL2 extends BaseObjective {
                     creepAgent.scheduleTask(new Harvest(source.id));
                 }
                 creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN]));
+                creepAgent.scheduleTask(new Repair());
                 creepAgent.scheduleTask(
                     new Build([STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_RAMPART, STRUCTURE_TOWER]),
                 );
+                creepAgent.scheduleTask(new Repair());
                 creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_CONTROLLER, STRUCTURE_CONTAINER]));
             }
         }
