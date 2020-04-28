@@ -27,6 +27,8 @@ export class RoomPlanner {
             this.planNextLevel(controllerLevel);
         }
         this.room.execute();
+        // TODO: add a `maintain` function that make sure none of the construction sites in the current room plan
+        // have been destroyed due to decay or enemy attacks
     }
 
     /**

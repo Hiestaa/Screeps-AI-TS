@@ -1,6 +1,6 @@
 import { SpawnAgent } from "agents/SpawnAgent";
 import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
-import { ContainersExtensionsRefill } from "objectives/KeepContainersExtensionsFull";
+import { KeepContainersExtensionsFull } from "objectives/KeepContainersExtensionsFull";
 import { MaintainBuildings } from "objectives/MaintainBuildings";
 import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
@@ -82,7 +82,10 @@ export class Colony {
             }
             if (!this.battalions.haulers) {
                 this.battalions.haulers = new Battalion("haulers", spawn, this.roomPlanner);
-                this.battalions.haulers.objective = new ContainersExtensionsRefill("haulers");
+                this.battalions.haulers.objective = new KeepContainersExtensionsFull("haulers");
+            }
+
+            if (!this.battalions.defenders) {
             }
         }
 
