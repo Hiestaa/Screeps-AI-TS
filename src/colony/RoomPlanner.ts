@@ -48,9 +48,6 @@ export class RoomPlanner {
      * @param controllerLevel new controller level
      */
     private createSpawnFortress(controllerLevel: number) {
-        if (this.room.hasTaskScheduled("TASK_PLACE_CONSTRUCTION_SITES")) {
-            return;
-        }
         for (const spawnName in this.spawns) {
             if (!this.spawns.hasOwnProperty(spawnName)) {
                 continue;

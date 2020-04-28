@@ -11,7 +11,7 @@ export class GeneralPurpose extends BaseCreepProfile {
     }
 
     private nextPartForLevel(level: number) {
-        if ([0, 3, 6, 8].includes(level % 10)) {
+        if ([3, 6, 8].includes(level % 10)) {
             return CARRY;
         } else if ([1, 4, 7, 9].includes(level % 10)) {
             return WORK;

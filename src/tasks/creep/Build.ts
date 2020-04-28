@@ -11,6 +11,7 @@ const logger = getLogger("tasks.creep.Build", COLORS.tasks);
 export class Build extends BaseCreepTask {
     // when on, task is complete - only useful during the current turn, saving in task memory is not needed
     private noMoreTarget: boolean = false;
+    private earlyInterruption: boolean = false;
     private buildPriority: STRUCTURE_X[];
 
     /**
@@ -43,6 +44,19 @@ export class Build extends BaseCreepTask {
         }
         creepCtl
             .build(targets[0])
+            .on(OK, () => {
+                // rampart get built with a single hit point - need to repair it fully
+                // before starting the build of another site otherwise it'll decay right away
+                if (targets[0].structureType === STRUCTURE_RAMPART) {
+                    logger.debug(
+                        `${creepCtl}: Constructed rampart ${targets[0]}. ` +
+                            `Interrupting build task to proceed with the repair.`,
+                    );
+                    this.earlyInterruption = true;
+                } else {
+                    this.buildTargets(creepCtl, targets.slice(1), attempt + 1);
+                }
+            })
             .on(ERR_NOT_IN_RANGE, () => {
                 creepCtl.moveTo(targets[0]).logFailure();
             })
@@ -52,7 +66,14 @@ export class Build extends BaseCreepTask {
             })
             .on(ERR_INVALID_TARGET, () => {
                 logger.debug(`${creepCtl}: Attempt #${attempt}: target ${targets[0]} is fully built.`);
-                this.buildTargets(creepCtl, targets.slice(1), attempt + 1);
+                // rampart get built with a single hit point - need to repair it fully
+                // before starting the build of another site otherwise it'll decay right away
+                if (targets[0].structureType === STRUCTURE_RAMPART) {
+                    logger.debug(`Interrupting build task to proceed with the repair.`);
+                    this.earlyInterruption = true;
+                } else {
+                    this.buildTargets(creepCtl, targets.slice(1), attempt + 1);
+                }
             })
             .on(ERR_NOT_ENOUGH_RESOURCES, () => {
                 logger.debug(`${creepCtl}: No more energy - task is completed.`);
@@ -100,7 +121,7 @@ export class Build extends BaseCreepTask {
     }
 
     public completed(creepCtl: CreepController) {
-        return this.noMoreTarget || creepCtl.creep.store.getUsedCapacity() === 0;
+        return this.noMoreTarget || this.earlyInterruption || creepCtl.creep.store.getUsedCapacity() === 0;
     }
 
     public toJSON(): BuildTaskMemory {

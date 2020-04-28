@@ -68,6 +68,7 @@ export class Colony {
         if (!this.battalions.allPurposeReserve) {
             logger.info(`All Purpose Reserve battalion not found in ${this}. Initializing.`);
             this.battalions.allPurposeReserve = new Battalion("allPurposeReserve", spawn, this.roomPlanner);
+            this.battalions.allPurposeReserve.objective = new ReachRCL2("allPurposeReserve");
         }
 
         const level = this.roomPlanner.room.roomController?.room.controller?.level;
@@ -83,10 +84,11 @@ export class Colony {
                 this.battalions.haulers = new Battalion("haulers", spawn, this.roomPlanner);
                 this.battalions.haulers.objective = new ContainersExtensionsRefill("haulers");
             }
-            if (!this.battalions.builders) {
-                this.battalions.builders = new Battalion("builders", spawn, this.roomPlanner);
-                this.battalions.builders.objective = new MaintainBuildings("builders");
-            }
+        }
+
+        if (!this.battalions.builders) {
+            this.battalions.builders = new Battalion("builders", spawn, this.roomPlanner);
+            this.battalions.builders.objective = new MaintainBuildings("builders");
         }
     }
 

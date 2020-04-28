@@ -47,7 +47,9 @@ export class MaintainBuildings extends BaseObjective {
     }
 
     public estimateRequiredWorkForce(room: RoomPlanner): SpawnRequest[] {
+        const level = room.room.roomController?.room.controller?.level;
         // TODO: make it a function of the number of containers and extensions?
-        return [{ count: 6, battalion: this.battalionId, creepProfile: "Worker" }];
+        const count = level === 1 ? 3 : 6;
+        return [{ count, battalion: this.battalionId, creepProfile: "Worker" }];
     }
 }

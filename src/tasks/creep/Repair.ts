@@ -25,7 +25,8 @@ export class Repair extends BaseCreepTask {
     public execute(creepCtl: CreepController) {
         const target = creepCtl.creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
             filter: Structure => Structure.hits < Structure.hitsMax,
-        }); // TODO: filter the ones that are full (if that makes sense)
+        });
+
         if (!target) {
             logger.debug(`No damaged building the current creep room`);
             this.noMoreTarget = true;
