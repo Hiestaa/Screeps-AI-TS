@@ -1,5 +1,3 @@
-// example declaration file - remove these and add your own custom typings
-
 declare interface IBuildUnit {
     structureType: BuildableStructureConstant;
     x: number;
@@ -11,7 +9,7 @@ interface BaseTaskMemory {
     executionPaused: number;
 }
 
-type CREEP_PROFILE = "GeneralPurpose" | "Harvester" | "Hauler" | "Worker";
+type CREEP_PROFILE = "GeneralPurpose" | "Harvester" | "Hauler" | "Worker" | "M-Attacker" | "R-Attacker" | "Healer";
 
 interface SpawnRequest {
     count: number;
@@ -95,7 +93,8 @@ type ObjectiveType =
     | "IDLE"
     | "CONTINUOUS_HARVESTING"
     | "KEEP_CONT_EXT_FULL"
-    | "MAINTAIN_BUILDINGS";
+    | "MAINTAIN_BUILDINGS"
+    | "DEFEND_COLONY";
 
 interface ObjectiveMemory {
     name: ObjectiveType;
@@ -114,6 +113,8 @@ interface ColonyBattalionsMemory {
     builders?: BattalionMemory;
     haulers?: BattalionMemory;
     harvesters?: BattalionMemory;
+    attackers?: BattalionMemory;
+    defenders?: BattalionMemory;
 }
 
 interface RoomPlanMemory {

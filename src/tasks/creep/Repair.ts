@@ -23,28 +23,46 @@ export class Repair extends BaseCreepTask {
     }
 
     public execute(creepCtl: CreepController) {
-        const target = creepCtl.creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-            filter: Structure => Structure.hits < Structure.hitsMax,
-        });
+        const target = this.getTarget(creepCtl);
 
-        if (!target) {
+        if (target !== null) {
+            creepCtl
+                .repair(target)
+                .on(ERR_NOT_IN_RANGE, () => {
+                    creepCtl.moveTo(target).logFailure();
+                })
+                .on(ERR_INVALID_TARGET, () => {
+                    logger.debug(`${creepCtl}: target ${target} is fully repaired.`);
+                })
+                .on(ERR_NOT_ENOUGH_RESOURCES, () => {
+                    logger.debug(`${creepCtl}: No more energy - task is completed.`);
+                })
+                .logFailure();
+        } else {
             logger.debug(`No damaged building the current creep room`);
+
             this.noMoreTarget = true;
             return;
         }
+    }
 
-        creepCtl
-            .repair(target)
-            .on(ERR_NOT_IN_RANGE, () => {
-                creepCtl.moveTo(target).logFailure();
-            })
-            .on(ERR_INVALID_TARGET, () => {
-                logger.debug(`${creepCtl}: target ${target} is fully repaired.`);
-            })
-            .on(ERR_NOT_ENOUGH_RESOURCES, () => {
-                logger.debug(`${creepCtl}: No more energy - task is completed.`);
-            })
-            .logFailure();
+    private getTarget(creepCtl: CreepController) {
+        const decayGranularity = 10;
+        let target = creepCtl.creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+            filter: Structure => Structure.hits < 100,
+        });
+        if (target) {
+            return target;
+        }
+        for (let index = 0; index < decayGranularity; index++) {
+            target = creepCtl.creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+                filter: Structure => Structure.hits < (index / decayGranularity) * Structure.hitsMax,
+            });
+            if (target) {
+                return target;
+            }
+        }
+        return null;
     }
 
     public completed(creepCtl: CreepController) {

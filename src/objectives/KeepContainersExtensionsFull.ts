@@ -5,13 +5,13 @@ import { Haul } from "tasks/creep/Haul";
 import { COLORS, getLogger } from "utils/Logger";
 import { BaseObjective } from "./BaseObjective";
 
-const logger = getLogger("objectives.ContainersExtensionsRefill", COLORS.objectives);
+const logger = getLogger("objectives.KeepContainersExtensionsFull", COLORS.objectives);
 
 /**
  * Creeps executing this objective will be maintained on task to keep extensions (primarily)
  * and sink containers using energy fetched from source containers or dropped resources
  */
-export class ContainersExtensionsRefill extends BaseObjective {
+export class KeepContainersExtensionsFull extends BaseObjective {
     public name: ObjectiveType = "KEEP_CONT_EXT_FULL";
 
     public execute(creepAgents: CreepAgent[], room: RoomPlanner) {

@@ -3,7 +3,7 @@ import { RoomAgent } from "agents/RoomAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
 import { BaseObjective, IdleObjective } from "objectives/BaseObjective";
 import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
-import { ContainersExtensionsRefill } from "objectives/KeepContainersExtensionsFull";
+import { KeepContainersExtensionsFull } from "objectives/KeepContainersExtensionsFull";
 import { MaintainBuildings } from "objectives/MaintainBuildings";
 import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
@@ -51,7 +51,7 @@ export class Battalion {
                     (objectiveMemory as ContinuousHarvestingMemory).miningSpotsPerSource,
                 );
             case "KEEP_CONT_EXT_FULL":
-                return new ContainersExtensionsRefill(this.name);
+                return new KeepContainersExtensionsFull(this.name);
             case "IDLE":
                 return new IdleObjective(this.name);
             case "MAINTAIN_BUILDINGS":
