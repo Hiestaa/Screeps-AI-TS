@@ -24,16 +24,20 @@ export class Heal extends BaseCreepTask {
 
     public execute(creepCtl: CreepController) {
         const target = this.pickTargetToHeal(creepCtl);
-
         if (!target) {
             return;
         }
 
         if (creepCtl.creep.pos.getRangeTo(target) > 1) {
-            return creepCtl.rangedHeal(target).on(OK, () => {
-                // does this take priority over rangedHeal? If yes, creep will never actually heal at range
-                creepCtl.moveTo(target).logFailure();
-            });
+            return creepCtl
+                .rangedHeal(target)
+                .on(OK, () => {
+                    // does this take priority over rangedHeal? If yes, creep will never actually heal at range
+                    creepCtl.moveTo(target).logFailure();
+                })
+                .on(ERR_NOT_IN_RANGE, () => {
+                    creepCtl.moveTo(target).logFailure();
+                });
         }
 
         return creepCtl
@@ -48,7 +52,7 @@ export class Heal extends BaseCreepTask {
         let currentTarget = null;
         if (this.currentTarget) {
             currentTarget = Game.getObjectById(this.currentTarget) as Creep;
-            if (currentTarget.hits < currentTarget.hitsMax) {
+            if (currentTarget && currentTarget.hits < currentTarget.hitsMax) {
                 return currentTarget;
             }
         }
@@ -69,7 +73,8 @@ export class Heal extends BaseCreepTask {
             creepCtl.moveTo(currentTarget).logFailure();
         }
 
-        logger.warning(`${creepCtl}: No target to heal or to follow - nothing to do.`);
+        // TODO: pause for a few cycles before completing the task.
+        logger.debug(`${creepCtl}: No target to heal or to follow - nothing to do.`);
         this.noMoreTarget = true;
         return null;
     }

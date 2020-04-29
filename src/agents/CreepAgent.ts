@@ -43,8 +43,8 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
     protected createTaskInstance(taskMemory: CreepTaskMemory): BaseCreepTask {
         switch (taskMemory.type) {
             case "TASK_HAUL":
-                const mem = taskMemory as HaulTaskMemory;
-                return new Haul(mem.deliveryTargets, mem.excludedPositions);
+                const healMem = taskMemory as HaulTaskMemory;
+                return new Haul(healMem.deliveryTargets, healMem.excludedPositions);
             case "TASK_HARVEST":
                 return new Harvest((taskMemory as HarvestTaskMemory).sourceId);
             case "TASK_HARVEST_NON_STOP":
@@ -64,7 +64,8 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
             case "TASK_RANGED_ATTACK":
                 return new RangedAttack((taskMemory as AttackTaskMemory).target);
             case "TASK_REACH":
-                return new Reach((taskMemory as ReachTaskMemory).destination);
+                const reachMem = taskMemory as ReachTaskMemory;
+                return new Reach(reachMem.destination, reachMem.noPath, reachMem.destinationReached);
         }
     }
 

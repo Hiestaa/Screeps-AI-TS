@@ -19,7 +19,7 @@ interface SpawnRequest {
 
 interface SpawnTaskMemory extends BaseTaskMemory {
     type: "TASK_SPAWN";
-    requests: SpawnRequest[];
+    request: SpawnRequest;
     spawnDelay: number;
 }
 
@@ -67,6 +67,8 @@ interface AttackTaskMemory extends CreepTaskMemory {
 
 interface ReachTaskMemory extends CreepTaskMemory {
     destination: { x: number; y: number };
+    destinationReached: number;
+    noPath: number;
 }
 
 type ROOM_TASK = "TASK_PLACE_CONSTRUCTION_SITES";

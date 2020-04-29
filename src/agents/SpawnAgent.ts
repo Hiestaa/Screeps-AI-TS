@@ -5,6 +5,19 @@ import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("controllers.agents.SpawnAgent", COLORS.controllers);
 
+// Priority levels, lower will be spawned first.
+// TODO: this should probably change depending on the context
+// when we're low on defense during an attack, not focusing on war effort might wipe us out
+const PROFILE_PRIORITIES: { [key in CREEP_PROFILE]: number } = {
+    GeneralPurpose: 0,
+    Harvester: 1,
+    Hauler: 2,
+    Worker: 3,
+    Healer: 4,
+    "R-Attacker": 5,
+    "M-Attacker": 6,
+};
+
 export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, SpawnTask, SpawnMemory> {
     public spawnController?: SpawnController;
     public newSpawnRequests: SpawnRequest[] = [];
@@ -29,7 +42,7 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
     }
 
     protected createTaskInstance(taskMemory: SpawnTaskMemory): SpawnTask {
-        return new SpawnTask(taskMemory.requests, taskMemory.spawnDelay);
+        return new SpawnTask(taskMemory.request, taskMemory.spawnDelay);
     }
 
     public requestSpawn(battalion: string, count: number, profile: CREEP_PROFILE) {
@@ -37,10 +50,19 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
     }
 
     public execute() {
-        if (this.newSpawnRequests.length > 0) {
-            this.scheduleTask(new SpawnTask(this.newSpawnRequests.slice()));
+        for (const request of this.newSpawnRequests) {
+            this.scheduleTask(new SpawnTask(request));
         }
+        this.newSpawnRequests = [];
+
+        this.reorderSpawnTasks();
         super.execute();
+    }
+
+    private reorderSpawnTasks() {
+        this.taskQueue = this.taskQueue.sort(
+            (a, b) => PROFILE_PRIORITIES[a.request.creepProfile] - PROFILE_PRIORITIES[b.request.creepProfile],
+        );
     }
 
     protected commitToMemory(memory: SpawnMemory) {
@@ -50,10 +72,8 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
     public pendingSpawnRequests(battalion: string) {
         const requests = this.newSpawnRequests.filter(({ battalion: battalionId }) => battalionId === battalion);
         for (const task of this.taskQueue) {
-            for (const request of task.requests) {
-                if (request.battalion === battalion) {
-                    requests.push(request);
-                }
+            if (task.request.battalion === battalion) {
+                requests.push(task.request);
             }
         }
         return requests;

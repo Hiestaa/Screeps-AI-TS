@@ -7,6 +7,8 @@ const logger = getLogger("tasks.creep.Attack", COLORS.tasks);
 
 /**
  * Simple attack task - attack the designated target until the target or the controlled creep is dead
+ * TODO: add support for attack priority, so the creep can dynamically switch from a lower priority attack to a higher priority task when scheduled
+ * Should this be available as a base class mechanism?
  */
 export class Attack extends BaseCreepTask {
     public target: string;

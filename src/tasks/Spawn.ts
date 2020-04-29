@@ -12,38 +12,34 @@ const MAX_SPAWN_DELAY = 100;
  * TODO: take battalion id as parameter for spawn task and assign the battalion in creep memory when spawning it
  */
 export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
-    public requests: SpawnRequest[];
+    public request: SpawnRequest;
     public executionPeriod = 10;
     private spawnDelay = 0;
 
-    constructor(requests: SpawnRequest[], spawnDelay: number = 0) {
+    constructor(request: SpawnRequest, spawnDelay: number = 0) {
         super();
-        this.requests = requests;
+        this.request = request;
         this.spawnDelay = spawnDelay;
     }
 
     public execute(spawnCtl: SpawnController) {
-        if (this.requests.length === 0) {
+        if (!this.request) {
             return;
         }
-        const currentRequest = this.requests[0];
-        if (currentRequest.count === 0) {
+        if (this.request.count === 0) {
             logger.debug(`${spawnCtl}: Not spawning any creep - all requested creeps have been spawned.`);
-            this.requests.shift();
-            this.execute(spawnCtl);
             return;
         }
         if (this.spawnDelay > (MAX_SPAWN_DELAY / this.executionPeriod) * 2) {
             logger.warning(`${spawnCtl}: Discarding spawn request after delay of ${this.spawnDelay}.`);
-            this.requests.shift();
             this.spawnDelay = 0;
-            this.execute(spawnCtl);
+            this.request.count = 0;
             return;
         }
 
-        const name = gun((currentRequest.creepProfile || "Harvest").slice(0, 4));
+        const name = gun(this.request.creepProfile.slice(0, 4));
         const energyStructures = this.getEnergyStructures(spawnCtl);
-        const bodyParts = this.maxCreepProfile(energyStructures, currentRequest.creepProfile);
+        const bodyParts = this.maxCreepProfile(energyStructures, this.request.creepProfile);
         if (!bodyParts) {
             return;
         }
@@ -51,17 +47,14 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
             .spawnCreep(bodyParts, name, {
                 energyStructures,
                 memory: {
-                    battalion: currentRequest.battalion,
+                    battalion: this.request.battalion,
                     tasks: [],
                     idleTime: 0,
-                    profile: currentRequest.creepProfile,
+                    profile: this.request.creepProfile,
                 },
             })
             .on(OK, () => {
-                currentRequest.count -= 1;
-                if (currentRequest.count === 0) {
-                    this.requests.shift();
-                }
+                this.request.count -= 1;
             })
             .on(ERR_NOT_ENOUGH_ENERGY, () => logger.warning("Not enough energy to produce creep"))
             .logFailure();
@@ -100,7 +93,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
             logger.info(
                 `Unable to spawn '${profileWithMaxPotentialEnergy}' ${suffix} (forced delay ${
                     this.spawnDelay
-                }/${maxSpawnDelay * 2}.`,
+                }/${maxSpawnDelay * 2}).`,
             );
             this.spawnDelay += 1;
             return;
@@ -145,12 +138,12 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     }
 
     public completed() {
-        return this.requests.length === 0;
+        return this.request.count === 0;
     }
 
     public toJSON(): TaskMemory {
         return {
-            requests: this.requests,
+            request: this.request,
             spawnDelay: this.spawnDelay,
             type: "TASK_SPAWN",
             executionStarted: this.executionStarted,

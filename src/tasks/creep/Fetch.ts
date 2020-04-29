@@ -4,6 +4,8 @@ import { COLORS, getLogger } from "utils/Logger";
 import { BaseCreepTask } from "./BaseCreepTask";
 
 const logger = getLogger("tasks.creep.Fetch", COLORS.tasks);
+const MAX_RANGE_HOSTILE = 8;
+
 /**
  * The fetch task will control the creep to retrieve energy from the closest
  * available drop / container / source in that order.
@@ -24,7 +26,7 @@ export class Fetch extends BaseCreepTask {
         const excPosFilter = ({ pos }: { pos: RoomPosition }) => {
             return (
                 !this.excludedPositions.includes({ x: pos.x, y: pos.x }) &&
-                hostiles.every(hostile => hostile.pos.getRangeTo(pos) > 5)
+                hostiles.every(hostile => hostile.pos.getRangeTo(pos) > MAX_RANGE_HOSTILE)
             );
         };
 
@@ -43,7 +45,10 @@ export class Fetch extends BaseCreepTask {
         }
 
         const droppedResource = creep.creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
-            filter: item => item.resourceType === RESOURCE_ENERGY && item.amount > creep.creep.store.getFreeCapacity(),
+            filter: item =>
+                item.resourceType === RESOURCE_ENERGY &&
+                item.amount > creep.creep.store.getFreeCapacity() &&
+                excPosFilter(item),
         });
         if (droppedResource) {
             logger.debug(`${creep}: picking up ${droppedResource}`);
@@ -62,13 +67,13 @@ export class Fetch extends BaseCreepTask {
         }
 
         if (creep.creep.memory.profile !== "Hauler") {
-            const source = creep.creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
+            const source = creep.creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE, { filter: excPosFilter });
             if (source) {
                 logger.debug(`${creep}: picking up ${source}`);
                 return this.moveToIfFail(creep, creep.harvest(source), source);
             }
         } else {
-            logger.warning(`${creep}: no available energy deposit to fetch from - pausing for 10 cycles.`);
+            logger.debug(`${creep}: no available energy deposit to fetch from - pausing for 10 cycles.`);
             this.pause(10);
         }
     }
