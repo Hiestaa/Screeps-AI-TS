@@ -1,5 +1,6 @@
 import { SpawnAgent } from "agents/SpawnAgent";
 import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
+import { DefendColony } from "objectives/DefendColony";
 import { KeepContainersExtensionsFull } from "objectives/KeepContainersExtensionsFull";
 import { MaintainBuildings } from "objectives/MaintainBuildings";
 import { ReachRCL2 } from "objectives/ReachRCL2";
@@ -86,6 +87,8 @@ export class Colony {
             }
 
             if (!this.battalions.defenders) {
+                this.battalions.defenders = new Battalion('defenders', spawn, this.roomPlanner);
+                this.battalions.defenders.objective = new DefendColony('defenders');
             }
         }
 

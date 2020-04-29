@@ -5,8 +5,7 @@ import { COLORS, getLogger } from "utils/Logger";
 const logger = getLogger("tasks.creep.Build", COLORS.tasks);
 
 /**
- * Simple Haul task - go Haul resources to the first available spawn
- * @param creepController controller for the creep that will perform this task
+ * Build task - go build to closest available construction site.
  */
 export class Build extends BaseCreepTask {
     // when on, task is complete - only useful during the current turn, saving in task memory is not needed
@@ -50,7 +49,7 @@ export class Build extends BaseCreepTask {
                 if (targets[0].structureType === STRUCTURE_RAMPART) {
                     logger.debug(
                         `${creepCtl}: Constructed rampart ${targets[0]}. ` +
-                            `Interrupting build task to proceed with the repair.`,
+                        `Interrupting build task to proceed with the repair.`,
                     );
                     this.earlyInterruption = true;
                 } else {

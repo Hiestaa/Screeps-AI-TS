@@ -1,17 +1,13 @@
 import { CreepAgent } from "agents/CreepAgent";
 import { RoomPlanner } from "colony/RoomPlanner";
-import { Build } from "tasks/creep/Build";
-import { Fetch } from "tasks/creep/Fetch";
-import { Haul } from "tasks/creep/Haul";
-import { Repair } from "tasks/creep/Repair";
-import { UpgradeController } from "tasks/creep/UpgradeController";
+import { Attack, RangedAttack } from "tasks/creep/Attack";
+import { Heal } from "tasks/creep/Heal";
 import { COLORS, getLogger } from "utils/Logger";
 import { BaseObjective } from "./BaseObjective";
-import { CONTROLLER_DOWNGRADE_TIMER_LEVEL } from "./ReachRCL3";
 
 const logger = getLogger("objectives.DefendColony", COLORS.objectives);
 
-const NB_HEALERS = 4;
+const NB_HEALERS = 5;
 const NB_MELEE = 4;
 const NB_RANGED = 6;
 const NB_TOTAL = NB_HEALERS + NB_MELEE + NB_RANGED;
@@ -34,26 +30,47 @@ export class DefendColony extends BaseObjective {
     public execute(creepAgents: CreepAgent[], room: RoomPlanner) {
         logger.debug(`Executing ${this}`);
 
-        const availableAgents = creepAgents.filter(agent => agent.taskQueue.length === 0);
+        // healers are always healing those who need it
+        for (const creep of creepAgents) {
+            if (creep.profile === 'Healer' && creep.taskQueue.length === 0) {
+                creep.scheduleTask(new Heal());
+            }
+        }
+        // TODO: self-defense tasks?
+
+        // don't schedule any new attack until we have a fully formed battalion
+        if (creepAgents.length < NB_TOTAL) {
+            logger.info(
+                `Waiting for requested battalion to be fully formed (${creepAgents.length}/${NB_TOTAL} creeps)`,
+            );
+            return;
+        }
+
+        const availableCreeps = creepAgents.filter(creep => creep.taskQueue.length === 0);
+
         for (const FIND_C of FIND_HOSTILES) {
             const hostiles = room.room.roomController?.room.find(FIND_C);
             if (hostiles && hostiles.length > 0) {
-                if (availableAgents.length < NB_TOTAL) {
-                    logger.info(
-                        `Waiting for requested battalion to be fully formed (${creepAgents.length}/${NB_TOTAL} creeps)`,
-                    );
-                    return;
+                for (const creep of availableCreeps) {
+                    if (creep.profile === 'R-Attacker') {
+                        creep.scheduleTask(new RangedAttack(hostiles[0].id));
+                    }
+                    else if (creep.profile === 'M-Attacker') {
+                        creep.scheduleTask(new Attack(hostiles[0].id));
+                    }
                 }
 
-                for (const creep of creepAgents) {
-                    // TODO: schedule attack, ranged attack or heal on the creep
-                }
+                break;
             }
-        })
+        }
     }
 
     public estimateRequiredWorkForce(room: RoomPlanner): SpawnRequest[] {
         // TODO: make it a function of the number of hostiles?
-        return [{ count: NB_MELEE, battalion: this.battalionId, creepProfile: "Attacker" }];
+        return [
+            { count: NB_HEALERS, battalion: this.battalionId, creepProfile: "Healer" },
+            { count: NB_MELEE, battalion: this.battalionId, creepProfile: "M-Attacker" },
+            { count: NB_RANGED, battalion: this.battalionId, creepProfile: "R-Attacker" }
+        ];
     }
 }

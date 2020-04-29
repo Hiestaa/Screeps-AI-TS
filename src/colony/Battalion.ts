@@ -1,8 +1,8 @@
 import { CreepAgent } from "agents/CreepAgent";
-import { RoomAgent } from "agents/RoomAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
 import { BaseObjective, IdleObjective } from "objectives/BaseObjective";
 import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
+import { DefendColony } from "objectives/DefendColony";
 import { KeepContainersExtensionsFull } from "objectives/KeepContainersExtensionsFull";
 import { MaintainBuildings } from "objectives/MaintainBuildings";
 import { ReachRCL2 } from "objectives/ReachRCL2";
@@ -56,6 +56,8 @@ export class Battalion {
                 return new IdleObjective(this.name);
             case "MAINTAIN_BUILDINGS":
                 return new MaintainBuildings(this.name);
+            case "DEFEND_COLONY":
+                return new DefendColony(this.name);
         }
     }
 
@@ -112,7 +114,7 @@ export class Battalion {
                 const requestCount = profileDesiredCount - profilePendingCount - profileCreepCount;
                 logger.info(
                     `${this}: requesting spawn of ${requestCount} creeps ` +
-                        `(desired: ${profileDesiredCount}, existing:${profileCreepCount}, pending: ${profilePendingCount})`,
+                    `(desired: ${profileDesiredCount}, existing:${profileCreepCount}, pending: ${profilePendingCount})`,
                 );
                 this.spawn.requestSpawn(this.name, requestCount, profile);
             }

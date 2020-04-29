@@ -5,8 +5,7 @@ import { COLORS, getLogger } from "utils/Logger";
 const logger = getLogger("tasks.creep.Haul", COLORS.tasks);
 
 /**
- * Simple Haul task - go Haul resources to the first available spawn
- * @param creepController controller for the creep that will perform this task
+ * Simple Haul task - go Haul resources to the first available delivery target with priority order.
  */
 export class Haul extends BaseCreepTask {
     private deliveryTargets: DeliveryTarget[];

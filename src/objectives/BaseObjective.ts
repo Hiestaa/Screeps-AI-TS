@@ -25,9 +25,9 @@ export interface IObjective {
 export abstract class BaseObjective implements IObjective {
     public abstract name: ObjectiveType;
     protected memory?: ObjectiveMemory;
-    public battalionId: string;
+    public battalionId: keyof ColonyBattalionsMemory;
 
-    constructor(battalionId: string) {
+    constructor(battalionId: keyof ColonyBattalionsMemory) {
         this.battalionId = battalionId;
     }
 

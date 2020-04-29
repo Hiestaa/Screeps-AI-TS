@@ -5,7 +5,7 @@ import { BaseCreepProfile } from "./BaseCreepProfile";
  * The warrior should be set to one of the three main types: melee attacker, ranged attacker or healer.
  * The type is defined by the body part given to the constructor.
  */
-export class Worker extends BaseCreepProfile {
+export class Warrior extends BaseCreepProfile {
     private mainBodyPart: ATTACK | RANGED_ATTACK | HEAL;
 
     constructor(mainBodyPart: ATTACK | RANGED_ATTACK | HEAL) {

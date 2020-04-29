@@ -6,7 +6,6 @@ const logger = getLogger("tasks.creep.Repair", COLORS.tasks);
 
 /**
  * Simple Haul task - go Haul resources to the first available spawn
- * @param creepController controller for the creep that will perform this task
  */
 export class Repair extends BaseCreepTask {
     // when on, task is complete - only useful during the current turn, saving in task memory is not needed
@@ -47,16 +46,16 @@ export class Repair extends BaseCreepTask {
     }
 
     private getTarget(creepCtl: CreepController) {
-        const decayGranularity = 10;
         let target = creepCtl.creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-            filter: Structure => Structure.hits < 100,
+            filter: structure => structure.hits < 100,
         });
         if (target) {
             return target;
         }
+        const decayGranularity = 10;
         for (let index = 0; index < decayGranularity; index++) {
             target = creepCtl.creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-                filter: Structure => Structure.hits < (index / decayGranularity) * Structure.hitsMax,
+                filter: structure => structure.hits < (index / decayGranularity) * structure.hitsMax,
             });
             if (target) {
                 return target;

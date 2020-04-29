@@ -5,8 +5,7 @@ import { COLORS, getLogger } from "utils/Logger";
 const logger = getLogger("tasks.creep.UpgradeController", COLORS.tasks);
 
 /**
- * Simple Haul task - go Haul resources to the first available spawn
- * @param creepController controller for the creep that will perform this task
+ * UpgradeController task - go upgrade the controller of the current room until carried energy is depleted
  */
 export class UpgradeController extends BaseCreepTask {
     public noMoreTarget: boolean = false;

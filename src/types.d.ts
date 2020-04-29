@@ -30,7 +30,10 @@ type CREEP_TASK =
     | "TASK_HARVEST_NON_STOP"
     | "TASK_FETCH"
     | "TASK_REPAIR"
-    | "TASK_UPGRADE_CONTROLLER";
+    | "TASK_UPGRADE_CONTROLLER"
+    | "TASK_HEAL"
+    | "TASK_ATTACK"
+    | "TASK_RANGED_ATTACK"
 
 interface CreepTaskMemory extends BaseTaskMemory {
     type: CREEP_TASK;
@@ -51,6 +54,14 @@ interface BuildTaskMemory extends CreepTaskMemory {
 
 interface HarvestTaskMemory extends CreepTaskMemory {
     sourceId: string;
+}
+
+interface HealTaskMemory extends CreepTaskMemory {
+    currentTarget?: string;
+}
+
+interface AttackTaskMemory extends CreepTaskMemory {
+    target: string;
 }
 
 type ROOM_TASK = "TASK_PLACE_CONSTRUCTION_SITES";

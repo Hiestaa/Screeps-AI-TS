@@ -1,9 +1,11 @@
 import { CreepController } from "agents/controllers/CreepController";
+import { Attack, RangedAttack } from "tasks/creep/Attack";
 import { BaseCreepTask } from "tasks/creep/BaseCreepTask";
 import { Build } from "tasks/creep/Build";
 import { Fetch } from "tasks/creep/Fetch";
 import { Harvest, HarvestNonStop } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
+import { Heal } from "tasks/creep/Heal";
 import { Repair } from "tasks/creep/Repair";
 import { UpgradeController } from "tasks/creep/UpgradeController";
 import { COLORS, getLogger } from "utils/Logger";
@@ -13,9 +15,11 @@ const logger = getLogger("controllers.agents.CreepAgent", COLORS.controllers);
 
 export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask, CreepMemory> {
     public creepController?: CreepController;
+    public profile: CREEP_PROFILE;
 
     constructor(name: string) {
         super(name, Memory.creeps, logger);
+        this.profile = this.memory.profile;
     }
 
     protected reloadControllers() {
@@ -52,6 +56,12 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
                 return new Repair();
             case "TASK_UPGRADE_CONTROLLER":
                 return new UpgradeController();
+            case "TASK_HEAL":
+                return new Heal((taskMemory as HealTaskMemory).currentTarget);
+            case "TASK_ATTACK":
+                return new Attack((taskMemory as AttackTaskMemory).target);
+            case "TASK_RANGED_ATTACK":
+                return new RangedAttack((taskMemory as AttackTaskMemory).target);
         }
     }
 

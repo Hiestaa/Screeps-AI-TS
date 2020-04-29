@@ -47,8 +47,12 @@ export class CreepController extends BaseController<Creep> {
         }
     }
 
-    // public attack(target: Creep | PowerCreep | Structure<StructureConstant>): ReturnCodeSwitcher<CreepActionReturnCode> {};
-    // public attackController(target: StructureController): ReturnCodeSwitcher<CreepActionReturnCode> {};
+    public attack(target: Creep | PowerCreep | Structure<StructureConstant>): ReturnCodeSwitcher<CreepActionReturnCode> {
+        return this.doSwitch<CreepActionReturnCode>(this.creep.attack(target), 'attack');
+    };
+    public attackController(target: StructureController): ReturnCodeSwitcher<CreepActionReturnCode> {
+        return this.doSwitch<CreepActionReturnCode>(this.creep.attackController(target), 'attackController');
+    };
     public build(
         target: ConstructionSite<BuildableStructureConstant>,
     ): ReturnCodeSwitcher<0 | -1 | -4 | -6 | -7 | -9 | -11 | -12 | -14> {
@@ -63,7 +67,9 @@ export class CreepController extends BaseController<Creep> {
     ): ReturnCodeSwitcher<0 | -1 | -4 | -5 | -6 | -7 | -9 | -11 | -12> {
         return this.doSwitch<0 | -1 | -4 | -5 | -6 | -7 | -9 | -11 | -12>(this.creep.harvest(target), "harvest");
     }
-    // public heal(target: AnyCreep): ReturnCodeSwitcher<CreepActionReturnCode> {};
+    public heal(target: AnyCreep): ReturnCodeSwitcher<CreepActionReturnCode> {
+        return this.doSwitch<CreepActionReturnCode>(this.creep.heal(target), 'heal');
+    };
     // public move{ (direction: DirectionConstant): CreepMoveReturnCode; (target: Creep): 0 | -1 | -4 | -9 | -10 };
     // public moveByPath(path: string | PathStep[] | RoomPosition[]): ReturnCodeSwitcher<0 | -1 | -4 | -5 | -10 | -11 | -12> {};
     // public notifyWhenAttacked(enabled: boolean): ReturnCodeSwitcher<0 | -1 | -4 | -10> {};
@@ -71,9 +77,17 @@ export class CreepController extends BaseController<Creep> {
         return this.doSwitch<0 | -1 | -4 | -7 | -8 | -9 | -11 | -12>(this.creep.pickup(target), "pickup");
     }
     // public pull(target: Creep): ReturnCodeSwitcher<0 | -1 | -4 | -7 | -9 | -12> {};
-    // public rangedAttack(target: Creep | PowerCreep | Structure<StructureConstant>): ReturnCodeSwitcher<CreepActionReturnCode> {};
-    // public rangedHeal(target: AnyCreep): ReturnCodeSwitcher<CreepActionReturnCode> {};
-    // public rangedMassAttack(): ReturnCodeSwitcher<0 | -1 | -4 | -12> {};
+    public rangedAttack(target: Creep | PowerCreep | Structure<StructureConstant>): ReturnCodeSwitcher<CreepActionReturnCode> {
+        return this.doSwitch<CreepActionReturnCode>(this.creep.rangedAttack(target), 'rangedAttack');
+
+    };
+    public rangedHeal(target: AnyCreep): ReturnCodeSwitcher<CreepActionReturnCode> {
+        return this.doSwitch<CreepActionReturnCode>(this.creep.rangedHeal(target), 'rangedHeal');
+    };
+    public rangedMassAttack(): ReturnCodeSwitcher<0 | -1 | -4 | -12> {
+        return this.doSwitch<0 | -1 | -4 | -12>(this.creep.rangedMassAttack(), 'rangedMassAttack');
+
+    };
     public repair(target: Structure<StructureConstant>): ReturnCodeSwitcher<0 | -1 | -4 | -6 | -7 | -9 | -11 | -12> {
         return this.doSwitch<0 | -1 | -4 | -6 | -7 | -9 | -11 | -12>(this.creep.repair(target), "repair");
     }

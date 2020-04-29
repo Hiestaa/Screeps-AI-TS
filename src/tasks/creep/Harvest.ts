@@ -5,13 +5,12 @@ import { COLORS, getLogger } from "utils/Logger";
 const logger = getLogger("tasks.creep.Harvest", COLORS.tasks);
 
 /**
- * Simple harvest task - go harvest from the first source available.
- * @param creepController controller for the creep that will perform this task
+ * Simple harvest task - go harvest from the nearest source available.
  */
 export class Harvest extends BaseCreepTask {
     public sourceId: string;
 
-    constructor(sourceId: string, type?: CREEP_TASK) {
+    constructor(sourceId: string, type?: "TASK_HARVEST_NON_STOP") {
         super(type || "TASK_HARVEST");
         this.sourceId = sourceId;
     }
@@ -50,13 +49,13 @@ export class Harvest extends BaseCreepTask {
             }
         }
 
-        const sources = creepCtl.creep.room.find(FIND_SOURCES);
-        if (sources.length <= 0) {
+        const source2 = creepCtl.creep.pos.findClosestByRange(FIND_SOURCES);
+        if (!source2) {
             logger.warning("No source available in the current creep room");
             return;
         }
 
-        return sources[0];
+        return source2;
     }
 
     public toJSON(): HarvestTaskMemory {

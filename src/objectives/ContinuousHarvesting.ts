@@ -15,7 +15,7 @@ export class ContinuousHarvesting extends BaseObjective {
     public miningSpotsPerSource: { [key: string]: number };
     public totalMiningSpots = 0;
 
-    constructor(battalionId: string, miningSpotsPerSource: { [key: string]: number }) {
+    constructor(battalionId: keyof ColonyBattalionsMemory, miningSpotsPerSource: { [key: string]: number }) {
         super(battalionId);
         this.miningSpotsPerSource = miningSpotsPerSource;
         this.totalMiningSpots = 0;
