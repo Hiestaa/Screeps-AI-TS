@@ -18,8 +18,14 @@ export class Fetch extends BaseCreepTask {
 
     public execute(creep: CreepController): void {
         // TODO[OPTIMIZATION]: remember assigned target in memory to save on computation
+        const hostiles = creep.creep.room.find(FIND_HOSTILE_CREEPS);
+
+        // avoid any excluded position and any hostile creep
         const excPosFilter = ({ pos }: { pos: RoomPosition }) => {
-            return !this.excludedPositions.includes({ x: pos.x, y: pos.x });
+            return (
+                !this.excludedPositions.includes({ x: pos.x, y: pos.x }) &&
+                hostiles.every(hostile => hostile.pos.getRangeTo(pos) > 5)
+            );
         };
 
         const tombstone = creep.creep.pos.findClosestByRange(FIND_TOMBSTONES, {

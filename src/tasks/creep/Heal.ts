@@ -11,6 +11,7 @@ const logger = getLogger("tasks.creep.Heal", COLORS.tasks);
  */
 export class Heal extends BaseCreepTask {
     public currentTarget: string | undefined;
+    public noMoreTarget: boolean = false;
 
     constructor(currentTarget?: string) {
         super("TASK_HEAL");
@@ -29,12 +30,10 @@ export class Heal extends BaseCreepTask {
         }
 
         if (creepCtl.creep.pos.getRangeTo(target) > 1) {
-            return creepCtl
-                .rangedHeal(target)
-                .on(OK, () => {
-                    // does this take priority over rangedHeal? If yes, creep will never actually heal at range
-                    creepCtl.moveTo(target).logFailure();
-                })
+            return creepCtl.rangedHeal(target).on(OK, () => {
+                // does this take priority over rangedHeal? If yes, creep will never actually heal at range
+                creepCtl.moveTo(target).logFailure();
+            });
         }
 
         return creepCtl
@@ -71,6 +70,7 @@ export class Heal extends BaseCreepTask {
         }
 
         logger.warning(`${creepCtl}: No target to heal or to follow - nothing to do.`);
+        this.noMoreTarget = true;
         return null;
     }
 
@@ -81,10 +81,10 @@ export class Heal extends BaseCreepTask {
     }
 
     public completed(creepCtl: CreepController) {
-        return false;
+        return this.noMoreTarget;
     }
 
     public description() {
-        return "⛏️";
+        return "💊";
     }
 }

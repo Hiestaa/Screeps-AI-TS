@@ -49,11 +49,9 @@ export class Build extends BaseCreepTask {
                 if (targets[0].structureType === STRUCTURE_RAMPART) {
                     logger.debug(
                         `${creepCtl}: Constructed rampart ${targets[0]}. ` +
-                        `Interrupting build task to proceed with the repair.`,
+                            `Interrupting build task to proceed with the repair.`,
                     );
                     this.earlyInterruption = true;
-                } else {
-                    this.buildTargets(creepCtl, targets.slice(1), attempt + 1);
                 }
             })
             .on(ERR_NOT_IN_RANGE, () => {

@@ -28,7 +28,16 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
         }
         const currentRequest = this.requests[0];
         if (currentRequest.count === 0) {
-            logger.debug(`Not spawning any creep - all requested creeps have been spawned.`);
+            logger.debug(`${spawnCtl}: Not spawning any creep - all requested creeps have been spawned.`);
+            this.requests.shift();
+            this.execute(spawnCtl);
+            return;
+        }
+        if (this.spawnDelay > (MAX_SPAWN_DELAY / this.executionPeriod) * 2) {
+            logger.warning(`${spawnCtl}: Discarding spawn request after delay of ${this.spawnDelay}.`);
+            this.requests.shift();
+            this.spawnDelay = 0;
+            this.execute(spawnCtl);
             return;
         }
 
@@ -88,7 +97,12 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
             this.spawnDelay = 0;
             return profileWithMaxPotentialEnergy.bodyParts;
         } else if (initialCost >= energy) {
-            logger.info(`Unable to spawn '${profileWithMaxPotentialEnergy}' ${suffix}.`);
+            logger.info(
+                `Unable to spawn '${profileWithMaxPotentialEnergy}' ${suffix} (forced delay ${
+                    this.spawnDelay
+                }/${maxSpawnDelay * 2}.`,
+            );
+            this.spawnDelay += 1;
             return;
         } else if (this.spawnDelay > maxSpawnDelay) {
             logger.info(`Spawning '${profileWithCurrentEnergy}' after delay of ${this.spawnDelay} cycle ${suffix}.`);

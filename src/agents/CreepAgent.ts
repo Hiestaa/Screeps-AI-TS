@@ -6,6 +6,7 @@ import { Fetch } from "tasks/creep/Fetch";
 import { Harvest, HarvestNonStop } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
 import { Heal } from "tasks/creep/Heal";
+import { Reach } from "tasks/creep/Reach";
 import { Repair } from "tasks/creep/Repair";
 import { UpgradeController } from "tasks/creep/UpgradeController";
 import { COLORS, getLogger } from "utils/Logger";
@@ -62,6 +63,8 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
                 return new Attack((taskMemory as AttackTaskMemory).target);
             case "TASK_RANGED_ATTACK":
                 return new RangedAttack((taskMemory as AttackTaskMemory).target);
+            case "TASK_REACH":
+                return new Reach((taskMemory as ReachTaskMemory).destination);
         }
     }
 

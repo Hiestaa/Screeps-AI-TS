@@ -44,8 +44,11 @@ export class Attack extends BaseCreepTask {
         return null;
     }
 
-    protected attackTarget(creepCtl: CreepController, target: Creep | Structure): ReturnCodeSwitcher<CreepActionReturnCode> {
-        return creepCtl.attack(target)
+    protected attackTarget(
+        creepCtl: CreepController,
+        target: Creep | Structure,
+    ): ReturnCodeSwitcher<CreepActionReturnCode> {
+        return creepCtl.attack(target);
     }
 
     public toJSON(): AttackTaskMemory {
@@ -59,7 +62,7 @@ export class Attack extends BaseCreepTask {
     }
 
     public description() {
-        return "⛏️";
+        return "🗡️";
     }
 }
 
@@ -68,7 +71,14 @@ export class RangedAttack extends Attack {
         super(target, "TASK_RANGED_ATTACK");
     }
 
-    protected attackTarget(creepCtl: CreepController, target: Creep | Structure): ReturnCodeSwitcher<CreepActionReturnCode> {
+    protected attackTarget(
+        creepCtl: CreepController,
+        target: Creep | Structure,
+    ): ReturnCodeSwitcher<CreepActionReturnCode> {
         return creepCtl.rangedAttack(target);
+    }
+
+    public description() {
+        return "🏹";
     }
 }

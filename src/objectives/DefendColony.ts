@@ -2,6 +2,7 @@ import { CreepAgent } from "agents/CreepAgent";
 import { RoomPlanner } from "colony/RoomPlanner";
 import { Attack, RangedAttack } from "tasks/creep/Attack";
 import { Heal } from "tasks/creep/Heal";
+import { Reach } from "tasks/creep/Reach";
 import { COLORS, getLogger } from "utils/Logger";
 import { BaseObjective } from "./BaseObjective";
 
@@ -27,40 +28,65 @@ const FIND_HOSTILES = [
 export class DefendColony extends BaseObjective {
     public name: ObjectiveType = "DEFEND_COLONY";
 
+    constructor(battalionId: keyof ColonyBattalionsMemory) {
+        super(battalionId);
+    }
+
     public execute(creepAgents: CreepAgent[], room: RoomPlanner) {
         logger.debug(`Executing ${this}`);
+        const { defenderGarrison } = room.roomPlan.plan;
 
         // healers are always healing those who need it
         for (const creep of creepAgents) {
-            if (creep.profile === 'Healer' && creep.taskQueue.length === 0) {
+            if (creep.profile === "Healer" && creep.taskQueue.length === 0) {
                 creep.scheduleTask(new Heal());
             }
         }
+
         // TODO: self-defense tasks?
+        const availableAttackers = creepAgents.filter(
+            creep => creep.taskQueue.length === 0 && creep.profile !== "Healer",
+        );
 
         // don't schedule any new attack until we have a fully formed battalion
         if (creepAgents.length < NB_TOTAL) {
-            logger.info(
-                `Waiting for requested battalion to be fully formed (${creepAgents.length}/${NB_TOTAL} creeps)`,
-            );
+            if (Game.time % 10 === 0) {
+                logger.info(
+                    `Waiting for requested battalion to be fully formed (${creepAgents.length}/${NB_TOTAL} creeps)`,
+                );
+            }
+        } else {
+            for (const FIND_C of FIND_HOSTILES) {
+                const hostiles = room.room.roomController?.room.find(FIND_C);
+                if (hostiles && hostiles.length > 0) {
+                    for (const creep of availableAttackers) {
+                        if (creep.profile === "R-Attacker") {
+                            creep.scheduleTask(new RangedAttack(hostiles[0].id));
+                        } else if (creep.profile === "M-Attacker") {
+                            creep.scheduleTask(new Attack(hostiles[0].id));
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        if (!defenderGarrison) {
+            logger.warning("No defender garrison - place a flag named 'Garrison' at the appropriate location");
             return;
         }
 
-        const availableCreeps = creepAgents.filter(creep => creep.taskQueue.length === 0);
-
-        for (const FIND_C of FIND_HOSTILES) {
-            const hostiles = room.room.roomController?.room.find(FIND_C);
-            if (hostiles && hostiles.length > 0) {
-                for (const creep of availableCreeps) {
-                    if (creep.profile === 'R-Attacker') {
-                        creep.scheduleTask(new RangedAttack(hostiles[0].id));
-                    }
-                    else if (creep.profile === 'M-Attacker') {
-                        creep.scheduleTask(new Attack(hostiles[0].id));
-                    }
-                }
-
-                break;
+        // for each creep not currently attacking, reach back to the garrison
+        // TODO: make so that the healers aren't sent back either after we launch an attack
+        for (const creep of creepAgents) {
+            const creepPos = creep.creepController?.creep.pos;
+            if (
+                !creep.taskQueue.find(t => t.type === "TASK_ATTACK" || t.type === "TASK_RANGED_ATTACK") &&
+                creepPos &&
+                creepPos.getRangeTo(defenderGarrison.x, defenderGarrison.y) > 5
+            ) {
+                creep.scheduleTask(new Reach(defenderGarrison));
             }
         }
     }
@@ -70,7 +96,7 @@ export class DefendColony extends BaseObjective {
         return [
             { count: NB_HEALERS, battalion: this.battalionId, creepProfile: "Healer" },
             { count: NB_MELEE, battalion: this.battalionId, creepProfile: "M-Attacker" },
-            { count: NB_RANGED, battalion: this.battalionId, creepProfile: "R-Attacker" }
+            { count: NB_RANGED, battalion: this.battalionId, creepProfile: "R-Attacker" },
         ];
     }
 }

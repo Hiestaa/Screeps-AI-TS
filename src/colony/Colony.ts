@@ -85,16 +85,17 @@ export class Colony {
                 this.battalions.haulers = new Battalion("haulers", spawn, this.roomPlanner);
                 this.battalions.haulers.objective = new KeepContainersExtensionsFull("haulers");
             }
-
-            if (!this.battalions.defenders) {
-                this.battalions.defenders = new Battalion('defenders', spawn, this.roomPlanner);
-                this.battalions.defenders.objective = new DefendColony('defenders');
-            }
         }
 
         if (!this.battalions.builders) {
             this.battalions.builders = new Battalion("builders", spawn, this.roomPlanner);
             this.battalions.builders.objective = new MaintainBuildings("builders");
+        }
+
+        // requesting defenders without extension blocks the spawn - consider waiting until these are built?
+        if (!this.battalions.defenders) {
+            this.battalions.defenders = new Battalion("defenders", spawn, this.roomPlanner);
+            this.battalions.defenders.objective = new DefendColony("defenders");
         }
     }
 

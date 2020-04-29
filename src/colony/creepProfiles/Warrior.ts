@@ -14,7 +14,7 @@ export class Warrior extends BaseCreepProfile {
             [RANGED_ATTACK]: "R-Attacker",
             [HEAL]: "Healer",
         };
-        super(names[mainBodyPart], [MOVE, MOVE]);
+        super(names[mainBodyPart], [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, mainBodyPart]);
         this.mainBodyPart = mainBodyPart;
     }
 

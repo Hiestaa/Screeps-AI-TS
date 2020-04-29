@@ -34,6 +34,7 @@ type CREEP_TASK =
     | "TASK_HEAL"
     | "TASK_ATTACK"
     | "TASK_RANGED_ATTACK"
+    | "TASK_REACH";
 
 interface CreepTaskMemory extends BaseTaskMemory {
     type: CREEP_TASK;
@@ -62,6 +63,10 @@ interface HealTaskMemory extends CreepTaskMemory {
 
 interface AttackTaskMemory extends CreepTaskMemory {
     target: string;
+}
+
+interface ReachTaskMemory extends CreepTaskMemory {
+    destination: { x: number; y: number };
 }
 
 type ROOM_TASK = "TASK_PLACE_CONSTRUCTION_SITES";
@@ -134,6 +139,7 @@ interface RoomPlanMemory {
         sinks: Array<{ x: number; y: number }>;
         spawns: Array<{ x: number; y: number }>;
     };
+    defenderGarrison?: { x: number; y: number };
 }
 
 interface Memory {
