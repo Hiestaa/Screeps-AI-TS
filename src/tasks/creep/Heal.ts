@@ -11,11 +11,13 @@ const logger = getLogger("tasks.creep.Heal", COLORS.tasks);
  */
 export class Heal extends BaseCreepTask {
     public currentTarget: string | undefined;
+    public following: string | undefined;
     public noMoreTarget: boolean = false;
 
-    constructor(currentTarget?: string) {
+    constructor(following?: string, currentTarget?: string) {
         super("TASK_HEAL");
         this.currentTarget = currentTarget;
+        this.following = following;
     }
 
     public canBeExecuted(creepCtl: CreepController) {
@@ -25,6 +27,14 @@ export class Heal extends BaseCreepTask {
     public execute(creepCtl: CreepController) {
         const target = this.pickTargetToHeal(creepCtl);
         if (!target) {
+            this.noMoreTarget = true;
+            if (this.following) {
+                const follow = Game.getObjectById(this.following) as Creep;
+                if (follow) {
+                    this.noMoreTarget = false;
+                    creepCtl.moveTo(follow);
+                }
+            }
             return;
         }
 
@@ -75,13 +85,12 @@ export class Heal extends BaseCreepTask {
 
         // TODO: pause for a few cycles before completing the task.
         logger.debug(`${creepCtl}: No target to heal or to follow - nothing to do.`);
-        this.noMoreTarget = true;
         return null;
     }
 
     public toJSON(): HealTaskMemory {
         const json = super.toJSON();
-        const memory: HealTaskMemory = { currentTarget: this.currentTarget, ...json };
+        const memory: HealTaskMemory = { currentTarget: this.currentTarget, following: this.following, ...json };
         return memory;
     }
 

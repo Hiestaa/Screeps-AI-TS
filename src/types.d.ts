@@ -58,6 +58,7 @@ interface HarvestTaskMemory extends CreepTaskMemory {
 }
 
 interface HealTaskMemory extends CreepTaskMemory {
+    following?: string;
     currentTarget?: string;
 }
 

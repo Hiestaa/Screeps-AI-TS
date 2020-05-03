@@ -28,7 +28,11 @@
     "ecer",
     "eter",
     "eterc",
+    "midx",
+    "midy",
     "nodent",
-    "rece"
+    "rece",
+    "topx",
+    "topy"
   ]
 }

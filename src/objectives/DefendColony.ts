@@ -36,22 +36,27 @@ export class DefendColony extends BaseObjective {
         logger.debug(`Executing ${this}`);
         const { defenderGarrison } = room.roomPlan.plan;
 
-        // healers are always healing those who need it
-        for (const creep of creepAgents) {
-            if (creep.profile === "Healer" && creep.taskQueue.length === 0) {
-                creep.scheduleTask(new Heal());
-            }
-        }
-
-        // TODO: self-defense tasks?
         const availableAttackers = creepAgents.filter(
             creep =>
                 creep.profile !== "Healer" &&
                 !creep.taskQueue.find(t => t.type === "TASK_ATTACK" || t.type === "TASK_RANGED_ATTACK"),
         );
+        const attackers = creepAgents.filter(creep => creep.profile !== "Healer");
+        const attacking = creepAgents.filter(creep =>
+            creep.taskQueue.find(t => t.type === "TASK_ATTACK" || t.type === "TASK_RANGED_ATTACK"),
+        );
+        const leader = attacking.length > 0 ? attacking[0] : attackers.length > 0 ? attackers[0] : undefined;
+
+        // healers are always healing those who need it
+        for (const creep of creepAgents) {
+            if (creep.profile === "Healer" && creep.taskQueue.length === 0) {
+                creep.scheduleTask(new Heal(leader?.creepController?.creep.id || undefined));
+            }
+        }
 
         // don't schedule any new attack until we have a fully formed battalion
         if (creepAgents.length < NB_TOTAL) {
+            // TODO: self-defense tasks?
             if (Game.time % 10 === 0) {
                 logger.info(
                     `Waiting for requested battalion to be fully formed (${creepAgents.length}/${NB_TOTAL} creeps)`,
@@ -63,8 +68,10 @@ export class DefendColony extends BaseObjective {
                 if (hostiles && hostiles.length > 0 && hostiles[0].hits > 0) {
                     for (const creep of availableAttackers) {
                         if (creep.profile === "R-Attacker") {
+                            creep.taskQueue = []; // focus attack - don't wait for completion of another task (e.g. reach)
                             creep.scheduleTask(new RangedAttack(hostiles[0].id));
                         } else if (creep.profile === "M-Attacker") {
+                            creep.taskQueue = []; // focus attack - don't wait for completion of another task (e.g. reach)
                             creep.scheduleTask(new Attack(hostiles[0].id));
                         }
                     }
@@ -72,6 +79,7 @@ export class DefendColony extends BaseObjective {
                     break;
                 }
             }
+            // TODO: healers should follow the pack... How?
         }
 
         if (!defenderGarrison) {
