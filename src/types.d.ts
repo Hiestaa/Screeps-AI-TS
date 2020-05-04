@@ -170,6 +170,8 @@ declare namespace NodeJS {
             log: {
                 [key: string]: (...args: any[]) => string | void;
             };
+            pause: () => void;
+            resume: () => void;
         };
     }
 }

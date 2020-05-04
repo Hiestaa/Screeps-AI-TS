@@ -195,16 +195,16 @@ export class RoomPlanner {
     }
 
     /**
-     * Plan the position of the garrison for defenders
+     * Plan the position of the garrison for defenders following a flag named 'Garrison'
      */
     private planDefenderGarrison() {
-        if (this.roomPlan.plan.defenderGarrison) {
-            return;
+        if (!this.roomPlan.plan.defenderGarrison) {
+            this.roomPlan.plan.defenderGarrison = { x: -1, y: -1 };
         }
-        const location = AvailableSpotsFinder.findSuitableGarrisonSpace(this.room);
-        if (location) {
-            this.roomPlan.addDefenderGarrison(location.x, location.y);
-        }
+        const garrisonFlagTracker = trackedWithFlag('Garrison', COLOR_ORANGE, this.roomPlan.plan.defenderGarrison);
+        const findSuitableGarrisonSpace = garrisonFlagTracker(AvailableSpotsFinder.findSuitableGarrisonSpace);
+
+        findSuitableGarrisonSpace(this.room);
     }
 }
 
@@ -303,80 +303,109 @@ export class AvailableSpotsFinder {
             .map(([x, y]) => ({ x, y }));
     }
 
+    // TODO: find other positions relevant to the whole room that would use the same (or derived) unavailability map
     public static findSuitableGarrisonSpace(room: RoomAgent): { x: number; y: number } | null {
-        logger.info("No defender garrison detected - looking for flag named 'Garrison'");
-        const garrisonFlag = room.roomController?.room.find(FIND_FLAGS, {
-            filter: flag => flag.name === "Garrison",
-        });
-        if (garrisonFlag && garrisonFlag.length > 0) {
-            return { x: garrisonFlag[0].pos.x, y: garrisonFlag[0].pos.y };
+        const roomObj = room.roomController?.room;
+        if (!roomObj) {
+            return null;
         }
-        return null;
 
-        // // TODO: debug
-        // // look at the entire room to determine availability level of each case that is
-        // // 255 for wall terrain or anything 5 squares of enemies
-        // // 1 for swamp
-        // // 2 if close (5 square dist) to an owned structure
-        // const availability: { [key: string]: number } = {};
-        // const unavailableInRange = (rx: number, ry: number, cx: number, cy: number, u: number) => {
-        //     for (let x = 0; x < rx * 2; x++) {
-        //         for (let y = 0; y < ry * 2; y++) {
-        //             const sign2 = `${cx - rx + x},${cy - ry + y}`;
-        //             availability[sign2] = Math.max(availability[sign2], u);
-        //         }
-        //     }
-        // };
-        // const surroundings = room.roomController?.room.lookAtArea(0, 0, 49, 49, true);
+        const STRUCT_IGNORE_DIST = 10
+        const SPACE_HALF_WIDTH = 4;
 
-        // for (const item of surroundings || []) {
-        //     const sign = `${item.x},${item.y}`;
-        //     if (availability[sign] === undefined && item.type === "terrain" && item.terrain === "wall") {
-        //         availability[sign] = 255;
-        //     }
-        //     if (availability[sign] === undefined && item.type === "terrain" && item.terrain === "swamp") {
-        //         availability[sign] = 1;
-        //     }
-        //     if (item.type === "creep" && !item.creep?.my) {
-        //         unavailableInRange(5, 5, item.x, item.y, 255);
-        //     }
-        //     if (item.type === "structure" && ) {
-        //         const ownedStructure = (item.structure as OwnedStructure);
-        //         if (ownedStructure && ownedStructure.owner) {
-        //             unavailableInRange(5, 5, item.x, item.y, ownedStructure.my ? 2 : 255);
+        // look at the entire room to determine unavailability level of each case that is
+        // 255 for wall terrain or anything 5 squares of enemies
+        // 1 for swamp
+        // 2 if close (5 square dist) to an owned structure
+        const unavailability: { [key: string]: number } = {};
+        const unavailableInRange = (rx: number, ry: number, cx: number, cy: number, u: (x: number, y: number) => number) => {
+            for (let x = 0; x < rx * 2; x++) {
+                for (let y = 0; y < ry * 2; y++) {
+                    const sx = cx - rx + x;
+                    const sy = cy - ry + y;
+                    const sign2 = `${sx},${sy}`;
+                    unavailability[sign2] = Math.max(unavailability[sign2] || 0, u(sx, sy));
+                }
+            }
+        };
+        const dist = (x1: number, y1: number, x2: number, y2: number) => {
+            return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2))
+        }
+        const invDistScore = (item: LookAtResultWithPos) => (sx: number, sy: number) => Math.max(0, STRUCT_IGNORE_DIST - dist(sx, sy, item.x, item.y))
+        const surroundings = room.roomController?.room.lookAtArea(0, 0, 49, 49, true);
 
-        //         }
-        //     }
-        // }
+        for (const item of surroundings || []) {
+            const sign = `${item.x},${item.y}`;
+            if (unavailability[sign] === undefined && item.type === "terrain" && item.terrain !== undefined) {
+                unavailability[sign] = { wall: 255, swamp: 1, plain: 0 }[item.terrain];
+            }
+            if (item.type === "creep" && !item.creep?.my) {
+                unavailableInRange(5, 5, item.x, item.y, () => 255);
+            }
+            if (item.type === "structure") {
+                const ownedStructure = (item.structure as OwnedStructure);
+                if (ownedStructure && ownedStructure.owner) {
+                    unavailableInRange(STRUCT_IGNORE_DIST, STRUCT_IGNORE_DIST, item.x, item.y, ownedStructure.my ? invDistScore(item) : () => 255);
 
-        // // then, starting from the middle of the room and spiraling towards the edges,
-        // // slide a 5*5 square and retain the minimum availability sum of the cases under that square
-        // // if 0 is found, pick that square as the garrison
-        // // if the edge of the board is reached, pick the square that had the minimum availability
-        // let bestScore: number | null = null;
-        // let bestPos: {x: number, y: number} | null = null;
-        // for (let x = 5; x < 45; x++) {
-        //     for (let y = 5; y < 45; y++) {
-        //         const midx = 20 + x < 45 ? 20 + x : x - 20;
-        //         const midy = 20 + y < 45 ? 20 + y : y - 20;
-        //         const topx = midx - 2;
-        //         const topy = midy - 2;
-        //         let score = 0;
-        //         for (let x2 = topx; x2 < topx + 5; x2 ++) {
-        //             for (let y2 = topy; y2 < topy + 5; y2 ++) {
-        //                 score += availability[`${x2},${y2}`] || 255;
-        //             }
-        //         }
-        //         if (score === 0) {
-        //             return {x: midx, midy};
-        //         }
-        //         else if (bestScore === null || score < bestScore) {
-        //             bestScore = score;
-        //             bestPos = {x: midx, y: midy};
-        //         }
-        //     }
-        // }
-        // return bestPos;
+                }
+            }
+            if (item.type === 'source') {
+                unavailableInRange(STRUCT_IGNORE_DIST, STRUCT_IGNORE_DIST, item.x, item.y, invDistScore(item));
+
+            }
+        }
+
+        // then, starting from the middle of the room and spiraling towards the edges,
+        // slide a 5*5 square and retain the minimum unavailability sum of the cases under that square
+        // if 0 is found, pick that square as the garrison
+        // if the edge of the board is reached, pick the square that had the minimum unavailability
+        let bestScore: number | null = null;
+        let bestPos: { x: number, y: number } | null = null;
+        for (let cx = 5; cx < 45; cx++) {
+            for (let cy = 5; cy < 45; cy++) {
+                const x = (20 + cx) < 45 ? (20 + cx) : (cx - 20);
+                const y = (20 + cy) < 45 ? (20 + cy) : (cy - 20);
+                let score = 0;
+                for (let x2 = x - SPACE_HALF_WIDTH; x2 < x + SPACE_HALF_WIDTH; x2++) {
+                    for (let y2 = y - SPACE_HALF_WIDTH; y2 < y - SPACE_HALF_WIDTH + 5; y2++) {
+                        score += unavailability[`${x2},${y2}`] || 0;
+                    }
+                }
+
+                // TODO[OPTIMIZATION] Stop early
+                // if (score === 0) {
+                //     return { x, y };
+                // } else
+                if (bestScore === null || score < bestScore) {
+                    bestScore = score;
+                    bestPos = { x, y };
+                    roomObj.visual.text(`${unavailability[`${x},${y}`] || 0} `, x, y - 0.1, {
+                        font: 0.3
+                    });
+
+                    roomObj.visual.text(`${score}`, x, y + 0.3, {
+                        font: 0.3
+                    });
+
+                }
+                else {
+                    // // TODO[OPTIMIZATION] remove room visuals
+                    roomObj.visual.text(`${unavailability[`${x},${y}`] || 0} `, x, y - 0.1, {
+                        font: 0.2,
+                        color: '#999999',
+                    });
+
+                    roomObj.visual.text(`${score}`, x, y + 0.3, {
+                        font: 0.2,
+                        color: '#999999',
+
+                    });
+
+                }
+            }
+        }
+
+        return bestPos;
     }
 }
 
@@ -385,8 +414,12 @@ class RoomPlan {
     public plan: RoomPlanMemory;
     constructor(roomId: string) {
         this.roomId = roomId;
-        this.plan = Memory.roomPlans[this.roomId] || { sources: [], sinks: [], spawns: [] };
+        this.plan = Memory.roomPlans[this.roomId] || this.emptyPlan();
         Memory.roomPlans[this.roomId] = this.plan;
+    }
+
+    private emptyPlan(): RoomPlanMemory {
+        return { containers: { sources: [], sinks: [], spawns: [] }, defenderGarrison: { x: -1, y: -1 } };
     }
 
     public addSourceContainer(x: number, y: number) {
@@ -418,5 +451,54 @@ class RoomPlan {
 
     public addDefenderGarrison(x: number, y: number) {
         this.plan.defenderGarrison = { x, y };
+    }
+}
+
+function findFlag(room: RoomAgent, name: string): Flag | null {
+    const flag = room.roomController?.room.find(FIND_FLAGS, {
+        filter: _flag => _flag.name === name,
+    });
+    if (flag && flag.length > 0) {
+        return flag[0];
+    }
+    return null;
+}
+
+/**
+ * Decorator factory for functions that automatically determine a position
+ * to add the ability to track such position using a specifically named flag.
+ * This allows both to see where the automatic positioning landed, and to modify it manually as needed.
+ * @param name name of the flag to use as tracker
+ * @param color color of the flag (not used for filtering)
+ * @param memoryLoc location of the position stored in memory
+ */
+function trackedWithFlag(name: string, color: ColorConstant, memoryLoc: { x: number, y: number }) {
+    return (fn: (room: RoomAgent) => { x: number, y: number } | null) => {
+        return (room: RoomAgent): { x: number, y: number } | null => {
+            const flag = findFlag(room, name);
+            if (flag && (flag.pos.x !== memoryLoc.x || flag.pos.y !== memoryLoc.y)) {
+                logger.warning(`${name} flag location changed - updating ${name} location to ${flag.pos}.`);
+                memoryLoc.x = flag.pos.x;
+                memoryLoc.y = flag.pos.y;
+                return memoryLoc;
+            }
+
+            if (memoryLoc.x >= 0 && memoryLoc.y >= 0) {
+                return memoryLoc
+            }
+
+            logger.info(`'${name} flag not found - attempt at auto-determining position`);
+            const location = fn(room);
+            if (location) {
+                memoryLoc.x = location.x
+                memoryLoc.y = location.y
+
+                room.roomController?.room.createFlag(location.x, location.y, name, color);
+
+                return memoryLoc;
+            }
+
+            return null;
+        }
     }
 }

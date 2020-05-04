@@ -1,8 +1,13 @@
 import { act } from "./act";
+import { isPaused } from "./pause";
 import { reload } from "./reload";
 import { save } from "./save";
 
 export function mainLoop() {
+    if (isPaused()) {
+        return;
+    }
+
     initialize();
     const colonies = reload();
     act(colonies);

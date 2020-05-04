@@ -1,3 +1,4 @@
+import { pause, resume } from "phases/pause";
 import { disableLevel, disableLogger, enableLevel, enableLogger, listLoggers } from "./Logger";
 
 global.cli = global.cli || {};
@@ -22,3 +23,11 @@ global.cli.log.disableLevel = level => {
 global.cli.log.list = () => {
     listLoggers();
 };
+
+global.cli.pause = () => {
+    pause();
+}
+
+global.cli.resume = () => {
+    resume();
+}
