@@ -92,11 +92,13 @@ export class Colony {
             this.battalions.builders.objective = new MaintainBuildings("builders");
         }
 
-        // requesting defenders without extension blocks the spawn - consider waiting until these are built?
-        // TODO: we really need a state machine...
-        if (!this.battalions.defenders) {
-            this.battalions.defenders = new Battalion("defenders", spawn, this.roomPlanner);
-            this.battalions.defenders.objective = new DefendColony("defenders");
+        if (level && level >= 8) {
+            // requesting defenders without extension blocks the spawn - consider waiting until these are built?
+            // TODO: we really need a state machine...
+            if (!this.battalions.defenders) {
+                this.battalions.defenders = new Battalion("defenders", spawn, this.roomPlanner);
+                this.battalions.defenders.objective = new DefendColony("defenders");
+            }
         }
     }
 

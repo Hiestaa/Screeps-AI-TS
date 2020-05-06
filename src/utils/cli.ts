@@ -1,4 +1,5 @@
 import { pause, resume } from "phases/pause";
+import { query } from "phases/tickTimer";
 import { disableLevel, disableLogger, enableLevel, enableLogger, listLoggers } from "./Logger";
 
 global.cli = global.cli || {};
@@ -26,8 +27,12 @@ global.cli.log.list = () => {
 
 global.cli.pause = () => {
     pause();
-}
+};
 
 global.cli.resume = () => {
     resume();
-}
+};
+
+global.cli.queryTickTimer = () => {
+    query();
+};

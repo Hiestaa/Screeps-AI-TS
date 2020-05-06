@@ -33,6 +33,7 @@ export class Build extends BaseCreepTask {
             this.noMoreTarget = true;
             return;
         }
+
         return this.buildTargets(creepCtl, this.sortTargets(creepCtl, targets));
     }
 
@@ -55,6 +56,17 @@ export class Build extends BaseCreepTask {
                 }
             })
             .on(ERR_NOT_IN_RANGE, () => {
+                const rampartToBuild = creepCtl.creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+                    filter: structure => structure.structureType === "rampart" && structure.hits < structure.hitsMax,
+                });
+                if (rampartToBuild) {
+                    logger.warning(
+                        `${creepCtl}: Interrupting build tasks - rampart ${rampartToBuild} needs construction.`,
+                    );
+                    this.earlyInterruption = true;
+                    return;
+                }
+
                 creepCtl.moveTo(targets[0]).logFailure();
             })
             .on(ERR_RCL_NOT_ENOUGH, () => {

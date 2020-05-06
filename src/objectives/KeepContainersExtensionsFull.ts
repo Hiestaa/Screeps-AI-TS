@@ -27,6 +27,7 @@ export class KeepContainersExtensionsFull extends BaseObjective {
             }
 
             creep.scheduleTask(new Fetch(sinks)); // avoid sinks (but pink any suitable source)
+            // TODO: find a way to avoid delivering to the containing it might just have fetched from
             creep.scheduleTask(new Haul(["spawn", "extension", "container"], sources)); // avoid source (but pink any suitable sink)
         }
     }

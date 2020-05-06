@@ -1,7 +1,9 @@
+import { COLORS, getLogger } from "utils/Logger";
 import { act } from "./act";
 import { isPaused } from "./pause";
 import { reload } from "./reload";
 import { save } from "./save";
+import { measure } from "./tickTimer";
 
 export function mainLoop() {
     if (isPaused()) {
@@ -12,6 +14,8 @@ export function mainLoop() {
     const colonies = reload();
     act(colonies);
     save(colonies);
+
+    measure();
 }
 
 function initialize() {

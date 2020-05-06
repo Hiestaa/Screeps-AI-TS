@@ -2,6 +2,7 @@ import { CreepAgent } from "agents/CreepAgent";
 import { Build } from "tasks/creep/Build";
 import { Fetch } from "tasks/creep/Fetch";
 import { Haul } from "tasks/creep/Haul";
+import { Repair } from "tasks/creep/Repair";
 import { COLORS, getLogger } from "utils/Logger";
 import { ReachRCL2 } from "./ReachRCL2";
 
@@ -28,6 +29,7 @@ export class ReachRCL3 extends ReachRCL2 {
                 creepAgent.scheduleTask(new Fetch());
                 this.assignUpgradeControllerIfNecessary(creepAgent);
                 creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_EXTENSION]));
+                creepAgent.scheduleTask(new Repair());
                 creepAgent.scheduleTask(
                     new Build([STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_RAMPART, STRUCTURE_CONTAINER]),
                 );

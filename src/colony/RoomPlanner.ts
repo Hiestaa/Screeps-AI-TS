@@ -3,6 +3,7 @@ import { SpawnAgent } from "agents/SpawnAgent";
 import { PlaceConstructionSites } from "tasks/PlaceConstructionSites";
 import { gridFortress } from "utils/layouts/gridFortress";
 import { COLORS, getLogger } from "utils/Logger";
+import { ROOM_HEIGHT, ROOM_WIDTH } from "../constants";
 
 const logger = getLogger("colony.RoomPlanner", COLORS.colony);
 
@@ -26,11 +27,40 @@ export class RoomPlanner {
         if (controllerLevel) {
             this.planNextLevel(controllerLevel);
         }
-        this.planDefenderGarrison();
+        const level = this.room.roomController?.room.controller?.level || 0;
+        if (level >= 8) {
+            // TODO: synchronize with the creation of the defender battalion by the colony
+            this.planDefenderGarrison();
+        }
 
         this.room.execute();
+        this.maintenance();
         // TODO: add a `maintain` function that make sure none of the construction sites in the current room plan
         // have been destroyed due to decay or enemy attacks
+    }
+
+    /**
+     * Maintenance of the room plan.
+     * Creeps should already be doing repairs, but in case a building decays completely,
+     * this will notice the lack of construction sites and structure and will create back the missing construction sites
+     */
+    private maintenance() {
+        if (this.room.taskQueue.length > 0) {
+            return; // wait for all construction sites to be placed
+        }
+        if (Game.time % 100 !== 0) {
+            return; // that's a rather expensive process, don't run it every tick
+        }
+
+        const buildUnits = this.roomPlan.getAllPlannedBuildings();
+        const missingBuildUnits: IBuildUnit[] = [];
+        for (const unit of buildUnits) {
+            const look = this.room.roomController?.room.lookAt(unit.x, unit.y);
+            if (!look || !look.find(item => item.type === "structure" || item.type === "constructionSite")) {
+                missingBuildUnits.push(unit);
+            }
+        }
+        this.room.scheduleTask(new PlaceConstructionSites(missingBuildUnits));
     }
 
     /**
@@ -41,9 +71,13 @@ export class RoomPlanner {
     private planNextLevel(controllerLevel: number) {
         this.createSpawnFortress(controllerLevel);
         if (controllerLevel >= 2) {
-            // this.createExitRamparts();
-            // this.createSinkAndSourceContainers();
-            // this.createRoadsBetweenContainers();
+            this.createSinkAndSourceContainers();
+        }
+        if (controllerLevel >= 4) {
+            this.createRoadsBetweenContainers();
+        }
+        if (controllerLevel >= 5) {
+            this.createExitRamparts();
         }
     }
 
@@ -65,6 +99,7 @@ export class RoomPlanner {
                     this.roomPlan.addSinkContainer(container.x, container.y);
                     this.roomPlan.addSpawnContainer(container.x, container.y);
                 }
+                this.roomPlan.updateSpawnFortress(spawnName, buildUnits);
                 this.room.scheduleTask(new PlaceConstructionSites(buildUnits));
             }
         }
@@ -111,20 +146,42 @@ export class RoomPlanner {
      * Place construction sites to link sink and source containers with roads.
      */
     private createRoadsBetweenContainers() {
+        // TODO[OPTIMIZATION]: use an object[`${x},${y}`] to store visited paths
+        let allPaths: Array<{ x: number; y: number }> = [];
+        const addPath = (path: Array<{ x: number; y: number }> | undefined) => {
+            if (path) {
+                allPaths = allPaths
+                    .concat(path)
+                    .concat(path.map(({ x, y }) => ({ x: x + 1, y })))
+                    .concat(path.map(({ x, y }) => ({ x, y: y + 1 })))
+                    .concat(path.map(({ x, y }) => ({ x: x - 1, y })))
+                    .concat(path.map(({ x, y }) => ({ x, y: y - 1 })))
+                    .concat(path.map(({ x, y }) => ({ x: x + 1, y: y + 1 })))
+                    .concat(path.map(({ x, y }) => ({ x: x - 1, y: y - 1 })))
+                    .concat(path.map(({ x, y }) => ({ x: x + 1, y: y - 1 })))
+                    .concat(path.map(({ x, y }) => ({ x: x - 1, y: y + 1 })));
+            }
+        };
         for (const spawn of this.roomPlan.plan.containers?.spawns || []) {
             for (const source of this.roomPlan.plan.containers?.sources || []) {
-                this.buildRoadsBetweenPositions(spawn, source);
+                const path = this.buildRoadsBetweenPositions(spawn, source, allPaths);
+                addPath(path);
             }
             for (const sink of this.roomPlan.plan.containers?.sinks || []) {
                 // spawn is a sink as well :)
                 if (sink.x !== spawn.x && sink.y !== spawn.y) {
-                    this.buildRoadsBetweenPositions(spawn, sink);
+                    const path = this.buildRoadsBetweenPositions(spawn, sink, allPaths);
+                    addPath(path);
                 }
             }
         }
     }
 
-    private buildRoadsBetweenPositions(p1: { x: number; y: number }, p2: { x: number; y: number }) {
+    private buildRoadsBetweenPositions(
+        p1: { x: number; y: number },
+        p2: { x: number; y: number },
+        existingPaths: Array<{ x: number; y: number }>,
+    ) {
         const room = this.room.roomController?.room;
         if (!room) {
             logger.warning("Unable to build roads because room controller is undefined");
@@ -139,8 +196,7 @@ export class RoomPlanner {
             const avoidPositions = ([] as IBuildUnit[]).concat
                 .apply([], pendingConstructionSites)
                 // exclude source and destination
-                .filter(({ x, y }) => (p1.x !== x || p1.y !== y) && (p2.x !== x || p2.y !== y))
-                .map(({ x, y }) => room.getPositionAt(x, y));
+                .filter(({ x, y }) => (p1.x !== x || p1.y !== y) && (p2.x !== x || p2.y !== y));
             const path = room.findPath(rp1, rp2, {
                 ignoreCreeps: true,
                 ignoreRoads: true,
@@ -150,6 +206,11 @@ export class RoomPlanner {
                             costMatrix.set(pos.x, pos.y, 255);
                         }
                     }
+                    // avoid existing roads, it's ugly :p
+                    for (const pos of existingPaths) {
+                        costMatrix.set(pos.x, pos.y, 5);
+                    }
+                    // TODO: discard the cost of swamps if road on swamp has no particular movement cost
                     return costMatrix;
                 },
             });
@@ -157,6 +218,9 @@ export class RoomPlanner {
                 logger.warning(`Unable to find path from position ${p1.x},${p1.y} to ${p2.x},${p2.y}`);
                 return;
             }
+
+            path.forEach(pos => this.roomPlan.addRoad(pos.x, pos.y));
+
             this.room.scheduleTask(
                 new PlaceConstructionSites(
                     path
@@ -169,9 +233,11 @@ export class RoomPlanner {
                         })),
                 ),
             );
+            return path.map(({ x, y }) => ({ x, y }));
         } else {
             logger.warning(`Unable to build roads from position ${p1.x},${p1.y} to ${p2.x},${p2.y}`);
         }
+        return;
     }
 
     /**
@@ -187,6 +253,7 @@ export class RoomPlanner {
         for (const _ramparts of ramparts) {
             for (const pos of _ramparts) {
                 if (!sites.find(item => item.x === pos.x && item.y === pos.y)) {
+                    this.roomPlan.addRampart(pos.x, pos.y);
                     sites.push({ x: pos.x, y: pos.y, structureType: STRUCTURE_RAMPART });
                 }
             }
@@ -201,7 +268,7 @@ export class RoomPlanner {
         if (!this.roomPlan.plan.defenderGarrison) {
             this.roomPlan.plan.defenderGarrison = { x: -1, y: -1 };
         }
-        const garrisonFlagTracker = trackedWithFlag('Garrison', COLOR_ORANGE, this.roomPlan.plan.defenderGarrison);
+        const garrisonFlagTracker = trackedWithFlag("Garrison", COLOR_ORANGE, this.roomPlan.plan.defenderGarrison);
         const findSuitableGarrisonSpace = garrisonFlagTracker(AvailableSpotsFinder.findSuitableGarrisonSpace);
 
         findSuitableGarrisonSpace(this.room);
@@ -268,10 +335,10 @@ export class AvailableSpotsFinder {
         }
 
         const surroundings = room.roomController?.room.lookAtArea(
-            pos.y - (range.max - 1),
-            pos.x - (range.max - 1),
-            pos.y + (range.max - 1),
-            pos.x + (range.max - 1),
+            Math.max(0, pos.y - (range.max - 1)),
+            Math.max(0, pos.x - (range.max - 1)),
+            Math.min(ROOM_HEIGHT, pos.y + (range.max - 1)),
+            Math.min(ROOM_WIDTH, pos.x + (range.max - 1)),
             true,
         );
         if (!surroundings) {
@@ -310,7 +377,7 @@ export class AvailableSpotsFinder {
             return null;
         }
 
-        const STRUCT_IGNORE_DIST = 10
+        const STRUCT_IGNORE_DIST = 10;
         const SPACE_HALF_WIDTH = 4;
 
         // look at the entire room to determine unavailability level of each case that is
@@ -318,7 +385,13 @@ export class AvailableSpotsFinder {
         // 1 for swamp
         // 2 if close (5 square dist) to an owned structure
         const unavailability: { [key: string]: number } = {};
-        const unavailableInRange = (rx: number, ry: number, cx: number, cy: number, u: (x: number, y: number) => number) => {
+        const unavailableInRange = (
+            rx: number,
+            ry: number,
+            cx: number,
+            cy: number,
+            u: (x: number, y: number) => number,
+        ) => {
             for (let x = 0; x < rx * 2; x++) {
                 for (let y = 0; y < ry * 2; y++) {
                     const sx = cx - rx + x;
@@ -329,10 +402,11 @@ export class AvailableSpotsFinder {
             }
         };
         const dist = (x1: number, y1: number, x2: number, y2: number) => {
-            return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2))
-        }
-        const invDistScore = (item: LookAtResultWithPos) => (sx: number, sy: number) => Math.max(0, STRUCT_IGNORE_DIST - dist(sx, sy, item.x, item.y))
-        const surroundings = room.roomController?.room.lookAtArea(0, 0, 49, 49, true);
+            return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
+        };
+        const invDistScore = (item: LookAtResultWithPos) => (sx: number, sy: number) =>
+            Math.max(0, STRUCT_IGNORE_DIST - dist(sx, sy, item.x, item.y));
+        const surroundings = room.roomController?.room.lookAtArea(0, 0, ROOM_WIDTH, ROOM_HEIGHT, true);
 
         for (const item of surroundings || []) {
             const sign = `${item.x},${item.y}`;
@@ -343,15 +417,19 @@ export class AvailableSpotsFinder {
                 unavailableInRange(5, 5, item.x, item.y, () => 255);
             }
             if (item.type === "structure") {
-                const ownedStructure = (item.structure as OwnedStructure);
+                const ownedStructure = item.structure as OwnedStructure;
                 if (ownedStructure && ownedStructure.owner) {
-                    unavailableInRange(STRUCT_IGNORE_DIST, STRUCT_IGNORE_DIST, item.x, item.y, ownedStructure.my ? invDistScore(item) : () => 255);
-
+                    unavailableInRange(
+                        STRUCT_IGNORE_DIST,
+                        STRUCT_IGNORE_DIST,
+                        item.x,
+                        item.y,
+                        ownedStructure.my ? invDistScore(item) : () => 255,
+                    );
                 }
             }
-            if (item.type === 'source') {
+            if (item.type === "source") {
                 unavailableInRange(STRUCT_IGNORE_DIST, STRUCT_IGNORE_DIST, item.x, item.y, invDistScore(item));
-
             }
         }
 
@@ -360,11 +438,11 @@ export class AvailableSpotsFinder {
         // if 0 is found, pick that square as the garrison
         // if the edge of the board is reached, pick the square that had the minimum unavailability
         let bestScore: number | null = null;
-        let bestPos: { x: number, y: number } | null = null;
+        let bestPos: { x: number; y: number } | null = null;
         for (let cx = 5; cx < 45; cx++) {
             for (let cy = 5; cy < 45; cy++) {
-                const x = (20 + cx) < 45 ? (20 + cx) : (cx - 20);
-                const y = (20 + cy) < 45 ? (20 + cy) : (cy - 20);
+                const x = 20 + cx < 45 ? 20 + cx : cx - 20;
+                const y = 20 + cy < 45 ? 20 + cy : cy - 20;
                 let score = 0;
                 for (let x2 = x - SPACE_HALF_WIDTH; x2 < x + SPACE_HALF_WIDTH; x2++) {
                     for (let y2 = y - SPACE_HALF_WIDTH; y2 < y - SPACE_HALF_WIDTH + 5; y2++) {
@@ -380,27 +458,23 @@ export class AvailableSpotsFinder {
                     bestScore = score;
                     bestPos = { x, y };
                     roomObj.visual.text(`${unavailability[`${x},${y}`] || 0} `, x, y - 0.1, {
-                        font: 0.3
+                        font: 0.3,
                     });
 
                     roomObj.visual.text(`${score}`, x, y + 0.3, {
-                        font: 0.3
+                        font: 0.3,
                     });
-
-                }
-                else {
+                } else {
                     // // TODO[OPTIMIZATION] remove room visuals
                     roomObj.visual.text(`${unavailability[`${x},${y}`] || 0} `, x, y - 0.1, {
                         font: 0.2,
-                        color: '#999999',
+                        color: "#999999",
                     });
 
                     roomObj.visual.text(`${score}`, x, y + 0.3, {
                         font: 0.2,
-                        color: '#999999',
-
+                        color: "#999999",
                     });
-
                 }
             }
         }
@@ -409,6 +483,7 @@ export class AvailableSpotsFinder {
     }
 }
 
+// TODO[OPTIMIZATION]: use sets or objects instead of array to speed up indexing
 class RoomPlan {
     public roomId: string;
     public plan: RoomPlanMemory;
@@ -419,7 +494,12 @@ class RoomPlan {
     }
 
     private emptyPlan(): RoomPlanMemory {
-        return { containers: { sources: [], sinks: [], spawns: [] }, defenderGarrison: { x: -1, y: -1 } };
+        return {
+            containers: { sources: [], sinks: [], spawns: [] },
+            defenderGarrison: { x: -1, y: -1 },
+            spawnFortresses: {},
+            roads: [],
+        };
     }
 
     public addSourceContainer(x: number, y: number) {
@@ -449,8 +529,56 @@ class RoomPlan {
         }
     }
 
+    public updateSpawnFortress(spawnName: string, sites: IBuildUnit[]) {
+        this.plan.spawnFortresses = this.plan.spawnFortresses || {};
+        this.plan.spawnFortresses[spawnName] = sites;
+    }
+
+    public addRoad(x: number, y: number) {
+        this.plan.roads = this.plan.roads || [];
+        if (!this.plan.roads.find(r => r.x === x && r.y === y)) {
+            this.plan.roads.push({ x, y });
+        }
+    }
+
+    public addRampart(x: number, y: number) {
+        this.plan.ramparts = this.plan.ramparts || [];
+        if (!this.plan.ramparts.find(r => r.x === x && r.y === y)) {
+            this.plan.ramparts.push({ x, y });
+        }
+    }
+
     public addDefenderGarrison(x: number, y: number) {
         this.plan.defenderGarrison = { x, y };
+    }
+
+    public getAllPlannedBuildings(): IBuildUnit[] {
+        let allUnits: IBuildUnit[] = [];
+        if (this.plan.spawnFortresses) {
+            for (const spawnName in this.plan.spawnFortresses) {
+                if (this.plan.spawnFortresses.hasOwnProperty(spawnName)) {
+                    const fortress = this.plan.spawnFortresses[spawnName];
+                    allUnits = allUnits.concat(fortress);
+                }
+            }
+        }
+
+        if (this.plan.roads) {
+            allUnits = allUnits.concat(this.plan.roads.map(({ x, y }) => ({ x, y, structureType: STRUCTURE_ROAD })));
+        }
+        if (this.plan.ramparts) {
+            allUnits = allUnits.concat(
+                this.plan.ramparts.map(({ x, y }) => ({ x, y, structureType: STRUCTURE_RAMPART })),
+            );
+        }
+
+        if (this.plan.containers) {
+            allUnits = allUnits.concat(
+                this.plan.containers.sources.map(({ x, y }) => ({ x, y, structureType: STRUCTURE_CONTAINER })),
+            );
+        }
+
+        return allUnits;
     }
 }
 
@@ -472,9 +600,9 @@ function findFlag(room: RoomAgent, name: string): Flag | null {
  * @param color color of the flag (not used for filtering)
  * @param memoryLoc location of the position stored in memory
  */
-function trackedWithFlag(name: string, color: ColorConstant, memoryLoc: { x: number, y: number }) {
-    return (fn: (room: RoomAgent) => { x: number, y: number } | null) => {
-        return (room: RoomAgent): { x: number, y: number } | null => {
+function trackedWithFlag(name: string, color: ColorConstant, memoryLoc: { x: number; y: number }) {
+    return (fn: (room: RoomAgent) => { x: number; y: number } | null) => {
+        return (room: RoomAgent): { x: number; y: number } | null => {
             const flag = findFlag(room, name);
             if (flag && (flag.pos.x !== memoryLoc.x || flag.pos.y !== memoryLoc.y)) {
                 logger.warning(`${name} flag location changed - updating ${name} location to ${flag.pos}.`);
@@ -484,14 +612,14 @@ function trackedWithFlag(name: string, color: ColorConstant, memoryLoc: { x: num
             }
 
             if (memoryLoc.x >= 0 && memoryLoc.y >= 0) {
-                return memoryLoc
+                return memoryLoc;
             }
 
             logger.info(`'${name} flag not found - attempt at auto-determining position`);
             const location = fn(room);
             if (location) {
-                memoryLoc.x = location.x
-                memoryLoc.y = location.y
+                memoryLoc.x = location.x;
+                memoryLoc.y = location.y;
 
                 room.roomController?.room.createFlag(location.x, location.y, name, color);
 
@@ -499,6 +627,6 @@ function trackedWithFlag(name: string, color: ColorConstant, memoryLoc: { x: num
             }
 
             return null;
-        }
-    }
+        };
+    };
 }

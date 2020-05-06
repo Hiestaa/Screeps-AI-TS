@@ -143,6 +143,9 @@ interface RoomPlanMemory {
         spawns: Array<{ x: number; y: number }>;
     };
     defenderGarrison?: { x: number; y: number };
+    spawnFortresses?: { [key: string]: IBuildUnit[] };
+    roads?: Array<{ x: number; y: number }>;
+    ramparts?: Array<{ x: number; y: number }>;
 }
 
 interface Memory {
@@ -155,6 +158,9 @@ interface Memory {
     roomObjectives: { [key: string]: ObjectiveMemory };
     battalions: ColonyBattalionsMemory;
     roomPlans: { [key: string]: RoomPlanMemory };
+    prevNow: number;
+    prevDuration: number;
+    prevDurations: number[];
 }
 
 declare interface RoomPosition {
@@ -172,6 +178,7 @@ declare namespace NodeJS {
             };
             pause: () => void;
             resume: () => void;
+            queryTickTimer: () => void;
         };
     }
 }

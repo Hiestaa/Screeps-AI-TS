@@ -1,13 +1,13 @@
 import { COLORS, getLogger } from "utils/Logger";
 
-const logger = getLogger(COLORS.phases, 'phases.pause');
+const logger = getLogger("phases.pause", COLORS.phases);
 
 Memory.paused = Memory.paused || 0;
 const INFINITY_ISH = 10000000;
 
 export function pause(duration?: number) {
     Memory.paused = Game.time + (duration || INFINITY_ISH);
-    logger.warning(`AI paused for ${duration || INFINITY_ISH}`)
+    logger.warning(`AI paused for ${duration || INFINITY_ISH}`);
 }
 
 export function resume() {
