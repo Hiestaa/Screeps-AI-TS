@@ -1,9 +1,12 @@
 import { CreepAgent } from "agents/CreepAgent";
+import { RoomPlanner } from "colony/RoomPlanner";
 import { HarvestNonStop } from "tasks/creep/Harvest";
 import { COLORS, getLogger } from "utils/Logger";
 import { BaseObjective } from "./BaseObjective";
 
 const logger = getLogger("objectives.ContinuousHarvesting", COLORS.objectives);
+
+const SOLO_HARVEST_PAST_RCL = 4;
 
 /**
  * Creeps executing this objective will be sent to harvest continuously, each to a different source
@@ -26,17 +29,28 @@ export class ContinuousHarvesting extends BaseObjective {
         }
     }
 
-    public execute(creepAgents: CreepAgent[]) {
+    public execute(creepAgents: CreepAgent[], roomPlanner: RoomPlanner) {
         logger.debug(`Executing ${this}`);
+        const controllerLevel = roomPlanner.room.roomController?.room.controller?.level;
 
         const sourceIds = Object.keys(this.miningSpotsPerSource).filter(k => this.miningSpotsPerSource[k] > 0);
         const creepPerSource: { [key: string]: number } = {};
         let i = 0;
         for (const creepAgent of creepAgents) {
             const sourceId = sourceIds[i];
+            const soloHarvest =
+                controllerLevel && controllerLevel >= SOLO_HARVEST_PAST_RCL && (creepPerSource[sourceId] || 0) === 0;
+
+            let harvestTask: HarvestNonStop;
+            if (soloHarvest) {
+                const harvestFromPos = roomPlanner.roomPlan.getContainerPositionForSource(sourceId);
+                harvestTask = new HarvestNonStop(sourceId, harvestFromPos);
+            } else {
+                harvestTask = new HarvestNonStop(sourceId);
+            }
 
             if (!creepAgent.taskQueue.length) {
-                creepAgent.scheduleTask(new HarvestNonStop(sourceId));
+                creepAgent.scheduleTask(harvestTask);
                 creepPerSource[sourceId] = (creepPerSource[sourceId] || 0) + 1;
             } else {
                 const taskCount = creepAgent
@@ -45,11 +59,11 @@ export class ContinuousHarvesting extends BaseObjective {
                 if (taskCount > 0) {
                     creepPerSource[sourceId] = (creepPerSource[sourceId] || 0) + 1;
                 } else {
-                    creepAgent.replaceTask(new HarvestNonStop(sourceId));
+                    creepAgent.replaceTask(harvestTask);
                 }
             }
 
-            if (creepPerSource[sourceId] >= this.miningSpotsPerSource[sourceId]) {
+            if (soloHarvest || creepPerSource[sourceId] >= this.miningSpotsPerSource[sourceId]) {
                 i += 1;
             }
 
@@ -60,10 +74,18 @@ export class ContinuousHarvesting extends BaseObjective {
         }
     }
 
-    public estimateRequiredWorkForce(): SpawnRequest[] {
-        return [
-            { count: Math.max(0, this.totalMiningSpots - 2), battalion: this.battalionId, creepProfile: "Harvester" },
-        ];
+    public estimateRequiredWorkForce(roomPlanner: RoomPlanner): SpawnRequest[] {
+        let count = 0;
+
+        const controllerLevel = roomPlanner.room.roomController?.room.controller?.level;
+        if (controllerLevel && controllerLevel >= SOLO_HARVEST_PAST_RCL) {
+            // past level 4, only 1 creep is enough per source to bring it to depletion before refill
+            count = Object.keys(this.miningSpotsPerSource).filter(sId => this.miningSpotsPerSource[sId] > 0).length;
+        } else {
+            count = Math.max(0, this.totalMiningSpots - 2);
+        }
+
+        return [{ count, battalion: this.battalionId, creepProfile: "Harvester" }];
     }
 
     public save(): ContinuousHarvestingMemory {

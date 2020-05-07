@@ -55,6 +55,7 @@ interface BuildTaskMemory extends CreepTaskMemory {
 
 interface HarvestTaskMemory extends CreepTaskMemory {
     sourceId: string;
+    from?: { x: number; y: number };
 }
 
 interface HealTaskMemory extends CreepTaskMemory {
@@ -138,7 +139,7 @@ interface ColonyBattalionsMemory {
 
 interface RoomPlanMemory {
     containers?: {
-        sources: Array<{ x: number; y: number }>;
+        sources: Array<{ x: number; y: number; sourceId: string }>;
         sinks: Array<{ x: number; y: number }>;
         spawns: Array<{ x: number; y: number }>;
     };

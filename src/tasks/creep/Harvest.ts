@@ -9,10 +9,12 @@ const logger = getLogger("tasks.creep.Harvest", COLORS.tasks);
  */
 export class Harvest extends BaseCreepTask {
     public sourceId: string;
+    public from?: { x: number; y: number };
 
-    constructor(sourceId: string, type?: "TASK_HARVEST_NON_STOP") {
+    constructor(sourceId: string, from?: { x: number; y: number }, type?: "TASK_HARVEST_NON_STOP") {
         super(type || "TASK_HARVEST");
         this.sourceId = sourceId;
+        this.from = from;
     }
 
     public canBeExecuted(creepCtl: CreepController) {
@@ -28,7 +30,11 @@ export class Harvest extends BaseCreepTask {
         return creepCtl
             .harvest(source)
             .on(ERR_NOT_IN_RANGE, () => {
-                creepCtl.moveTo(source).logFailure();
+                if (this.from && (creepCtl.creep.pos.x !== this.from.x || creepCtl.creep.pos.y !== this.from.y)) {
+                    creepCtl.moveTo(this.from.x, this.from.y).logFailure();
+                } else {
+                    creepCtl.moveTo(source).logFailure();
+                }
             })
             .on(ERR_NOT_ENOUGH_RESOURCES, () => {
                 logger.warning(
@@ -60,7 +66,7 @@ export class Harvest extends BaseCreepTask {
 
     public toJSON(): HarvestTaskMemory {
         const json = super.toJSON();
-        const memory: HarvestTaskMemory = { sourceId: this.sourceId, ...json };
+        const memory: HarvestTaskMemory = { sourceId: this.sourceId, from: this.from, ...json };
         return memory;
     }
     public completed(creepCtl: CreepController) {
@@ -76,8 +82,8 @@ export class Harvest extends BaseCreepTask {
  * Never stop harvesting even when full - will continue and let resource drop on the floor
  */
 export class HarvestNonStop extends Harvest {
-    constructor(sourceId: string) {
-        super(sourceId, "TASK_HARVEST_NON_STOP");
+    constructor(sourceId: string, from?: { x: number; y: number }) {
+        super(sourceId, from, "TASK_HARVEST_NON_STOP");
     }
 
     public canBeExecuted(creepCtl: CreepController) {

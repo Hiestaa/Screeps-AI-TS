@@ -46,9 +46,11 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
                 const haulMem = taskMemory as HaulTaskMemory;
                 return new Haul(haulMem.deliveryTargets, haulMem.excludedPositions);
             case "TASK_HARVEST":
-                return new Harvest((taskMemory as HarvestTaskMemory).sourceId);
+                const harvestMem = taskMemory as HarvestTaskMemory;
+                return new Harvest(harvestMem.sourceId, harvestMem.from);
             case "TASK_HARVEST_NON_STOP":
-                return new HarvestNonStop((taskMemory as HarvestTaskMemory).sourceId);
+                const harvestMem2 = taskMemory as HarvestTaskMemory;
+                return new HarvestNonStop(harvestMem2.sourceId, harvestMem2.from);
             case "TASK_BUILD":
                 return new Build((taskMemory as BuildTaskMemory).buildPriority);
             case "TASK_FETCH":

@@ -35,8 +35,6 @@ export class RoomPlanner {
 
         this.room.execute();
         this.maintenance();
-        // TODO: add a `maintain` function that make sure none of the construction sites in the current room plan
-        // have been destroyed due to decay or enemy attacks
     }
 
     /**
@@ -46,7 +44,7 @@ export class RoomPlanner {
      */
     private maintenance() {
         if (this.room.taskQueue.length > 0) {
-            return; // wait for all construction sites to be placed
+            return; // wait for all construction sites to be placed so we don't risk placing a site twice
         }
         if (Game.time % 100 !== 0) {
             return; // that's a rather expensive process, don't run it every tick
@@ -60,7 +58,10 @@ export class RoomPlanner {
                 missingBuildUnits.push(unit);
             }
         }
-        this.room.scheduleTask(new PlaceConstructionSites(missingBuildUnits));
+        if (missingBuildUnits.length > 0) {
+            logger.warning(`Detected ${missingBuildUnits.length} missing build units. Re-placing them now.`);
+            this.room.scheduleTask(new PlaceConstructionSites(missingBuildUnits));
+        }
     }
 
     /**
@@ -137,7 +138,7 @@ export class RoomPlanner {
                 const spot = spots[0];
 
                 buildUnits.push({ structureType: "container", ...spot });
-                this.roomPlan.addSourceContainer(spot.x, spot.y);
+                this.roomPlan.addSourceContainer(spot.x, spot.y, sourceId);
                 continue;
             }
         }
@@ -510,13 +511,20 @@ class RoomPlan {
         };
     }
 
-    public addSourceContainer(x: number, y: number) {
+    // TODO[OPTIMIZATION]: index source containers by source id to avoid doing a `find`
+    public addSourceContainer(x: number, y: number, sourceId: string) {
         this.plan.containers = this.plan.containers || { sources: [], sinks: [], spawns: [] };
         this.plan.containers.sources = this.plan.containers.sources || [];
         const existing = this.plan.containers.sources.find(c => c.x === x && c.y === y);
         if (!existing) {
-            this.plan.containers.sources.push({ x, y });
+            this.plan.containers.sources.push({ x, y, sourceId });
         }
+    }
+
+    public getContainerPositionForSource(sourceId: string) {
+        this.plan.containers = this.plan.containers || { sources: [], sinks: [], spawns: [] };
+
+        return this.plan.containers.sources.find(c => c.sourceId === sourceId);
     }
 
     public addSinkContainer(x: number, y: number) {
