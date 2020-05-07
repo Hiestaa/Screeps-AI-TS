@@ -86,6 +86,7 @@ export class RoomPlanner {
      * @param controllerLevel new controller level
      */
     private createSpawnFortress(controllerLevel: number) {
+        // FIXME: remember which spawn is the primary one!
         for (const spawnName in this.spawns) {
             if (!this.spawns.hasOwnProperty(spawnName)) {
                 continue;
@@ -102,6 +103,8 @@ export class RoomPlanner {
                 this.roomPlan.updateSpawnFortress(spawnName, buildUnits);
                 this.room.scheduleTask(new PlaceConstructionSites(buildUnits));
             }
+
+            return; // only 1 spawn fortress per room - there is more than one spawn in them
         }
     }
 
@@ -192,7 +195,12 @@ export class RoomPlanner {
         if (rp1 && rp2) {
             const pendingConstructionSites = this.room.taskQueue
                 .filter(t => t.getType() === "TASK_PLACE_CONSTRUCTION_SITES")
-                .map(t => t.scheduledBuildUnits.concat(t.buildUnitsInProgress));
+                .map(
+                    t =>
+                        t.scheduledBuildUnits
+                            .concat(t.buildUnitsInProgress)
+                            .filter(({ structureType }) => structureType !== STRUCTURE_RAMPART), // we can have roads going through ramparts
+                );
             const avoidPositions = ([] as IBuildUnit[]).concat
                 .apply([], pendingConstructionSites)
                 // exclude source and destination

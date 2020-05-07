@@ -26,30 +26,40 @@ export class Build extends BaseCreepTask {
         return creepCtl.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0;
     }
 
-    public execute(creepCtl: CreepController) {
-        const targets = creepCtl.creep.room.find(FIND_MY_CONSTRUCTION_SITES); // TODO: filter the ones that are full (if that makes sense)
-        if (targets.length <= 0) {
+    public execute(creepCtl: CreepController, attempt = 0, exclude: string[] = []) {
+        const target = this.findTarget(creepCtl, exclude);
+        if (!target) {
             logger.debug(`No construction site available in the current creep room`);
             this.noMoreTarget = true;
             return;
         }
-
-        return this.buildTargets(creepCtl, this.sortTargets(creepCtl, targets));
+        return this.buildTargets(creepCtl, target, attempt, exclude);
     }
 
-    private buildTargets(creepCtl: CreepController, targets: ConstructionSite[], attempt: number = 0) {
-        if (targets.length === 0) {
-            logger.info(`${creepCtl}: All construction sites are fully built`);
-            this.noMoreTarget = true;
+    private findTarget(creepCtl: CreepController, exclude: string[]) {
+        for (const structureType of this.buildPriority) {
+            const closest = creepCtl.creep.pos.findClosestByRange(FIND_MY_CONSTRUCTION_SITES, {
+                filter: constructionSite =>
+                    constructionSite.structureType === structureType && !exclude.includes(constructionSite.id),
+            });
+            if (closest) {
+                return closest;
+            }
         }
+        return creepCtl.creep.pos.findClosestByRange(FIND_MY_CONSTRUCTION_SITES, {
+            filter: constructionSite => !exclude.includes(constructionSite.id),
+        });
+    }
+
+    private buildTargets(creepCtl: CreepController, target: ConstructionSite, attempt: number = 0, exclude: string[]) {
         creepCtl
-            .build(targets[0])
+            .build(target)
             .on(OK, () => {
                 // rampart get built with a single hit point - need to repair it fully
                 // before starting the build of another site otherwise it'll decay right away
-                if (targets[0].structureType === STRUCTURE_RAMPART) {
+                if (target.structureType === STRUCTURE_RAMPART) {
                     logger.debug(
-                        `${creepCtl}: Constructed rampart ${targets[0]}. ` +
+                        `${creepCtl}: Constructed rampart ${target}. ` +
                             `Interrupting build task to proceed with the repair.`,
                     );
                     this.earlyInterruption = true;
@@ -67,66 +77,29 @@ export class Build extends BaseCreepTask {
                     return;
                 }
 
-                creepCtl.moveTo(targets[0]).logFailure();
+                creepCtl.moveTo(target).logFailure();
             })
             .on(ERR_RCL_NOT_ENOUGH, () => {
-                logger.debug(`${creepCtl}: Attempt #${attempt}: RCL not enough to build target ${targets[0]}.`);
-                this.buildTargets(creepCtl, targets.slice(1), attempt + 1);
+                logger.debug(`${creepCtl}: Attempt #${attempt}: RCL not enough to build target ${target}.`);
+                exclude = exclude.concat([target.id]);
+                this.execute(creepCtl, attempt + 1, exclude);
             })
             .on(ERR_INVALID_TARGET, () => {
-                logger.debug(`${creepCtl}: Attempt #${attempt}: target ${targets[0]} is fully built.`);
+                logger.debug(`${creepCtl}: Attempt #${attempt}: target ${target} is fully built.`);
                 // rampart get built with a single hit point - need to repair it fully
                 // before starting the build of another site otherwise it'll decay right away
-                if (targets[0].structureType === STRUCTURE_RAMPART) {
+                if (target.structureType === STRUCTURE_RAMPART) {
                     logger.debug(`Interrupting build task to proceed with the repair.`);
                     this.earlyInterruption = true;
                 } else {
-                    this.buildTargets(creepCtl, targets.slice(1), attempt + 1);
+                    exclude = exclude.concat([target.id]);
+                    this.execute(creepCtl, attempt + 1, exclude);
                 }
             })
             .on(ERR_NOT_ENOUGH_RESOURCES, () => {
                 logger.debug(`${creepCtl}: No more energy - task is completed.`);
             })
             .logFailure();
-    }
-
-    /**
-     * Sort the targets by the following rules in order:
-     * 1. Prefer a target of the type seen earlier in the deliveryTarget array
-     * 2. Prefer a target of closer distance
-     * It is assumed that all targets should have available capacity.
-     * TODO[OPTIMIZATION]: instead of sorting all possible target by distance, make a `getClosestInRange`
-     * with filter for each priority type so we don't compute distance as many times (I guess)
-     * @param creepCtl creep controller used to compute distances
-     * @param targets targets to sort
-     */
-    private sortTargets(creepCtl: CreepController, targets: ConstructionSite[]): ConstructionSite[] {
-        const distances: { [key: string]: number } = {};
-        for (const target of targets) {
-            distances[target.id] = creepCtl.creep.pos.getRangeTo(target);
-        }
-        const priorities: { [key: string]: number } = {};
-        for (const target of targets) {
-            priorities[target.id] = this.buildPriority.indexOf(target.structureType);
-            if (priorities[target.id] === -1) {
-                priorities[target.id] = this.buildPriority.length;
-            }
-        }
-
-        // sort primarily by priority - among items of the same priority, pick the closest to completion,
-        // and among the same the same level of completion pick the closest one by distance.
-        targets.sort((t1: ConstructionSite, t2: ConstructionSite) => {
-            if (priorities[t1.structureType] !== priorities[t2.structureType]) {
-                return priorities[t1.structureType] - priorities[t2.structureType];
-            }
-            if (t1.progress > 100 || t2.progress > 100) {
-                const remainingT1 = t1.progressTotal - t1.progress;
-                const remainingT2 = t2.progressTotal - t2.progress;
-                return remainingT1 - remainingT2;
-            }
-            return distances[t1.id] - distances[t2.id];
-        });
-        return targets;
     }
 
     public completed(creepCtl: CreepController) {

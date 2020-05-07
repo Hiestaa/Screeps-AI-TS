@@ -2,77 +2,71 @@ import { IBuildUnit, render } from "./renderer";
 
 const RCL_LAYOUTS: { [key: number]: string } = {
     1: `
-   X
-    `,
+X
+`,
     2: `
-E E X E E
-    C
-    E   `,
+ E
+EEX
+EE C
+`,
     3: `
-    E
-
-ETE X E E
-    C
-E E E E E `,
+  E T
+EEEX  EEE
+ EE C E
+`,
     4: `
-RRRRRRRRRRR
-R    E    R
-R         R
-RE E E E ER
-R         R
-RE E X ETER
-R    C    R
-RE E E E ER
-R         R
-RE E E E ER
-RRRRRRRRRRR`,
+  E   E
+EEE T EEE
+EEEX  EEE
+EEE C EEE
+`,
     5: `
 RRRRRRRRRRR
-RE E E E ER
 R         R
-RE E E E ER
-R  E E    R
-RETEEXEETER
-R    C E  R
-RE E E E ER
 R         R
-RE E E E ER
+REEE   EEER
+REEE T EEER
+REEEX  EEER
+REEE C EEER
+REEE   EEER
+R         R
+R         R
 RRRRRRRRRRR`,
     6: `
 RRRRRRRRRRR
-RE E E E ER
-RE E E E ER
-RE E E E ER
-R  E   E  R
-RETEEXEETER
-R  E C E  R
-RE E E E ER
-RE E E E ER
-RE E E E ER
+R         R
+R    E    R
+REEE E EEER
+REEE T EEER
+REEEX  EEER
+REEE C EEER
+REEE E EEER
+REEE E EEER
+R         R
 RRRRRRRRRRR`,
     7: `
 RRRRRRRRRRR
-RE EEEEE ER
-RE E E E ER
-RE E E E ER
-RE E T E ER
-RETEEXEETER
-RE E C E ER
-RE E E E ER
-RE E E E ER
-REEEEEEEEER
+REEE E    R
+REEE E EEER
+REEE E EEER
+REEE T EEER
+REEEX SEEER
+REEE C EEER
+REEE E EEER
+REEE E EEER
+R         R
 RRRRRRRRRRR`,
     8: `
 RRRRRRRRRRR
-RE EEEEE ER
-RE E E E ER
-RE E E E ER
-RE E T E ER
-RETEEXEETER
-RE E C E ER
-RE E E E ER
-RE E E E ER
-REEEEEEEEER
+REEE E EEER
+REEE E EEER
+REEE E EEER
+REEE T EEER
+REEEX SEEER
+REEE C EEER
+REEE E EEER
+REEE E EEER
+REEE E EEER
 RRRRRRRRRRR`,
 };
 
