@@ -10,7 +10,6 @@ const logger = getLogger("tasks.creep.Haul", COLORS.tasks);
 export class Haul extends BaseCreepTask {
     private deliveryTargets: DeliveryTarget[];
     private excludedPositions: Array<{ x: number; y: number }>;
-    private noMoreTarget: boolean = false;
 
     constructor(deliveryTargets: DeliveryTarget[], excludedPositions?: Array<{ x: number; y: number }>) {
         super("TASK_HAUL");
@@ -36,19 +35,13 @@ export class Haul extends BaseCreepTask {
             if (spawns.length > 0) {
                 creepCtl.moveTo(spawns[0]);
             }
-            // FIXME: remember 'noMoreTarget' after pause this.pause(10);
-            this.noMoreTarget = true;
+            this.pause(20);
             return;
         }
         return this.transferToTargets(creepCtl, this.sortTargets(creepCtl, targets));
     }
 
     private transferToTargets(creepCtl: CreepController, targets: Structure[], attempt: number = 0) {
-        if (targets.length === 0) {
-            logger.error(`${creepCtl}: All specified delivery targets ${this.deliveryTargets.join("/")} are full`);
-            this.noMoreTarget = true;
-        }
-        // FIXME: if target is a controller we need to do `upgradeController` instead of `transfer`?
         creepCtl
             .transfer(targets[0], RESOURCE_ENERGY)
             .on(ERR_NOT_IN_RANGE, () => {
@@ -64,32 +57,38 @@ export class Haul extends BaseCreepTask {
             .logFailure();
     }
 
+    // TODO[OPTIMIZATION]: similar to the build task, find the closest target by distance of each type
+    // so we do less sort & distance compute operations
     private findTargets(creepCtl: CreepController, target: DeliveryTarget): Structure[] {
-        const excPosFilter = ({ pos }: { pos: RoomPosition }) => {
-            return !this.excludedPositions.includes({ x: pos.x, y: pos.x });
+        const lastFetchTargetId = this.prevTaskPersist?.lastFetchTargetId;
+        const commonFilter = ({ pos, id }: { pos: RoomPosition; id: string }) => {
+            return (
+                !this.excludedPositions.includes({ x: pos.x, y: pos.x }) &&
+                (!lastFetchTargetId || id !== lastFetchTargetId)
+            );
         };
 
         switch (target) {
             case STRUCTURE_SPAWN:
                 return creepCtl.creep.room.find(FIND_MY_SPAWNS, {
-                    filter: spawn => spawn.energy < spawn.energyCapacity && excPosFilter(spawn),
+                    filter: spawn => spawn.energy < spawn.energyCapacity && commonFilter(spawn),
                 });
             case STRUCTURE_CONTROLLER:
                 const controller = creepCtl.creep.room.controller;
-                return controller && excPosFilter(controller) ? [controller] : [];
+                return controller && commonFilter(controller) ? [controller] : [];
             case STRUCTURE_CONTAINER:
                 return creepCtl.creep.room.find(FIND_STRUCTURES, {
                     filter: structure =>
                         structure.structureType === STRUCTURE_CONTAINER &&
                         structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
-                        excPosFilter(structure),
+                        commonFilter(structure),
                 });
             case STRUCTURE_EXTENSION:
                 return creepCtl.creep.room.find(FIND_STRUCTURES, {
                     filter: structure =>
                         structure.structureType === STRUCTURE_EXTENSION &&
                         structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
-                        excPosFilter(structure),
+                        commonFilter(structure),
                 });
         }
     }
@@ -99,7 +98,6 @@ export class Haul extends BaseCreepTask {
      * 1. Prefer a target of the type seen earlier in the deliveryTarget array
      * 2. Prefer a target of closer distance
      * It is assumed that all targets should have available capacity.
-     * TODO: Test me
      * @param creepCtl creep controller used to compute distances
      * @param targets targets to sort
      */
@@ -124,7 +122,7 @@ export class Haul extends BaseCreepTask {
     }
 
     public completed(creepCtl: CreepController) {
-        return this.noMoreTarget || creepCtl.creep.store.getUsedCapacity() === 0;
+        return creepCtl.creep.store.getUsedCapacity() === 0;
     }
 
     public description() {

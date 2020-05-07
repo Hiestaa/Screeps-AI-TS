@@ -1,5 +1,5 @@
 import { BaseController, Controllable } from "agents/controllers/BaseController";
-import { BaseTask, TASK_TYPE } from "tasks/BaseTask";
+import { BaseTask } from "tasks/BaseTask";
 import { COLORS, getLogger, Logger } from "utils/Logger";
 
 const logger = getLogger("controllers.agents.BaseAgent", COLORS.controllers);
@@ -105,7 +105,7 @@ export abstract class BaseAgent<
             return;
         }
 
-        let currentTask = this.taskQueue[0];
+        let currentTask = this.nextTask();
         while (!this.canExecuteTask(currentTask, controller)) {
             this.logger.debug(`${controller}: Cannot execute task: ${currentTask} - discarding.`);
             this.taskQueue.shift();
@@ -114,7 +114,7 @@ export abstract class BaseAgent<
                 return;
             }
 
-            currentTask = this.taskQueue[0];
+            currentTask = this.nextTask();
         }
 
         if (this.hasTaskCompleted(currentTask, controller)) {
@@ -135,6 +135,12 @@ export abstract class BaseAgent<
         this.hasTaskCompleted(currentTask, controller);
     }
 
+    private nextTask(): TaskType {
+        const currentTask = this.taskQueue[0];
+        currentTask.prevTaskPersist = this.memory.prevTaskPersist;
+        return currentTask;
+    }
+
     private hasTaskCompleted(currentTask: TaskType, controller: ControllerType | undefined) {
         if (currentTask.isPaused()) {
             return false;
@@ -142,6 +148,8 @@ export abstract class BaseAgent<
         const hasTaskCompleted = currentTask.executionStarted && controller && currentTask.completed(controller);
         if (hasTaskCompleted) {
             this.onTaskExecutionCompletes(currentTask, controller);
+
+            this.memory.prevTaskPersist = currentTask.persistAfterCompletion();
 
             this.taskQueue.shift();
 
@@ -167,12 +175,12 @@ export abstract class BaseAgent<
     }
 
     protected onTaskExecutionStarts(task: TaskType, controller: ControllerType | undefined) {
-        this.logger.info(`${controller}: Started execution of task: ${task}`);
+        this.logger.debug(`${controller}: Started execution of task: ${task}`);
         return;
     }
 
     protected onTaskExecutionCompletes(task: TaskType, controller: ControllerType | undefined) {
-        this.logger.info(`${controller}: Completed execution of task: ${task}`);
+        this.logger.debug(`${controller}: Completed execution of task: ${task}`);
         return;
     }
 

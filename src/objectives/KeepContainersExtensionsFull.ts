@@ -19,7 +19,6 @@ export class KeepContainersExtensionsFull extends BaseObjective {
 
         const sinks = room.roomPlan.plan.containers?.sinks || [];
         const sources = room.roomPlan.plan.containers?.sources || [];
-        const nbSinks = sinks.length;
 
         for (const creep of creepAgents) {
             if (creep.taskQueue.length > 0) {

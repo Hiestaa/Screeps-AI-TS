@@ -1,7 +1,5 @@
 import { BaseController, Controllable } from "agents/controllers/BaseController";
 
-export type TASK_TYPE = "TASK_SPAWN" | CREEP_TASK | "TASK_PLACE_CONSTRUCTION_SITES";
-
 /**
  * Base Class for any task object. The interface describes the task load/execute/save cycle:
  * * When scheduling a new task, build a new task from its constructor. Each children define its own set of parameters.
@@ -15,6 +13,8 @@ export abstract class BaseTask<RO extends Controllable, Controller extends BaseC
     public executionStarted: boolean = false;
     public executionPeriod: number = 1;
     public executionPaused: number = 0;
+    // populated by the data persisted by the previous task
+    public prevTaskPersist?: PersistTaskMemory;
 
     /**
      * Indicate whether the given controller can execute the task.
@@ -38,6 +38,14 @@ export abstract class BaseTask<RO extends Controllable, Controller extends BaseC
     public abstract completed(controller: Controller): boolean;
     public abstract toJSON(): TaskMemory;
     public abstract getType(): TASK_TYPE;
+
+    /**
+     * Override to persist any data for the next executed task to use.
+     */
+    public persistAfterCompletion(): undefined | PersistTaskMemory {
+        return;
+    }
+
     public toString() {
         return `task ${this.getType()} ${JSON.stringify(this.toJSON())}`;
     }

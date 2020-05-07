@@ -12,6 +12,7 @@ const MAX_RANGE_HOSTILE = 8;
  */
 export class Fetch extends BaseCreepTask {
     public excludedPositions: Array<{ x: number; y: number }>;
+    private lastFetchTargetId?: string;
 
     constructor(excludedPositions?: Array<{ x: number; y: number }>) {
         super("TASK_FETCH");
@@ -63,6 +64,8 @@ export class Fetch extends BaseCreepTask {
         });
         if (container) {
             logger.debug(`${creep}: picking up ${container}`);
+            // remember container resource got fetched from not to haul straight back in after
+            this.lastFetchTargetId = container.id;
             return this.moveToIfFail(creep, creep.withdraw(container, RESOURCE_ENERGY), container);
         }
 
@@ -94,6 +97,14 @@ export class Fetch extends BaseCreepTask {
 
     public completed(creep: CreepController): boolean {
         return creep.creep.store.getFreeCapacity() === 0;
+    }
+
+    public persistAfterCompletion(): undefined | PersistTaskMemory {
+        return {
+            prevTask: this.type,
+            // remember container resource got fetched from not to haul straight back in after
+            lastFetchTargetId: this.lastFetchTargetId,
+        };
     }
 
     public description() {

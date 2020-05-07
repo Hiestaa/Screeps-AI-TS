@@ -86,11 +86,19 @@ interface PlaceConstructionSitesMemory extends RoomTaskMemory {
 
 type TaskMemory = SpawnTaskMemory | CreepTaskMemory | PlaceConstructionSitesMemory;
 
+type TASK_TYPE = "TASK_SPAWN" | CREEP_TASK | "TASK_PLACE_CONSTRUCTION_SITES";
+
+// data a task can request to save after completion for use by a subsequent task
+interface PersistTaskMemory {
+    prevTask: TASK_TYPE;
+    lastFetchTargetId?: string;
+}
+
 interface BaseMemory {
     tasks: TaskMemory[];
     idleTime: number;
+    prevTaskPersist?: PersistTaskMemory;
 }
-
 // memory extension samples
 interface CreepMemory extends BaseMemory {
     battalion: string;

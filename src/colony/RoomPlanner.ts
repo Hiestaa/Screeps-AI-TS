@@ -74,7 +74,7 @@ export class RoomPlanner {
         if (controllerLevel >= 2) {
             this.createSinkAndSourceContainers();
         }
-        if (controllerLevel >= 4) {
+        if (controllerLevel >= 5) {
             this.createRoadsBetweenContainers();
         }
         if (controllerLevel >= 5) {
