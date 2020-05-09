@@ -9,7 +9,7 @@ import { COLORS, getLogger } from "utils/Logger";
 import { BaseObjective } from "./BaseObjective";
 import { CONTROLLER_DOWNGRADE_TIMER_LEVEL } from "./ReachRCL3";
 
-const logger = getLogger("objectives.ContainersExtensionsRefill", COLORS.objectives);
+const logger = getLogger("objectives.MaintainBuildings", COLORS.objectives);
 
 /**
  * Maintain buildings in good shape and build new construction sites.

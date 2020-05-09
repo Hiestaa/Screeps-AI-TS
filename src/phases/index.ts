@@ -1,4 +1,3 @@
-import { COLORS, getLogger } from "utils/Logger";
 import { act } from "./act";
 import { isPaused } from "./pause";
 import { reload } from "./reload";
@@ -43,7 +42,7 @@ function initialize() {
                     controllerLevel: 0,
                 };
                 Memory.roomPlans[room] = {
-                    containers: { sinks: [], sources: [], spawns: [] },
+                    containers: { sinks: [], sources: [] },
                 };
             }
         }

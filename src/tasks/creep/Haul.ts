@@ -4,6 +4,9 @@ import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("tasks.creep.Haul", COLORS.tasks);
 
+// except if storage is the last destination, we don't want to keep pumping energy into storage for no reason when containers are empty
+const STORAGE_ENERGY_CAP = 2000;
+
 /**
  * Simple Haul task - go Haul resources to the first available delivery target with priority order.
  */
@@ -21,111 +24,120 @@ export class Haul extends BaseCreepTask {
         return creepCtl.creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0;
     }
 
-    public execute(creepCtl: CreepController) {
-        const emptyTargets: Structure[] = [];
-        const targets = emptyTargets.concat.apply(
-            emptyTargets,
-            this.deliveryTargets.map(target => this.findTargets(creepCtl, target)),
-        );
-        if (targets.length <= 0) {
-            logger.debug(
-                `No ${this.deliveryTargets.join("/")} available in the current creep room - pausing for 20 ticks.`,
-            );
-            const spawns = creepCtl.creep.room.find(FIND_MY_SPAWNS);
-            if (spawns.length > 0) {
-                creepCtl.moveTo(spawns[0]);
-            }
-            this.pause(20);
+    public execute(creepCtl: CreepController, attempt = 0) {
+        const target = this.findTarget(creepCtl);
+        if (!target) {
             return;
         }
-        return this.transferToTargets(creepCtl, this.sortTargets(creepCtl, targets));
+        return this.transferToTarget(creepCtl, target, attempt);
     }
 
-    private transferToTargets(creepCtl: CreepController, targets: Structure[], attempt: number = 0) {
+    private findTarget(creepCtl: CreepController): Structure | undefined {
+        const lastFetchTargetId = this.prevTaskPersist?.lastFetchTargetId;
+        const commonFilter = ({ pos, id }: { pos: RoomPosition; id: string }) => {
+            return (
+                !this.excludedPositions.find(({ x, y }) => x === pos.x && y === pos.y) &&
+                (!lastFetchTargetId || id !== lastFetchTargetId)
+            );
+        };
+        for (let targetTypeIdx = 0; targetTypeIdx < this.deliveryTargets.length; targetTypeIdx++) {
+            const target = this.deliveryTargets[targetTypeIdx];
+
+            switch (target) {
+                case STRUCTURE_SPAWN:
+                    const spawn = creepCtl.creep.pos.findClosestByRange(FIND_MY_SPAWNS, {
+                        filter: spawnStruct =>
+                            spawnStruct.energy < spawnStruct.energyCapacity && commonFilter(spawnStruct),
+                    });
+                    if (spawn) {
+                        return spawn;
+                    }
+                    break;
+                case STRUCTURE_CONTROLLER:
+                    const controller = creepCtl.creep.room.controller;
+                    if (controller && commonFilter(controller)) {
+                        return controller;
+                    }
+                    break;
+                case STRUCTURE_EXTENSION:
+                case STRUCTURE_TOWER:
+                    const towerOrExtension = creepCtl.creep.pos.findClosestByRange(FIND_STRUCTURES, {
+                        filter: structure =>
+                            structure.structureType === target &&
+                            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
+                            commonFilter(structure),
+                    });
+                    if (towerOrExtension) {
+                        return towerOrExtension;
+                    }
+                    break;
+                case STRUCTURE_CONTAINER:
+                    const container = creepCtl.creep.pos.findClosestByRange(FIND_STRUCTURES, {
+                        filter: structure =>
+                            structure.structureType === target &&
+                            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
+                            commonFilter(structure),
+                    });
+                    if (container) {
+                        return container;
+                    }
+                    break;
+                case STRUCTURE_STORAGE:
+                    const storage = creepCtl.creep.pos.findClosestByRange(FIND_STRUCTURES, {
+                        filter: structure => {
+                            const isProperStructure = structure.structureType === STRUCTURE_STORAGE;
+                            if (structure.structureType !== STRUCTURE_STORAGE) {
+                                return false;
+                            }
+                            const freeCap = isProperStructure && structure.store.getFreeCapacity(RESOURCE_ENERGY);
+                            const usedCap = structure.store.getUsedCapacity(RESOURCE_ENERGY);
+                            const isNotFull = freeCap > 0;
+                            const needsUrgentRefill = usedCap < STORAGE_ENERGY_CAP;
+                            const isLastItem = targetTypeIdx === this.deliveryTargets.length - 1;
+
+                            return (
+                                isProperStructure &&
+                                isNotFull &&
+                                ((!isLastItem && needsUrgentRefill) || isLastItem) &&
+                                commonFilter(structure)
+                            );
+                        },
+                    });
+                    if (storage) {
+                        return storage;
+                    }
+                    break;
+            }
+        }
+
+        logger.debug(
+            `No ${this.deliveryTargets.join("/")} available in the current creep room - pausing for 20 ticks.`,
+        );
+        const spawns = creepCtl.creep.room.find(FIND_MY_SPAWNS);
+        this.pause(20);
+
+        // TODO: consider moving towards0 the garrison, or a different area dedicated to idle creeps
+        // to avoid too many creeps blocking the spawn?
+        if (spawns.length > 0) {
+            creepCtl.moveTo(spawns[0]).logFailure();
+        }
+        return;
+    }
+
+    private transferToTarget(creepCtl: CreepController, target: Structure, attempt: number = 0) {
         creepCtl
-            .transfer(targets[0], RESOURCE_ENERGY)
+            .transfer(target, RESOURCE_ENERGY)
             .on(ERR_NOT_IN_RANGE, () => {
-                creepCtl.moveTo(targets[0]).logFailure();
+                creepCtl.moveTo(target).logFailure();
             })
             .on(ERR_NOT_ENOUGH_ENERGY, () => {
                 logger.debug(`${creepCtl}: No more energy - task is completed.`);
             })
             .on(ERR_FULL, () => {
-                logger.debug(`${creepCtl}: Attempt #${attempt}: target ${targets[0]} is full.`);
-                this.transferToTargets(creepCtl, targets.slice(1), attempt + 1);
+                logger.debug(`${creepCtl}: Attempt #${attempt}: target ${target} is full.`);
+                this.execute(creepCtl, attempt + 1);
             })
             .logFailure();
-    }
-
-    // TODO[OPTIMIZATION]: similar to the build task, find the closest target by distance of each type
-    // so we do less sort & distance compute operations
-    private findTargets(creepCtl: CreepController, target: DeliveryTarget): Structure[] {
-        const lastFetchTargetId = this.prevTaskPersist?.lastFetchTargetId;
-        const commonFilter = ({ pos, id }: { pos: RoomPosition; id: string }) => {
-            return (
-                !this.excludedPositions.includes({ x: pos.x, y: pos.x }) &&
-                (!lastFetchTargetId || id !== lastFetchTargetId)
-            );
-        };
-
-        switch (target) {
-            case STRUCTURE_SPAWN:
-                return creepCtl.creep.room.find(FIND_MY_SPAWNS, {
-                    filter: spawn => spawn.energy < spawn.energyCapacity && commonFilter(spawn),
-                });
-            case STRUCTURE_CONTROLLER:
-                const controller = creepCtl.creep.room.controller;
-                return controller && commonFilter(controller) ? [controller] : [];
-            case STRUCTURE_CONTAINER:
-                return creepCtl.creep.room.find(FIND_STRUCTURES, {
-                    filter: structure =>
-                        structure.structureType === STRUCTURE_CONTAINER &&
-                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
-                        commonFilter(structure),
-                });
-            case STRUCTURE_EXTENSION:
-                return creepCtl.creep.room.find(FIND_STRUCTURES, {
-                    filter: structure =>
-                        structure.structureType === STRUCTURE_EXTENSION &&
-                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
-                        commonFilter(structure),
-                });
-            case STRUCTURE_STORAGE:
-                return creepCtl.creep.room.find(FIND_STRUCTURES, {
-                    filter: structure =>
-                        structure.structureType === STRUCTURE_STORAGE &&
-                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
-                        commonFilter(structure),
-                });
-        }
-    }
-
-    /**
-     * Sort the targets by the following rules in order:
-     * 1. Prefer a target of the type seen earlier in the deliveryTarget array
-     * 2. Prefer a target of closer distance
-     * It is assumed that all targets should have available capacity.
-     * @param creepCtl creep controller used to compute distances
-     * @param targets targets to sort
-     */
-    private sortTargets(creepCtl: CreepController, targets: Structure[]): Structure[] {
-        const computeTargetRelevance = (target: Structure): number => {
-            return (this.deliveryTargets as StructureConstant[]).indexOf(target.structureType);
-        };
-        const distances: { [key: string]: number } = {};
-        for (const target of targets) {
-            distances[target.id] = creepCtl.creep.pos.getRangeTo(target);
-        }
-        const maxDist = Math.max.apply(
-            null,
-            Object.keys(distances).map(k => distances[k]),
-        );
-        targets.sort((t1: Structure, t2: Structure) => {
-            const t1Relevance = computeTargetRelevance(t1) * maxDist;
-            const t2Relevance = computeTargetRelevance(t2) * maxDist;
-            return t1Relevance + distances[t1.id] - (t2Relevance + distances[t2.id]);
-        });
-        return targets;
     }
 
     public completed(creepCtl: CreepController) {

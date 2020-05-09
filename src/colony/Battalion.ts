@@ -3,7 +3,7 @@ import { SpawnAgent } from "agents/SpawnAgent";
 import { BaseObjective, IdleObjective } from "objectives/BaseObjective";
 import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
 import { DefendColony } from "objectives/DefendColony";
-import { KeepContainersExtensionsFull } from "objectives/KeepContainersExtensionsFull";
+import { RefillContainers, RefillSpawnStorage } from "objectives/EnergyHauling";
 import { MaintainBuildings } from "objectives/MaintainBuildings";
 import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
@@ -28,7 +28,9 @@ export class Battalion {
         this.roomPlanner = roomPlanner;
         this.name = name;
 
-        this.memory = Memory.battalions[name] || {
+        const roomName = roomPlanner.room.name;
+        const roomBattalionMemory = Memory.battalions[roomName] || {};
+        this.memory = roomBattalionMemory[name] || {
             objective: {
                 name: "IDLE",
             },
@@ -50,8 +52,10 @@ export class Battalion {
                     this.name,
                     (objectiveMemory as ContinuousHarvestingMemory).miningSpotsPerSource,
                 );
-            case "KEEP_CONT_EXT_FULL":
-                return new KeepContainersExtensionsFull(this.name);
+            case "REFILL_CONTAINERS":
+                return new RefillContainers(this.name);
+            case "REFILL_SPAWN_STORAGE":
+                return new RefillSpawnStorage(this.name);
             case "IDLE":
                 return new IdleObjective(this.name);
             case "MAINTAIN_BUILDINGS":
@@ -114,7 +118,7 @@ export class Battalion {
                 const requestCount = profileDesiredCount - profilePendingCount - profileCreepCount;
                 logger.info(
                     `${this}: requesting spawn of ${requestCount} creeps ` +
-                    `(desired: ${profileDesiredCount}, existing:${profileCreepCount}, pending: ${profilePendingCount})`,
+                        `(desired: ${profileDesiredCount}, existing:${profileCreepCount}, pending: ${profilePendingCount})`,
                 );
                 this.spawn.requestSpawn(this.name, requestCount, profile);
             }
@@ -126,10 +130,15 @@ export class Battalion {
     }
 
     public save() {
+        const roomName = this.roomPlanner.room.name;
         logger.debug(`Saving ${this.objective}`);
-        Memory.battalions[this.name] = {
+        Memory.battalions = Memory.battalions || {};
+        Memory.battalions[roomName] = Memory.battalions[roomName] || {};
+
+        Memory.battalions[roomName][this.name] = {
             objective: this.objective.save(),
         };
+
         for (const creep of this.creeps) {
             logger.debug(`Saving ${creep}`);
             creep.save();

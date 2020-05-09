@@ -45,8 +45,18 @@ interface HaulTaskMemory extends CreepTaskMemory {
     excludedPositions: Array<{ x: number; y: number }>;
 }
 
+type FETCH_TARGETS =
+    | FIND_TOMBSTONES
+    | FIND_RUINS
+    | FIND_DROPPED_RESOURCES
+    | STRUCTURE_CONTAINER
+    | STRUCTURE_STORAGE
+    | FIND_SOURCES;
+
 interface FetchTaskMemory extends CreepTaskMemory {
+    targetPriority: FETCH_TARGETS[];
     excludedPositions: Array<{ x: number; y: number }>;
+    lastFetchTargetId?: string;
 }
 
 interface BuildTaskMemory extends CreepTaskMemory {
@@ -120,7 +130,8 @@ type ObjectiveType =
     | "REACH_RCL3"
     | "IDLE"
     | "CONTINUOUS_HARVESTING"
-    | "KEEP_CONT_EXT_FULL"
+    | "REFILL_CONTAINERS"
+    | "REFILL_SPAWN_STORAGE"
     | "MAINTAIN_BUILDINGS"
     | "DEFEND_COLONY";
 
@@ -140,6 +151,7 @@ interface ColonyBattalionsMemory {
     allPurposeReserve?: BattalionMemory;
     builders?: BattalionMemory;
     haulers?: BattalionMemory;
+    hatchers?: BattalionMemory;
     harvesters?: BattalionMemory;
     attackers?: BattalionMemory;
     defenders?: BattalionMemory;
@@ -149,7 +161,7 @@ interface RoomPlanMemory {
     containers?: {
         sources: Array<{ x: number; y: number; sourceId: string }>;
         sinks: Array<{ x: number; y: number }>;
-        spawns: Array<{ x: number; y: number }>;
+        spawn?: { x: number; y: number };
     };
     defenderGarrison?: { x: number; y: number };
     spawnFortresses?: { [key: string]: IBuildUnit[] };
@@ -165,7 +177,7 @@ interface Memory {
     globalCount: number;
     nameCount: [number, number, number];
     roomObjectives: { [key: string]: ObjectiveMemory };
-    battalions: ColonyBattalionsMemory;
+    battalions: { [key: string]: ColonyBattalionsMemory };
     roomPlans: { [key: string]: RoomPlanMemory };
     prevNow: number;
     prevDuration: number;
@@ -197,6 +209,7 @@ type DeliveryTarget =
     | STRUCTURE_CONTAINER
     | STRUCTURE_CONTROLLER
     | STRUCTURE_EXTENSION
-    | STRUCTURE_STORAGE;
+    | STRUCTURE_STORAGE
+    | STRUCTURE_TOWER;
 
 type IConstructable<T> = new (...args: any) => T;

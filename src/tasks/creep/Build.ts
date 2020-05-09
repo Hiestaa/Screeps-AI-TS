@@ -33,7 +33,7 @@ export class Build extends BaseCreepTask {
             this.noMoreTarget = true;
             return;
         }
-        return this.buildTargets(creepCtl, target, attempt, exclude);
+        return this.buildTarget(creepCtl, target, attempt, exclude);
     }
 
     private findTarget(creepCtl: CreepController, exclude: string[]) {
@@ -51,7 +51,7 @@ export class Build extends BaseCreepTask {
         });
     }
 
-    private buildTargets(creepCtl: CreepController, target: ConstructionSite, attempt: number = 0, exclude: string[]) {
+    private buildTarget(creepCtl: CreepController, target: ConstructionSite, attempt: number = 0, exclude: string[]) {
         creepCtl
             .build(target)
             .on(OK, () => {

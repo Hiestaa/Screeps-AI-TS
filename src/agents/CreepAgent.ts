@@ -54,7 +54,8 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
             case "TASK_BUILD":
                 return new Build((taskMemory as BuildTaskMemory).buildPriority);
             case "TASK_FETCH":
-                return new Fetch((taskMemory as FetchTaskMemory).excludedPositions);
+                const fetchMem = taskMemory as FetchTaskMemory;
+                return new Fetch(fetchMem.targetPriority, fetchMem.excludedPositions, fetchMem.lastFetchTargetId);
             case "TASK_REPAIR":
                 return new Repair();
             case "TASK_UPGRADE_CONTROLLER":

@@ -101,7 +101,7 @@ export class RoomPlanner {
                 );
                 if (containerOrStore) {
                     this.roomPlan.addSinkContainer(containerOrStore.x, containerOrStore.y);
-                    this.roomPlan.addSpawnContainer(containerOrStore.x, containerOrStore.y);
+                    this.roomPlan.setSpawnContainer(containerOrStore.x, containerOrStore.y);
                 }
                 this.roomPlan.updateSpawnFortress(spawnName, buildUnits);
                 this.room.scheduleTask(new PlaceConstructionSites(buildUnits));
@@ -168,7 +168,8 @@ export class RoomPlanner {
                     .concat(path.map(({ x, y }) => ({ x: x - 1, y: y + 1 })));
             }
         };
-        for (const spawn of this.roomPlan.plan.containers?.spawns || []) {
+        const spawn = this.roomPlan.plan.containers?.spawn;
+        if (spawn) {
             for (const source of this.roomPlan.plan.containers?.sources || []) {
                 const path = this.buildRoadsBetweenPositions(spawn, source, allPaths);
                 addPath(path);
@@ -506,7 +507,7 @@ class RoomPlan {
 
     private emptyPlan(): RoomPlanMemory {
         return {
-            containers: { sources: [], sinks: [], spawns: [] },
+            containers: { sources: [], sinks: [] },
             defenderGarrison: { x: -1, y: -1 },
             spawnFortresses: {},
             roads: [],
@@ -515,7 +516,7 @@ class RoomPlan {
 
     // TODO[OPTIMIZATION]: index source containers by source id to avoid doing a `find`
     public addSourceContainer(x: number, y: number, sourceId: string) {
-        this.plan.containers = this.plan.containers || { sources: [], sinks: [], spawns: [] };
+        this.plan.containers = this.plan.containers || { sources: [], sinks: [] };
         this.plan.containers.sources = this.plan.containers.sources || [];
         const existing = this.plan.containers.sources.find(c => c.x === x && c.y === y);
         if (!existing) {
@@ -524,13 +525,13 @@ class RoomPlan {
     }
 
     public getContainerPositionForSource(sourceId: string) {
-        this.plan.containers = this.plan.containers || { sources: [], sinks: [], spawns: [] };
+        this.plan.containers = this.plan.containers || { sources: [], sinks: [] };
 
         return this.plan.containers.sources.find(c => c.sourceId === sourceId);
     }
 
     public addSinkContainer(x: number, y: number) {
-        this.plan.containers = this.plan.containers || { sources: [], sinks: [], spawns: [] };
+        this.plan.containers = this.plan.containers || { sources: [], sinks: [] };
         this.plan.containers.sinks = this.plan.containers.sinks || [];
         const existing = this.plan.containers.sinks.find(c => c.x === x && c.y === y);
         if (!existing) {
@@ -538,13 +539,9 @@ class RoomPlan {
         }
     }
 
-    public addSpawnContainer(x: number, y: number) {
-        this.plan.containers = this.plan.containers || { sources: [], sinks: [], spawns: [] };
-        this.plan.containers.spawns = this.plan.containers.spawns || [];
-        const existing = this.plan.containers.spawns.find(c => c.x === x && c.y === y);
-        if (!existing) {
-            this.plan.containers.spawns.push({ x, y });
-        }
+    public setSpawnContainer(x: number, y: number) {
+        this.plan.containers = this.plan.containers || { sources: [], sinks: [] };
+        this.plan.containers.spawn = { x, y };
     }
 
     public updateSpawnFortress(spawnName: string, sites: IBuildUnit[]) {

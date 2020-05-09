@@ -6,6 +6,15 @@ import { BaseCreepTask } from "./BaseCreepTask";
 const logger = getLogger("tasks.creep.Fetch", COLORS.tasks);
 const MAX_RANGE_HOSTILE = 8;
 
+const allFetchTargets = [
+    FIND_TOMBSTONES,
+    FIND_RUINS,
+    FIND_DROPPED_RESOURCES,
+    STRUCTURE_CONTAINER,
+    STRUCTURE_STORAGE,
+    FIND_SOURCES,
+];
+
 /**
  * The fetch task will control the creep to retrieve energy from the closest
  * available drop / container / source in that order.
@@ -13,73 +22,124 @@ const MAX_RANGE_HOSTILE = 8;
 export class Fetch extends BaseCreepTask {
     public excludedPositions: Array<{ x: number; y: number }>;
     private lastFetchTargetId?: string;
+    public targetPriority: FETCH_TARGETS[];
 
-    constructor(excludedPositions?: Array<{ x: number; y: number }>) {
+    constructor(
+        targetPriority?: FETCH_TARGETS[],
+        excludedPositions?: Array<{ x: number; y: number }>,
+        lastFetchTargetId?: string,
+    ) {
         super("TASK_FETCH");
         this.excludedPositions = excludedPositions || [];
+        this.targetPriority = targetPriority || [];
+        this._addMissingTargets();
+        this.lastFetchTargetId = lastFetchTargetId;
     }
 
-    public execute(creep: CreepController): void {
+    private _addMissingTargets(): void {
+        for (const target of allFetchTargets) {
+            if (!this.targetPriority.includes(target)) {
+                this.targetPriority.push(target);
+            }
+        }
+    }
+
+    public execute(creepCtl: CreepController) {
         // TODO[OPTIMIZATION]: remember assigned target in memory to save on computation
-        const hostiles = creep.creep.room.find(FIND_HOSTILE_CREEPS);
+        const hostiles = creepCtl.creep.room.find(FIND_HOSTILE_CREEPS);
 
         // avoid any excluded position and any hostile creep
         const excPosFilter = ({ pos }: { pos: RoomPosition }) => {
             return (
-                !this.excludedPositions.includes({ x: pos.x, y: pos.x }) &&
+                !this.excludedPositions.find(({ x, y }) => x === pos.x && y === pos.y) &&
                 hostiles.every(hostile => hostile.pos.getRangeTo(pos) > MAX_RANGE_HOSTILE)
             );
         };
-        const tombstone = creep.creep.pos.findClosestByRange(FIND_TOMBSTONES, {
-            filter: structure => structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && excPosFilter(structure),
-        });
-        if (tombstone) {
-            logger.debug(`${creep}: picking up ${tombstone}`);
-            return this.moveToIfFail(creep, creep.withdraw(tombstone, RESOURCE_ENERGY), tombstone);
+
+        for (const fetchTarget of this.targetPriority) {
+            let foundTarget: boolean = false;
+            if (fetchTarget === FIND_TOMBSTONES || fetchTarget === FIND_RUINS) {
+                foundTarget = this.withdrawFromTombOrRuin(creepCtl, fetchTarget, excPosFilter);
+            } else if (fetchTarget === FIND_DROPPED_RESOURCES) {
+                foundTarget = this.pickupDroppedResource(creepCtl, excPosFilter);
+            } else if (fetchTarget === STRUCTURE_STORAGE || fetchTarget === STRUCTURE_CONTAINER) {
+                foundTarget = this.withdrawFromStorage(creepCtl, fetchTarget, excPosFilter);
+            } else if (fetchTarget === FIND_SOURCES && creepCtl.creep.memory.profile !== "Hauler") {
+                foundTarget = this.extractFromSource(creepCtl, excPosFilter);
+            }
+
+            if (foundTarget) {
+                return;
+            }
         }
 
-        const ruin = creep.creep.pos.findClosestByRange(FIND_RUINS, {
-            filter: structure => structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && excPosFilter(structure),
-        });
-        if (ruin) {
-            logger.debug(`${creep}: picking up ${ruin}`);
-            return this.moveToIfFail(creep, creep.withdraw(ruin, RESOURCE_ENERGY), ruin);
-        }
+        logger.debug(`${creepCtl}: no available energy deposit to fetch from - pausing for 10 cycles.`);
+        this.pause(10);
+    }
 
-        const droppedResource = creep.creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
+    private withdrawFromTombOrRuin(
+        creepCtl: CreepController,
+        fetchTarget: FIND_TOMBSTONES | FIND_RUINS,
+        commonFilter: (structure: { pos: RoomPosition }) => boolean,
+    ) {
+        const target = creepCtl.creep.pos.findClosestByRange(fetchTarget, {
+            filter: structure => structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && commonFilter(structure),
+        });
+        if (target) {
+            logger.debug(`${creepCtl}: withdrawing from ${target}`);
+            this.moveToIfFail(creepCtl, creepCtl.withdraw(target, RESOURCE_ENERGY), target);
+            return true;
+        }
+        return false;
+    }
+
+    private pickupDroppedResource(
+        creepCtl: CreepController,
+        commonFilter: (structure: { pos: RoomPosition }) => boolean,
+    ) {
+        const droppedResource = creepCtl.creep.pos.findClosestByRange(FIND_DROPPED_RESOURCES, {
             filter: item =>
                 item.resourceType === RESOURCE_ENERGY &&
-                item.amount > creep.creep.store.getFreeCapacity() &&
-                excPosFilter(item),
+                item.amount > creepCtl.creep.store.getFreeCapacity() &&
+                commonFilter(item),
         });
         if (droppedResource) {
-            logger.debug(`${creep}: picking up ${droppedResource}`);
-            return this.moveToIfFail(creep, creep.pickup(droppedResource), droppedResource);
+            logger.debug(`${creepCtl}: picking up ${droppedResource}`);
+            this.moveToIfFail(creepCtl, creepCtl.pickup(droppedResource), droppedResource);
+            return true;
         }
+        return false;
+    }
 
-        const container = creep.creep.pos.findClosestByRange(FIND_STRUCTURES, {
+    private withdrawFromStorage(
+        creepCtl: CreepController,
+        fetchTarget: STRUCTURE_CONTAINER | STRUCTURE_STORAGE,
+        commonFilter: (structure: { pos: RoomPosition }) => boolean,
+    ) {
+        const target = creepCtl.creep.pos.findClosestByRange(FIND_STRUCTURES, {
             filter: structure =>
-                structure.structureType === STRUCTURE_CONTAINER &&
-                structure.store.getUsedCapacity(RESOURCE_ENERGY) > creep.creep.store.getFreeCapacity() &&
-                excPosFilter(structure),
+                structure.structureType === fetchTarget &&
+                structure.store.getUsedCapacity(RESOURCE_ENERGY) > creepCtl.creep.store.getFreeCapacity() &&
+                commonFilter(structure),
         });
-        if (container) {
-            logger.debug(`${creep}: picking up ${container}`);
-            // remember container resource got fetched from not to haul straight back in after
-            this.lastFetchTargetId = container.id;
-            return this.moveToIfFail(creep, creep.withdraw(container, RESOURCE_ENERGY), container);
+        if (target) {
+            logger.debug(`${creepCtl}: withdrawing from ${target}`);
+            // remember target resource got fetched from not to haul straight back in after
+            this.lastFetchTargetId = target.id;
+            this.moveToIfFail(creepCtl, creepCtl.withdraw(target, RESOURCE_ENERGY), target);
+            return true;
         }
+        return false;
+    }
 
-        if (creep.creep.memory.profile !== "Hauler") {
-            const source = creep.creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE, { filter: excPosFilter });
-            if (source) {
-                logger.debug(`${creep}: picking up ${source}`);
-                return this.moveToIfFail(creep, creep.harvest(source), source);
-            }
-        } else {
-            logger.debug(`${creep}: no available energy deposit to fetch from - pausing for 10 cycles.`);
-            this.pause(10);
+    private extractFromSource(creepCtl: CreepController, commonFilter: (structure: { pos: RoomPosition }) => boolean) {
+        const source = creepCtl.creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE, { filter: commonFilter });
+        if (source) {
+            logger.debug(`${creepCtl}: picking up ${source}`);
+            this.moveToIfFail(creepCtl, creepCtl.harvest(source), source);
+            return true;
         }
+        return false;
     }
 
     private moveToIfFail(creep: CreepController, switcher: ReturnCodeSwitcher<any>, pos: { pos: RoomPosition }): void {
@@ -118,7 +178,12 @@ export class Fetch extends BaseCreepTask {
 
     public toJSON(): FetchTaskMemory {
         const json = super.toJSON();
-        const memory: FetchTaskMemory = { excludedPositions: this.excludedPositions, ...json };
+        const memory: FetchTaskMemory = {
+            excludedPositions: this.excludedPositions,
+            targetPriority: this.targetPriority,
+            lastFetchTargetId: this.lastFetchTargetId,
+            ...json,
+        };
         return memory;
     }
 }

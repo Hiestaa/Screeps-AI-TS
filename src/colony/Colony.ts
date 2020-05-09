@@ -1,7 +1,8 @@
 import { SpawnAgent } from "agents/SpawnAgent";
+import { IdleObjective } from "objectives/BaseObjective";
 import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
 import { DefendColony } from "objectives/DefendColony";
-import { KeepContainersExtensionsFull } from "objectives/KeepContainersExtensionsFull";
+import { RefillContainers, RefillSpawnStorage } from "objectives/EnergyHauling";
 import { MaintainBuildings } from "objectives/MaintainBuildings";
 import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
@@ -10,6 +11,8 @@ import { Battalion } from "./Battalion";
 import { AvailableSpotsFinder, RoomPlanner } from "./RoomPlanner";
 
 const logger = getLogger("colony.Colony", COLORS.colony);
+
+const GP_BATTALION_PHASE_OUT_LEVEL = 2;
 
 /**
  * A colony is represents the settlement of a particular room.
@@ -52,8 +55,9 @@ export class Colony {
 
         // TODO: in case of multiple spawn available, better battalion / spawn dispatch
         // than assigning the first spawn to every battalion
+        const battalionsMemory = Memory.battalions[room.name] || {};
         if (firstSpawn) {
-            const battalionIds = Object.keys(Memory.battalions) as Array<keyof ColonyBattalionsMemory>;
+            const battalionIds = Object.keys(battalionsMemory) as Array<keyof ColonyBattalionsMemory>;
             for (const battalionId of battalionIds) {
                 logger.debug(`Reloading battalion ${battalionId} in ${this}`);
                 this.battalions[battalionId] = new Battalion(battalionId, firstSpawn, this.roomPlanner);
@@ -66,13 +70,20 @@ export class Colony {
     }
 
     private initializeBattalions(spawn: SpawnAgent) {
-        if (!this.battalions.allPurposeReserve) {
+        const level = this.roomPlanner.room.roomController?.room.controller?.level;
+
+        // FIXME: This is run at init time only, it won't delete the battalion past RCL4
+        if (level && level <= 4 && !this.battalions.allPurposeReserve) {
             logger.info(`All Purpose Reserve battalion not found in ${this}. Initializing.`);
             this.battalions.allPurposeReserve = new Battalion("allPurposeReserve", spawn, this.roomPlanner);
             this.battalions.allPurposeReserve.objective = new ReachRCL2("allPurposeReserve");
         }
 
-        const level = this.roomPlanner.room.roomController?.room.controller?.level;
+        if (!this.battalions.builders) {
+            this.battalions.builders = new Battalion("builders", spawn, this.roomPlanner);
+            this.battalions.builders.objective = new MaintainBuildings("builders");
+        }
+
         if (level && level >= 2) {
             if (!this.battalions.harvesters) {
                 this.battalions.harvesters = new Battalion("harvesters", spawn, this.roomPlanner);
@@ -81,15 +92,18 @@ export class Colony {
                     AvailableSpotsFinder.countMiningSpotsPerSource(this.roomPlanner.room),
                 );
             }
-            if (!this.battalions.haulers) {
-                this.battalions.haulers = new Battalion("haulers", spawn, this.roomPlanner);
-                this.battalions.haulers.objective = new KeepContainersExtensionsFull("haulers");
+        }
+        if (level && level >= 2) {
+            if (!this.battalions.hatchers) {
+                this.battalions.hatchers = new Battalion("hatchers", spawn, this.roomPlanner);
+                this.battalions.hatchers.objective = new RefillSpawnStorage("hatchers");
             }
         }
-
-        if (!this.battalions.builders) {
-            this.battalions.builders = new Battalion("builders", spawn, this.roomPlanner);
-            this.battalions.builders.objective = new MaintainBuildings("builders");
+        if (level && level >= 3) {
+            if (!this.battalions.haulers) {
+                this.battalions.haulers = new Battalion("haulers", spawn, this.roomPlanner);
+                this.battalions.haulers.objective = new RefillContainers("haulers");
+            }
         }
 
         if (level && level >= 8) {
@@ -185,6 +199,10 @@ export class Colony {
                 logger.warning("Controller reached or downgraded to level 2. ");
                 battalion.objective = new ReachRCL3(name);
             }
+            // TODO: delete the battalion
+            // if (controllerLevel >= GP_BATTALION_PHASE_OUT_LEVEL) {
+            //     battalion.objective = new IdleObjective(name);
+            // }
         }
     }
 
