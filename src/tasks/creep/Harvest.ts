@@ -27,6 +27,11 @@ export class Harvest extends BaseCreepTask {
             return;
         }
 
+        if (this.from && (creepCtl.creep.pos.x !== this.from.x || creepCtl.creep.pos.y !== this.from.y)) {
+            creepCtl.moveTo(this.from.x, this.from.y).logFailure();
+            // can still execute harvest after that
+        }
+
         return creepCtl
             .harvest(source)
             .on(ERR_NOT_IN_RANGE, () => {

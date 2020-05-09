@@ -90,6 +90,13 @@ export class Haul extends BaseCreepTask {
                         structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
                         commonFilter(structure),
                 });
+            case STRUCTURE_STORAGE:
+                return creepCtl.creep.room.find(FIND_STRUCTURES, {
+                    filter: structure =>
+                        structure.structureType === STRUCTURE_STORAGE &&
+                        structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
+                        commonFilter(structure),
+                });
         }
     }
 
@@ -103,7 +110,7 @@ export class Haul extends BaseCreepTask {
      */
     private sortTargets(creepCtl: CreepController, targets: Structure[]): Structure[] {
         const computeTargetRelevance = (target: Structure): number => {
-            return (this.deliveryTargets as STRUCTURE_X[]).indexOf(target.structureType);
+            return (this.deliveryTargets as StructureConstant[]).indexOf(target.structureType);
         };
         const distances: { [key: string]: number } = {};
         for (const target of targets) {

@@ -50,7 +50,7 @@ interface FetchTaskMemory extends CreepTaskMemory {
 }
 
 interface BuildTaskMemory extends CreepTaskMemory {
-    buildPriority: STRUCTURE_X[];
+    buildPriority: StructureConstant[];
 }
 
 interface HarvestTaskMemory extends CreepTaskMemory {
@@ -192,28 +192,11 @@ declare namespace NodeJS {
     }
 }
 
-type STRUCTURE_X =
+type DeliveryTarget =
     | STRUCTURE_SPAWN
-    | STRUCTURE_EXTENSION
-    | STRUCTURE_ROAD
-    | STRUCTURE_WALL
-    | STRUCTURE_RAMPART
-    | STRUCTURE_KEEPER_LAIR
-    | STRUCTURE_PORTAL
-    | STRUCTURE_CONTROLLER
-    | STRUCTURE_LINK
-    | STRUCTURE_STORAGE
-    | STRUCTURE_TOWER
-    | STRUCTURE_OBSERVER
-    | STRUCTURE_POWER_BANK
-    | STRUCTURE_POWER_SPAWN
-    | STRUCTURE_EXTRACTOR
-    | STRUCTURE_LAB
-    | STRUCTURE_TERMINAL
     | STRUCTURE_CONTAINER
-    | STRUCTURE_NUKER
-    | STRUCTURE_FACTORY
-    | STRUCTURE_INVADER_CORE;
+    | STRUCTURE_CONTROLLER
+    | STRUCTURE_EXTENSION
+    | STRUCTURE_STORAGE;
 
-type DeliveryTarget = STRUCTURE_SPAWN | STRUCTURE_CONTAINER | STRUCTURE_CONTROLLER | STRUCTURE_EXTENSION;
 type IConstructable<T> = new (...args: any) => T;

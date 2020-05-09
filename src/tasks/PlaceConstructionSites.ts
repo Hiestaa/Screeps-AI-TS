@@ -5,6 +5,8 @@ import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("tasks.PlaceConstructionSites", COLORS.tasks);
 
+const CAN_BE_BUILT_ON_STRUCTURES: StructureConstant[] = [STRUCTURE_RAMPART];
+
 /**
  * Tasks for placing construction site
  * The task is complete when the layout is fully built.
@@ -44,10 +46,24 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
                 return;
             }
 
+            if (!CAN_BE_BUILT_ON_STRUCTURES.includes(unit.structureType)) {
+                const items = roomCtl.room.lookForAt(LOOK_STRUCTURES, unit.x, unit.y);
+                for (const item of items) {
+                    logger.warning(`${roomCtl}: destroying structure ${item} to place construction site ${unit}`);
+                    item.destroy();
+                }
+
+                if (items.length > 0) {
+                    failedBuildUnits.push(unit);
+                    buildUnit(this.scheduledBuildUnits.shift());
+                    return;
+                }
+            }
+
             roomCtl
                 .createConstructionSite(unit.x, unit.y, unit.structureType)
                 .on(OK, () => {
-                    this.buildUnitsInProgress.push(unit!); // can't be undefined we just called while() on it
+                    this.buildUnitsInProgress.push(unit);
                 })
                 .on(ERR_INVALID_TARGET, () => {
                     logger.warning(
@@ -74,7 +90,7 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
                     );
                 })
                 .failure(() => {
-                    failedBuildUnits.push(unit!); // can't be undefined we just called while() on it
+                    failedBuildUnits.push(unit);
                 })
                 .logFailure();
 

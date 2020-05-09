@@ -30,7 +30,6 @@ export class Fetch extends BaseCreepTask {
                 hostiles.every(hostile => hostile.pos.getRangeTo(pos) > MAX_RANGE_HOSTILE)
             );
         };
-
         const tombstone = creep.creep.pos.findClosestByRange(FIND_TOMBSTONES, {
             filter: structure => structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && excPosFilter(structure),
         });
@@ -39,7 +38,9 @@ export class Fetch extends BaseCreepTask {
             return this.moveToIfFail(creep, creep.withdraw(tombstone, RESOURCE_ENERGY), tombstone);
         }
 
-        const ruin = creep.creep.pos.findClosestByRange(FIND_RUINS, { filter: excPosFilter });
+        const ruin = creep.creep.pos.findClosestByRange(FIND_RUINS, {
+            filter: structure => structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && excPosFilter(structure),
+        });
         if (ruin) {
             logger.debug(`${creep}: picking up ${ruin}`);
             return this.moveToIfFail(creep, creep.withdraw(ruin, RESOURCE_ENERGY), ruin);
@@ -91,6 +92,10 @@ export class Fetch extends BaseCreepTask {
             })
             .on(ERR_NOT_ENOUGH_RESOURCES, () => {
                 logger.debug(`${creep}: Target is empty - will try again.`);
+            })
+            .on(ERR_INVALID_TARGET, () => {
+                logger.failure(ERR_INVALID_TARGET, `${creep}: Invalid target at position: ${pos}`);
+                this.excludedPositions.push(pos.pos);
             })
             .logFailure();
     }

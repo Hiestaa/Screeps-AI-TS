@@ -11,13 +11,13 @@ export class Build extends BaseCreepTask {
     // when on, task is complete - only useful during the current turn, saving in task memory is not needed
     private noMoreTarget: boolean = false;
     private earlyInterruption: boolean = false;
-    private buildPriority: STRUCTURE_X[];
+    private buildPriority: StructureConstant[];
 
     /**
      *
      * @param buildPriority array of structure types first come first serve.
      */
-    constructor(buildPriority: STRUCTURE_X[] = []) {
+    constructor(buildPriority: StructureConstant[] = []) {
         super("TASK_BUILD");
         this.buildPriority = buildPriority || [];
     }

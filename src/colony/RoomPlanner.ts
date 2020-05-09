@@ -96,10 +96,12 @@ export class RoomPlanner {
             const spawnAgent = this.spawns[spawnName];
             if (spawnAgent.spawnController) {
                 const buildUnits = gridFortress(spawnAgent.spawnController.spawn.pos, controllerLevel);
-                const container = buildUnits.find(b => b.structureType === STRUCTURE_CONTAINER);
-                if (container) {
-                    this.roomPlan.addSinkContainer(container.x, container.y);
-                    this.roomPlan.addSpawnContainer(container.x, container.y);
+                const containerOrStore = buildUnits.find(
+                    b => b.structureType === STRUCTURE_CONTAINER || b.structureType === STRUCTURE_STORAGE,
+                );
+                if (containerOrStore) {
+                    this.roomPlan.addSinkContainer(containerOrStore.x, containerOrStore.y);
+                    this.roomPlan.addSpawnContainer(containerOrStore.x, containerOrStore.y);
                 }
                 this.roomPlan.updateSpawnFortress(spawnName, buildUnits);
                 this.room.scheduleTask(new PlaceConstructionSites(buildUnits));
