@@ -1,3 +1,15 @@
+// For some reason these are inaccurate on the private server
+const BODYPART_COST = {
+    move: 50,
+    work: 100,
+    attack: 80,
+    carry: 50,
+    heal: 250,
+    ranged_attack: 150,
+    tough: 10,
+    claim: 600,
+};
+
 export abstract class BaseCreepProfile {
     public name: CREEP_PROFILE;
     public bodyParts: BodyPartConstant[];
@@ -11,6 +23,10 @@ export abstract class BaseCreepProfile {
 
     /**
      * Add 1 level worth of body parts to this creep profile
+     * As a rule of thumb for the number of MOVE body parts to reach the maximum speed:
+     * - a creep needs half the number of non-MOVE body parts travelling on road,
+     * - the same number of non-MOVE body parts travelling on plain and
+     * - 5 times the number of non-MOVE body parts travelling on swamp.
      */
     public abstract incrementLevel(): void;
 

@@ -1,6 +1,6 @@
 import { RoomController } from "agents/controllers/RoomController";
 import { BaseTask } from "tasks/BaseTask";
-import { IBuildUnit } from "utils/layouts/renderer";
+import { buildUnitToStr, IBuildUnit } from "utils/layouts/renderer";
 import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("tasks.PlaceConstructionSites", COLORS.tasks);
@@ -49,8 +49,13 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
             if (!CAN_BE_BUILT_ON_STRUCTURES.includes(unit.structureType)) {
                 const items = roomCtl.room.lookForAt(LOOK_STRUCTURES, unit.x, unit.y);
                 for (const item of items) {
-                    logger.warning(`${roomCtl}: destroying structure ${item} to place construction site ${unit}`);
-                    item.destroy();
+                    if (item.structureType !== unit.structureType) {
+                        logger.warning(
+                            `${roomCtl}: destroying structure ${item} ` +
+                                `to place construction site ${buildUnitToStr(unit)}`,
+                        );
+                        item.destroy();
+                    }
                 }
 
                 if (items.length > 0) {

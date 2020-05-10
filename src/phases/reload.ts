@@ -1,4 +1,5 @@
 import { Colony } from "colony/Colony";
+import * as cpuUsageEstimator from "utils/cpuUsageEstimator";
 import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("phases.reload", COLORS.phases);
@@ -8,6 +9,7 @@ const logger = getLogger("phases.reload", COLORS.phases);
  * Re-instantiate all the game objects based on the current memory/game state.
  */
 export function reload(): { [key: string]: Colony } {
+    cpuUsageEstimator.notifyStart("phases.reload");
     logger.debug(">>> RELOAD <<<");
 
     const colonies: { [key: string]: Colony } = {};
@@ -47,6 +49,7 @@ export function reload(): { [key: string]: Colony } {
         colony.reloadCreep(creepName);
     }
 
+    cpuUsageEstimator.notifyComplete();
     // TODO: necessary to clear up memory when `Memory.creep` exist but not `Game.creep`?
     // Would it screw the spawning process with memory pre-setting?
     return colonies;

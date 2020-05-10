@@ -1,18 +1,16 @@
 import { SpawnAgent } from "agents/SpawnAgent";
-import { IdleObjective } from "objectives/BaseObjective";
 import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
 import { DefendColony } from "objectives/DefendColony";
 import { RefillContainers, RefillSpawnStorage } from "objectives/EnergyHauling";
 import { MaintainBuildings } from "objectives/MaintainBuildings";
 import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
+import * as cpuUsageEstimator from "utils/cpuUsageEstimator";
 import { COLORS, getLogger } from "utils/Logger";
 import { Battalion } from "./Battalion";
 import { AvailableSpotsFinder, RoomPlanner } from "./RoomPlanner";
 
 const logger = getLogger("colony.Colony", COLORS.colony);
-
-const GP_BATTALION_PHASE_OUT_LEVEL = 2;
 
 /**
  * A colony is represents the settlement of a particular room.
@@ -65,7 +63,9 @@ export class Colony {
 
             this.initializeBattalions(firstSpawn);
         } else {
-            logger.warning(`No spawn in ${room} - not reloading / initializing any battalion`);
+            // FIXME: de-correlate battalions from spawn if we want to get battalions to travel to other rooms that have no spawn
+            logger.debug(`No spawn in ${room} - not reloading / initializing any battalion`);
+            delete Memory.battalions[room.name];
         }
     }
 
@@ -151,6 +151,7 @@ export class Colony {
      * * Spawns, to execute spawn requests
      */
     public execute() {
+        cpuUsageEstimator.notifyStart(`colony.${this.roomPlanner.room.name}`);
         logger.debug(`Executing ${this}`);
         this.roomPlanner.execute();
 
@@ -171,6 +172,7 @@ export class Colony {
         }
 
         this.transitionObjectives();
+        cpuUsageEstimator.notifyComplete();
     }
 
     /**
@@ -185,7 +187,7 @@ export class Colony {
         const name = "allPurposeReserve";
         const battalion = this.battalions[name];
         if (!battalion) {
-            logger.warning("No allPurposeReserve battalion");
+            logger.debug("No allPurposeReserve battalion");
             return;
         }
 

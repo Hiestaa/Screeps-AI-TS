@@ -8,7 +8,7 @@ import { ReachRCL2 } from "./ReachRCL2";
 
 const logger = getLogger("objectives.ReachRCL3", COLORS.objectives);
 
-export const CONTROLLER_DOWNGRADE_TIMER_LEVEL: { [key: number]: number } = {
+export const CONTROLLER_DOWNGRADE_TIMER_LEVEL: { [key: number]: number } = CONTROLLER_DOWNGRADE || {
     1: 20000,
     2: 10000,
     3: 20000,

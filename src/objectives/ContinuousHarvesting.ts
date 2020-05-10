@@ -68,7 +68,9 @@ export class ContinuousHarvesting extends BaseObjective {
             }
 
             if (i > sourceIds.length) {
-                logger.warning(`Too many creeps for the number of sources`);
+                if (Game.time % 10 === 0) {
+                    logger.warning(`Too many creeps for the number of sources`);
+                }
                 break;
             }
         }

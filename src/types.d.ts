@@ -182,6 +182,7 @@ interface Memory {
     prevNow: number;
     prevDuration: number;
     prevDurations: number[];
+    cpuUsageEstimator: { enabled: boolean; depth: number };
 }
 
 declare interface RoomPosition {
@@ -200,6 +201,8 @@ declare namespace NodeJS {
             pause: () => void;
             resume: () => void;
             queryTickTimer: () => void;
+            enableCpuUsageEstimator: (depth?: number) => void;
+            disableCpuUsageEstimator: () => void;
         };
     }
 }

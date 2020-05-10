@@ -1,3 +1,5 @@
+import * as cpuUsageEstimator from "utils/cpuUsageEstimator";
+
 import { act } from "./act";
 import { isPaused } from "./pause";
 import { reload } from "./reload";
@@ -8,6 +10,7 @@ export function mainLoop() {
     if (isPaused()) {
         return;
     }
+    cpuUsageEstimator.tickStart();
 
     initialize();
     const colonies = reload();
@@ -15,6 +18,7 @@ export function mainLoop() {
     save(colonies);
 
     measure();
+    cpuUsageEstimator.tickEnd();
 }
 
 function initialize() {

@@ -1,5 +1,6 @@
 import { BaseController, Controllable } from "agents/controllers/BaseController";
 import { BaseTask } from "tasks/BaseTask";
+import * as cpuUsageEstimator from "utils/cpuUsageEstimator";
 import { COLORS, getLogger, Logger } from "utils/Logger";
 
 const logger = getLogger("controllers.agents.BaseAgent", COLORS.controllers);
@@ -72,9 +73,9 @@ export abstract class BaseAgent<
     public replaceTask(task: TaskType) {
         if (this.taskQueue.length === 0) {
             this.taskQueue.push(task);
-            this.logger.info(`${this}: replacing current task with ${task}`);
+            this.logger.debug(`${this}: replacing current task with ${task}`);
         } else {
-            this.logger.info(`${this}: replacing ${this.taskQueue[0]} with ${task}`);
+            this.logger.debug(`${this}: replacing ${this.taskQueue[0]} with ${task}`);
             this.taskQueue[0] = task;
         }
     }
@@ -97,6 +98,7 @@ export abstract class BaseAgent<
 
     public execute() {
         const controller = this.getController();
+        cpuUsageEstimator.notifyStart(`agents.${this.name}`);
         if (this.taskQueue.length === 0) {
             this.memory.idleTime += 1;
             if (this.memory.idleTime > 0 && this.memory.idleTime % WARN_IDLE_PERIOD === 0) {
@@ -133,6 +135,7 @@ export abstract class BaseAgent<
 
         // re-check if task has completed, saves some memory in case the task Memory doesn't need to be saved
         this.hasTaskCompleted(currentTask, controller);
+        cpuUsageEstimator.notifyComplete();
     }
 
     private nextTask(): TaskType {

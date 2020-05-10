@@ -7,6 +7,7 @@ import { RefillContainers, RefillSpawnStorage } from "objectives/EnergyHauling";
 import { MaintainBuildings } from "objectives/MaintainBuildings";
 import { ReachRCL2 } from "objectives/ReachRCL2";
 import { ReachRCL3 } from "objectives/ReachRCL3";
+import * as cpuUsageEstimator from "utils/cpuUsageEstimator";
 import { COLORS, getLogger } from "utils/Logger";
 import { RoomPlanner } from "./RoomPlanner";
 
@@ -83,6 +84,7 @@ export class Battalion {
      * Spawn and room agents are not executed as multiple battalion may be referencing the same spawn and room.
      */
     public execute() {
+        cpuUsageEstimator.notifyStart(`battalions.${this.roomPlanner.room.name}.${this.name}`);
         this.objective.execute(this.creeps, this.roomPlanner, this.spawn);
 
         for (const creep of this.creeps) {
@@ -90,6 +92,7 @@ export class Battalion {
         }
 
         this.requestNewCreepsIfNecessary();
+        cpuUsageEstimator.notifyComplete();
     }
 
     public requestNewCreepsIfNecessary() {

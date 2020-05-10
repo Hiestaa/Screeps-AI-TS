@@ -12,6 +12,8 @@ export class Worker extends BaseCreepProfile {
     public incrementLevel(): void {
         this.bodyParts.push(CARRY);
         this.bodyParts.push(WORK);
+        this.bodyParts.push(MOVE);
+        this.bodyParts.push(MOVE);
         this.level += 1;
     }
 }

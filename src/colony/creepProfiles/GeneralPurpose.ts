@@ -1,4 +1,7 @@
+import { COLORS, getLogger } from "utils/Logger";
 import { BaseCreepProfile } from "./BaseCreepProfile";
+
+const logger = getLogger("colony.creepProfiles.GeneralPurpose", COLORS.colony);
 
 /**
  * Hauler creep profile, designed to carry resources from haulers to extensions, containers, etc..
@@ -10,18 +13,13 @@ export class GeneralPurpose extends BaseCreepProfile {
         super("GeneralPurpose", [CARRY, WORK, MOVE]);
     }
 
-    private nextPartForLevel(level: number) {
-        if ([3, 6, 8].includes(level % 10)) {
-            return CARRY;
-        } else if ([1, 4, 7, 9].includes(level % 10)) {
-            return WORK;
-        } else {
-            return MOVE;
-        }
-    }
-
     public incrementLevel(): void {
-        this.bodyParts.push(this.nextPartForLevel(this.level));
+        // logger.info(`level ${this.level}: cost: ${this.cost()} for parts: ${this.bodyParts.join(",")}`);
+        this.bodyParts.push(CARRY);
+        this.bodyParts.push(WORK);
+        this.bodyParts.push(MOVE);
+        this.bodyParts.push(MOVE);
         this.level += 1;
+        // logger.info(`level ${this.level}: cost: ${this.cost()} for parts: ${this.bodyParts.join(",")}`);
     }
 }

@@ -1,5 +1,6 @@
 import { pause, resume } from "phases/pause";
 import { query } from "phases/tickTimer";
+import * as cpuUsageEstimator from "utils/cpuUsageEstimator";
 import { disableLevel, disableLogger, enableLevel, enableLogger, listLoggers } from "./Logger";
 
 global.cli = global.cli || {};
@@ -35,4 +36,12 @@ global.cli.resume = () => {
 
 global.cli.queryTickTimer = () => {
     query();
+};
+
+global.cli.enableCpuUsageEstimator = (depth?: number) => {
+    cpuUsageEstimator.enable(depth);
+};
+
+global.cli.disableCpuUsageEstimator = () => {
+    cpuUsageEstimator.disable();
 };

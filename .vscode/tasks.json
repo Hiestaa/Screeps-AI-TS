@@ -49,6 +49,14 @@
 		},
 		{
 			"type": "npm",
+			"script": "push-pserver",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: push-pserver",
+			"detail": "rollup -c --environment DEST:pserver && echo 'done'"
+		},
+		{
+			"type": "npm",
 			"script": "build-test-unit",
 			"group": "build",
 			"problemMatcher": [],

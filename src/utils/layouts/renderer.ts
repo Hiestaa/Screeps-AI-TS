@@ -19,6 +19,10 @@ export interface IBuildUnit {
     y: number;
 }
 
+export function buildUnitToStr(unit: IBuildUnit): string {
+    return `structure: ${unit.structureType} @ [${unit.x}, ${unit.y}]`;
+}
+
 /**
  * Convert the given layout into an ordered list of structures
  * Layout will have the following form (organized on a 2D grid separated by newlines)
