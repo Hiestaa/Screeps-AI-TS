@@ -5,6 +5,7 @@ if (!Memory.cpuUsageEstimator) {
 }
 
 const logger = getLogger("utils.cpuUsageEstimator", COLORS.utils);
+const WARNING_THRESHOLD = 100;
 
 interface IProcessNode {
     name: string;
@@ -91,6 +92,11 @@ export function tickEnd() {
         throw new Error("No CPU usage estimator");
     }
     estimator.notifyComplete();
+
+    if (isWarning()) {
+        global.tmpCache.debugFlag = true;
+        logger.warning("CPU Usage WARNING!!");
+    }
 }
 
 export function notifyStart(name: string) {
@@ -122,4 +128,15 @@ export function enable(depth?: number) {
 
 export function disable() {
     Memory.cpuUsageEstimator.enabled = false;
+}
+
+export function isWarning() {
+    if (!Memory.cpuUsageEstimator.enabled) {
+        return false;
+    }
+    if (!estimator) {
+        throw new Error("No CPU usage estimator");
+    }
+    const duration = (estimator.allProcesses.end || Date.now()) - estimator.allProcesses.start;
+    return duration > WARNING_THRESHOLD;
 }

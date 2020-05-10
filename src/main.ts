@@ -18,6 +18,8 @@ export const loop = ErrorMapper.wrapLoop(() => {
         logger.fatal(`Interrupted tick: ${e.message}\n${e.stack}`);
         // tslint:disable-next-line:no-debugger
         debugger;
+        global.tmpCache = global.tmpCache || { debugFlag: true };
+        global.tmpCache.debugFlag = true;
         throw e;
     }
     logger.debug(`[MAIN] Tick ${Game.time} ends.`);

@@ -85,7 +85,9 @@ export class Battalion {
      */
     public execute() {
         cpuUsageEstimator.notifyStart(`battalions.${this.roomPlanner.room.name}.${this.name}`);
+        cpuUsageEstimator.notifyStart(`objective.${this.objective.name}`);
         this.objective.execute(this.creeps, this.roomPlanner, this.spawn);
+        cpuUsageEstimator.notifyComplete();
 
         for (const creep of this.creeps) {
             creep.execute();

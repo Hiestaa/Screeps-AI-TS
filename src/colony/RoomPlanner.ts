@@ -3,6 +3,7 @@ import { SpawnAgent } from "agents/SpawnAgent";
 import { PlaceConstructionSites } from "tasks/PlaceConstructionSites";
 import { gridFortress } from "utils/layouts/gridFortress";
 import { COLORS, getLogger } from "utils/Logger";
+import { distance } from "utils/math";
 import { ROOM_HEIGHT, ROOM_WIDTH } from "../constants";
 
 const logger = getLogger("colony.RoomPlanner", COLORS.colony);
@@ -168,15 +169,32 @@ export class RoomPlanner {
                     .concat(path.map(({ x, y }) => ({ x: x - 1, y: y + 1 })));
             }
         };
+        const candidatePositions: Array<{ x: number; y: number }> = [];
+        const getClosestCandidateTo = (pos: { x: number; y: number }) => {
+            let min = null;
+            let minDist = null;
+            for (const candidate of candidatePositions) {
+                const dist = distance(pos, candidate);
+                if (minDist === null || dist < minDist) {
+                    min = candidate;
+                    minDist = dist;
+                }
+            }
+            return min;
+        };
+
         const spawn = this.roomPlan.plan.containers?.spawn;
         if (spawn) {
+            candidatePositions.push(spawn);
             for (const source of this.roomPlan.plan.containers?.sources || []) {
+                candidatePositions.push(source);
                 const path = this.buildRoadsBetweenPositions(spawn, source, allPaths);
                 addPath(path);
             }
             for (const sink of this.roomPlan.plan.containers?.sinks || []) {
+                const from = getClosestCandidateTo(sink) || spawn;
                 // spawn is a sink as well :)
-                if (sink.x !== spawn.x && sink.y !== spawn.y) {
+                if (sink.x !== from.x && sink.y !== from.y) {
                     const path = this.buildRoadsBetweenPositions(spawn, sink, allPaths);
                     addPath(path);
                 }

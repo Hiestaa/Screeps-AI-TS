@@ -204,6 +204,9 @@ declare namespace NodeJS {
             enableCpuUsageEstimator: (depth?: number) => void;
             disableCpuUsageEstimator: () => void;
         };
+        tmpCache: {
+            debugFlag: boolean;
+        };
     }
 }
 

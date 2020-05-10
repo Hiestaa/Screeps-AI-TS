@@ -7,12 +7,18 @@ import { save } from "./save";
 import { measure } from "./tickTimer";
 
 export function mainLoop() {
+    initialize();
+
     if (isPaused()) {
         return;
     }
     cpuUsageEstimator.tickStart();
 
-    initialize();
+    if (global.tmpCache.debugFlag) {
+        // tslint:disable-next-line:no-debugger
+        debugger;
+    }
+
     const colonies = reload();
     act(colonies);
     save(colonies);
@@ -50,5 +56,8 @@ function initialize() {
                 };
             }
         }
+    }
+    if (!global.tmpCache) {
+        global.tmpCache = { debugFlag: false };
     }
 }

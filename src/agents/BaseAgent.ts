@@ -104,6 +104,7 @@ export abstract class BaseAgent<
             if (this.memory.idleTime > 0 && this.memory.idleTime % WARN_IDLE_PERIOD === 0) {
                 this.logger.warning(`${controller}: No task to perform (idle time: ${this.memory.idleTime})`);
             }
+            cpuUsageEstimator.notifyComplete();
             return;
         }
 
@@ -113,6 +114,7 @@ export abstract class BaseAgent<
             this.taskQueue.shift();
 
             if (!this.taskQueue.length) {
+                cpuUsageEstimator.notifyComplete();
                 return;
             }
 
@@ -125,6 +127,7 @@ export abstract class BaseAgent<
                 // this.onTaskExecutionStarts(this.taskQueue[0], controller);
                 this.execute();
             }
+            cpuUsageEstimator.notifyComplete();
             return;
         }
 
@@ -166,15 +169,17 @@ export abstract class BaseAgent<
     }
 
     private executeTask(task: TaskType, controller: ControllerType | undefined) {
+        cpuUsageEstimator.notifyStart(`task.${task.getType()}`);
         if (task.isPaused()) {
             logger.debug(`Not executing ${task} - task is currently on pause.`);
         } else if (controller) {
             this.logger.debug(`${controller} is executing ${task}`);
             task.executionStarted = true;
-            return task.execute(controller);
+            task.execute(controller);
         } else {
             this.logger.error(`Not executing ${task} - controller is undefined`);
         }
+        cpuUsageEstimator.notifyComplete();
     }
 
     protected onTaskExecutionStarts(task: TaskType, controller: ControllerType | undefined) {

@@ -25,6 +25,9 @@ export class Repair extends BaseCreepTask {
         const target = this.getTarget(creepCtl);
 
         if (target !== null) {
+            logger.debug(
+                `${creepCtl}: Repairing damaged target building: ${target} (${target.hits} hits/ ${target.hitsMax} total}`,
+            );
             creepCtl
                 .repair(target)
                 .on(ERR_NOT_IN_RANGE, () => {
@@ -38,7 +41,7 @@ export class Repair extends BaseCreepTask {
                 })
                 .logFailure();
         } else {
-            logger.debug(`No damaged building the current creep room`);
+            logger.debug(`${creepCtl}: No damaged building the current creep room`);
 
             this.noMoreTarget = true;
             return;
@@ -47,7 +50,7 @@ export class Repair extends BaseCreepTask {
 
     private getTarget(creepCtl: CreepController) {
         let target = creepCtl.creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-            filter: structure => structure.hits < 100,
+            filter: structure => structure.hitsMax > 0 && structure.hits < 100,
         });
         if (target) {
             return target;
@@ -55,7 +58,8 @@ export class Repair extends BaseCreepTask {
         const decayGranularity = 10;
         for (let index = 0; index < decayGranularity; index++) {
             target = creepCtl.creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-                filter: structure => structure.hits < (index / decayGranularity) * structure.hitsMax,
+                filter: structure =>
+                    structure.hitsMax > 0 && structure.hits < (index / decayGranularity) * structure.hitsMax,
             });
             if (target) {
                 return target;
