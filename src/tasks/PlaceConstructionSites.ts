@@ -39,7 +39,7 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
             return;
         }
 
-        const failedBuildUnits: IBuildUnit[] = [];
+        const retryBuildUnits: IBuildUnit[] = [];
 
         const buildUnit = (unit: IBuildUnit | undefined) => {
             if (!unit) {
@@ -47,6 +47,7 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
             }
 
             if (!CAN_BE_BUILT_ON_STRUCTURES.includes(unit.structureType)) {
+                let destroyed = false;
                 const items = roomCtl.room.lookForAt(LOOK_STRUCTURES, unit.x, unit.y);
                 for (const item of items) {
                     if (item.structureType !== unit.structureType) {
@@ -55,11 +56,15 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
                                 `to place construction site ${buildUnitToStr(unit)}`,
                         );
                         item.destroy();
+                        destroyed = true;
                     }
                 }
 
                 if (items.length > 0) {
-                    failedBuildUnits.push(unit);
+                    if (destroyed) {
+                        // if we destroyed what was in the way, it's worth trying again this unit
+                        retryBuildUnits.push(unit);
+                    }
                     buildUnit(this.scheduledBuildUnits.shift());
                     return;
                 }
@@ -95,7 +100,7 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
                     );
                 })
                 .failure(() => {
-                    failedBuildUnits.push(unit);
+                    retryBuildUnits.push(unit);
                 })
                 .logFailure();
 
@@ -104,7 +109,7 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
 
         buildUnit(this.scheduledBuildUnits.shift());
 
-        this.scheduledBuildUnits = failedBuildUnits;
+        this.scheduledBuildUnits = retryBuildUnits;
 
         this.buildUnitsInProgress = this.buildUnitsInProgress.filter(unit => {
             const lookAtResult = roomCtl.room.lookForAt(LOOK_CONSTRUCTION_SITES, unit.x, unit.y);
