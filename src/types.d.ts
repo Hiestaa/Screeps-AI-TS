@@ -13,7 +13,7 @@ type CREEP_PROFILE = "GeneralPurpose" | "Harvester" | "Hauler" | "Worker" | "M-A
 
 interface SpawnRequest {
     count: number;
-    battalion: string;
+    battalion: keyof ColonyBattalionsMemory;
     creepProfile: CREEP_PROFILE;
 }
 
@@ -21,6 +21,10 @@ interface SpawnTaskMemory extends BaseTaskMemory {
     type: "TASK_SPAWN";
     request: SpawnRequest;
     spawnDelay: number;
+}
+
+interface TowerTaskMemory extends BaseTaskMemory {
+    type: "TASK_TOWER";
 }
 
 type CREEP_TASK =
@@ -94,9 +98,9 @@ interface PlaceConstructionSitesMemory extends RoomTaskMemory {
     buildUnitsInProgress: IBuildUnit[];
 }
 
-type TaskMemory = SpawnTaskMemory | CreepTaskMemory | PlaceConstructionSitesMemory;
+type TaskMemory = SpawnTaskMemory | CreepTaskMemory | PlaceConstructionSitesMemory | TowerTaskMemory;
 
-type TASK_TYPE = "TASK_SPAWN" | CREEP_TASK | "TASK_PLACE_CONSTRUCTION_SITES";
+type TASK_TYPE = "TASK_SPAWN" | CREEP_TASK | "TASK_PLACE_CONSTRUCTION_SITES" | "TASK_TOWER";
 
 // data a task can request to save after completion for use by a subsequent task
 interface PersistTaskMemory {
@@ -111,7 +115,7 @@ interface BaseMemory {
 }
 // memory extension samples
 interface CreepMemory extends BaseMemory {
-    battalion: string;
+    battalion: keyof ColonyBattalionsMemory;
     tasks: CreepTaskMemory[];
     profile: CREEP_PROFILE;
 }
@@ -120,9 +124,15 @@ interface SpawnMemory extends BaseMemory {
     tasks: SpawnTaskMemory[];
 }
 
+interface TowerMemory extends BaseMemory {
+    battalion: keyof ColonyBattalionsMemory;
+    tasks: TowerTaskMemory[];
+}
+
 interface RoomMemory extends BaseMemory {
     tasks: PlaceConstructionSitesMemory[];
     controllerLevel: number;
+    towers: { [key: string]: TowerMemory }
 }
 
 type ObjectiveType =
@@ -141,6 +151,10 @@ interface ObjectiveMemory {
 
 interface ContinuousHarvestingMemory extends ObjectiveMemory {
     miningSpotsPerSource: { [key: string]: number };
+}
+
+interface DefendColonyMemory extends ObjectiveMemory {
+    attackLaunched: boolean;
 }
 
 interface BattalionMemory {

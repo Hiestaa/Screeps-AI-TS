@@ -45,7 +45,7 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
         return new SpawnTask(taskMemory.request, taskMemory.spawnDelay);
     }
 
-    public requestSpawn(battalion: string, count: number, profile: CREEP_PROFILE) {
+    public requestSpawn(battalion: keyof ColonyBattalionsMemory, count: number, profile: CREEP_PROFILE) {
         this.newSpawnRequests.push({ battalion, count, creepProfile: profile });
     }
 
@@ -69,7 +69,7 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
         Memory.spawns[this.name] = memory;
     }
 
-    public pendingSpawnRequests(battalion: string) {
+    public pendingSpawnRequests(battalion: keyof ColonyBattalionsMemory) {
         const requests = this.newSpawnRequests.filter(({ battalion: battalionId }) => battalionId === battalion);
         for (const task of this.taskQueue) {
             if (task.request.battalion === battalion) {

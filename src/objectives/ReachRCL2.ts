@@ -32,7 +32,7 @@ export class ReachRCL2 extends BaseObjective {
         }
     }
 
-    public estimateRequiredWorkForce(): SpawnRequest[] {
+    public estimateRequiredWorkForce(roomPlanner: RoomPlanner): SpawnRequest[] {
         return [{ count: 2, battalion: this.battalionId, creepProfile: "GeneralPurpose" }];
     }
 }

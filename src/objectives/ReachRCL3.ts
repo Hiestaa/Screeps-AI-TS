@@ -1,9 +1,11 @@
 import { CreepAgent } from "agents/CreepAgent";
+import { RoomPlanner } from "colony/RoomPlanner";
 import { Build } from "tasks/creep/Build";
 import { Fetch } from "tasks/creep/Fetch";
 import { Haul } from "tasks/creep/Haul";
 import { Repair } from "tasks/creep/Repair";
 import { COLORS, getLogger } from "utils/Logger";
+import { GENERAL_PURPOSE_BATTALION_PHASE_OUT_RCL } from "../constants";
 import { ReachRCL2 } from "./ReachRCL2";
 
 const logger = getLogger("objectives.ReachRCL3", COLORS.objectives);
@@ -52,8 +54,11 @@ export class ReachRCL3 extends ReachRCL2 {
         }
     }
 
-    public estimateRequiredWorkForce(): SpawnRequest[] {
+    public estimateRequiredWorkForce(roomPlanner: RoomPlanner): SpawnRequest[] {
         // TODO: this should be a 0 - at this point we should transition to dedicated battalion instead of general purpose creeps
+        if (roomPlanner.reachedRCL(GENERAL_PURPOSE_BATTALION_PHASE_OUT_RCL)) {
+            return [];
+        }
         return [{ count: 1, battalion: this.battalionId, creepProfile: "GeneralPurpose" }];
     }
 }

@@ -8,9 +8,6 @@ const logger = getLogger("tasks.Spawn", COLORS.tasks);
 
 const MAX_SPAWN_DELAY = 100;
 
-/**
- * TODO: take battalion id as parameter for spawn task and assign the battalion in creep memory when spawning it
- */
 export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     public request: SpawnRequest;
     public executionPeriod = 10;
@@ -92,7 +89,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
         } else if (initialCost >= energy) {
             logger.info(
                 `Unable to spawn '${profileWithMaxPotentialEnergy}' ${suffix} (forced delay ${
-                    this.spawnDelay
+                this.spawnDelay
                 }/${maxSpawnDelay * 2}).`,
             );
             this.spawnDelay += 1;
@@ -106,7 +103,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
             // in which case spawn `profileWithCurrentEnergy`
             logger.info(
                 `Spawn delay ${this.spawnDelay}/${maxSpawnDelay} of '${profileWithMaxPotentialEnergy}' ` +
-                    `until ${maxedPotentialCost} energy is available ${suffix}.`,
+                `until ${maxedPotentialCost} energy is available ${suffix}.`,
             );
             this.spawnDelay += 1;
             return;

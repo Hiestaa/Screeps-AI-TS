@@ -1,5 +1,6 @@
 import { CreepAgent } from "agents/CreepAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
+import { TowerAgent } from "agents/TowerAgent";
 import { BaseObjective, IdleObjective } from "objectives/BaseObjective";
 import { ContinuousHarvesting } from "objectives/ContinuousHarvesting";
 import { DefendColony } from "objectives/DefendColony";
@@ -19,6 +20,7 @@ const logger = getLogger("colony.Battalion", COLORS.colony);
 export class Battalion {
     public creeps: CreepAgent[] = [];
     public spawn: SpawnAgent;
+    public towers: TowerAgent[] = [];
     public roomPlanner: RoomPlanner;
     public objective: BaseObjective;
     public memory: BattalionMemory;
@@ -49,10 +51,8 @@ export class Battalion {
             case "REACH_RCL3":
                 return new ReachRCL3(this.name);
             case "CONTINUOUS_HARVESTING":
-                return new ContinuousHarvesting(
-                    this.name,
-                    (objectiveMemory as ContinuousHarvestingMemory).miningSpotsPerSource,
-                );
+                const chMem = objectiveMemory as ContinuousHarvestingMemory
+                return new ContinuousHarvesting(this.name, chMem.miningSpotsPerSource);
             case "REFILL_CONTAINERS":
                 return new RefillContainers(this.name);
             case "REFILL_SPAWN_STORAGE":
@@ -62,7 +62,8 @@ export class Battalion {
             case "MAINTAIN_BUILDINGS":
                 return new MaintainBuildings(this.name);
             case "DEFEND_COLONY":
-                return new DefendColony(this.name);
+                const defMem = objectiveMemory as DefendColonyMemory;
+                return new DefendColony(this.name, defMem.attackLaunched);
         }
     }
 
@@ -79,6 +80,11 @@ export class Battalion {
         }
     }
 
+    public assignTower(tower: TowerAgent) {
+        tower.memory.battalion = this.name;
+        this.towers.push(tower);
+    }
+
     /**
      * Execute the objective and all creep agents members of this battalion.
      * Spawn and room agents are not executed as multiple battalion may be referencing the same spawn and room.
@@ -86,11 +92,15 @@ export class Battalion {
     public execute() {
         cpuUsageEstimator.notifyStart(`battalions.${this.roomPlanner.room.name}.${this.name}`);
         cpuUsageEstimator.notifyStart(`objective.${this.objective.name}`);
-        this.objective.execute(this.creeps, this.roomPlanner, this.spawn);
+        this.objective.execute(this.creeps, this.roomPlanner, this.spawn, this.towers);
         cpuUsageEstimator.notifyComplete();
 
         for (const creep of this.creeps) {
             creep.execute();
+        }
+
+        for (const tower of this.towers) {
+            tower.execute();
         }
 
         this.requestNewCreepsIfNecessary();
@@ -123,7 +133,7 @@ export class Battalion {
                 const requestCount = profileDesiredCount - profilePendingCount - profileCreepCount;
                 logger.info(
                     `${this}: requesting spawn of ${requestCount} creeps ` +
-                        `(desired: ${profileDesiredCount}, existing:${profileCreepCount}, pending: ${profilePendingCount})`,
+                    `(desired: ${profileDesiredCount}, existing:${profileCreepCount}, pending: ${profilePendingCount})`,
                 );
                 this.spawn.requestSpawn(this.name, requestCount, profile);
             }

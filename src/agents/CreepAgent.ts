@@ -41,6 +41,9 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
     }
 
     protected createTaskInstance(taskMemory: CreepTaskMemory): BaseCreepTask {
+        // TODO: use objects instead of lists of params in all tasks constructor
+        // so we don't need to come back and update this function ever again to extend the task memory
+        // is it possible to get there also without doing any casting, e.g. if CreepTaskMemory used here is a type union we might be able to use type exhaustion?
         switch (taskMemory.type) {
             case "TASK_HAUL":
                 const haulMem = taskMemory as HaulTaskMemory;

@@ -1,5 +1,6 @@
 import { CreepAgent } from "agents/CreepAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
+import { TowerAgent } from "agents/TowerAgent";
 import { RoomPlanner } from "colony/RoomPlanner";
 import { COLORS, getLogger } from "utils/Logger";
 
@@ -10,7 +11,7 @@ export interface IObjective {
      * Execute the operations for this objective
      * @param agentStore an access to the existing controllers after reload
      */
-    execute(agents: CreepAgent[], room: RoomPlanner, spawn: SpawnAgent): void;
+    execute(agents: CreepAgent[], room: RoomPlanner, spawn: SpawnAgent, towers: TowerAgent[]): void;
 
     save(): ObjectiveMemory;
 
@@ -33,11 +34,12 @@ export abstract class BaseObjective implements IObjective {
 
     /**
      *
-     * @param agents agents executing the objective
+     * @param agents creep agents executing the objective
      * @param room room in which the objective is executed
      * @param spawn spawn the battalion executing is related to
+     * @param towers towers assigned to the battalion executing this objective
      */
-    public abstract execute(agents: CreepAgent[], room: RoomPlanner, spawn: SpawnAgent): void;
+    public abstract execute(agents: CreepAgent[], room: RoomPlanner, spawn: SpawnAgent, towers: TowerAgent[]): void;
 
     public save(): ObjectiveMemory {
         return {

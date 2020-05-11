@@ -19,6 +19,15 @@ export class RoomPlanner {
         this.roomPlan = new RoomPlan(roomName);
     }
 
+    public getRCL() {
+        return this.room.roomController?.room.controller?.level || undefined;
+    }
+
+    public reachedRCL(level: number) {
+        const rcl = this.getRCL()
+        return rcl !== undefined && rcl >= level;
+    }
+
     public reloadSpawns(spawns: { [key: string]: SpawnAgent }) {
         this.spawns = spawns;
     }

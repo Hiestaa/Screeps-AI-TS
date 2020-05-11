@@ -50,6 +50,7 @@ function initialize() {
                     tasks: [],
                     idleTime: 0,
                     controllerLevel: 0,
+                    towers: {}
                 };
                 Memory.roomPlans[room] = {
                     containers: { sinks: [], sources: [] },
