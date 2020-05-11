@@ -51,7 +51,7 @@ export class Battalion {
             case "REACH_RCL3":
                 return new ReachRCL3(this.name);
             case "CONTINUOUS_HARVESTING":
-                const chMem = objectiveMemory as ContinuousHarvestingMemory
+                const chMem = objectiveMemory as ContinuousHarvestingMemory;
                 return new ContinuousHarvesting(this.name, chMem.miningSpotsPerSource);
             case "REFILL_CONTAINERS":
                 return new RefillContainers(this.name);
@@ -133,7 +133,7 @@ export class Battalion {
                 const requestCount = profileDesiredCount - profilePendingCount - profileCreepCount;
                 logger.info(
                     `${this}: requesting spawn of ${requestCount} creeps ` +
-                    `(desired: ${profileDesiredCount}, existing:${profileCreepCount}, pending: ${profilePendingCount})`,
+                        `(desired: ${profileDesiredCount}, existing:${profileCreepCount}, pending: ${profilePendingCount})`,
                 );
                 this.spawn.requestSpawn(this.name, requestCount, profile);
             }
@@ -157,6 +157,11 @@ export class Battalion {
         for (const creep of this.creeps) {
             logger.debug(`Saving ${creep}`);
             creep.save();
+        }
+
+        for (const tower of this.towers) {
+            logger.debug(`Saving ${tower}`);
+            tower.save();
         }
     }
 

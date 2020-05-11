@@ -25,6 +25,9 @@ interface SpawnTaskMemory extends BaseTaskMemory {
 
 interface TowerTaskMemory extends BaseTaskMemory {
     type: "TASK_TOWER";
+    currentHealTarget?: string;
+    currentAttackTarget?: string;
+    currentRepairTarget?: string;
 }
 
 type CREEP_TASK =
@@ -132,7 +135,7 @@ interface TowerMemory extends BaseMemory {
 interface RoomMemory extends BaseMemory {
     tasks: PlaceConstructionSitesMemory[];
     controllerLevel: number;
-    towers: { [key: string]: TowerMemory }
+    towers: { [key: string]: TowerMemory };
 }
 
 type ObjectiveType =

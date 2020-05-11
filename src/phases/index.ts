@@ -50,11 +50,15 @@ function initialize() {
                     tasks: [],
                     idleTime: 0,
                     controllerLevel: 0,
-                    towers: {}
+                    towers: {},
                 };
                 Memory.roomPlans[room] = {
                     containers: { sinks: [], sources: [] },
                 };
+            }
+            // TODO: remove after migration
+            if (!Memory.rooms[room].towers) {
+                Memory.rooms[room].towers = {};
             }
         }
     }

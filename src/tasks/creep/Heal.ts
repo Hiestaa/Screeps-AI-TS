@@ -1,5 +1,6 @@
 import { CreepController } from "agents/controllers/CreepController";
 import { BaseCreepTask } from "tasks/creep/BaseCreepTask";
+import { findNearbyMostDamaged } from "utils/findHelpers";
 import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("tasks.creep.Heal", COLORS.tasks);
@@ -67,15 +68,10 @@ export class Heal extends BaseCreepTask {
             }
         }
 
-        const hpGranularity = 10;
-        for (let index = 0; index < hpGranularity; index++) {
-            const target = creepCtl.creep.pos.findClosestByRange(FIND_MY_CREEPS, {
-                filter: creep => creep.hits < (index / hpGranularity) * creep.hitsMax,
-            });
-            if (target) {
-                this.currentTarget = target.id;
-                return target;
-            }
+        const target = findNearbyMostDamaged(creepCtl.creep.pos, FIND_MY_CREEPS, 10) as Creep;
+        if (target) {
+            this.currentTarget = target.id;
+            return target;
         }
 
         if (currentTarget !== null) {

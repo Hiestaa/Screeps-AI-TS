@@ -7,7 +7,7 @@ import { Heal } from "tasks/creep/Heal";
 import { Reach } from "tasks/creep/Reach";
 import { TowerTask } from "tasks/TowerTask";
 import { COLORS, getLogger } from "utils/Logger";
-import { DEFEND_COLONY_REQUESTS_CREEPS_RCL } from "../constants";
+import { DEFEND_COLONY_REQUESTS_CREEPS_RCL, WARN_FREQUENCY } from "../constants";
 import { BaseObjective } from "./BaseObjective";
 
 const logger = getLogger("objectives.DefendColony", COLORS.objectives);
@@ -16,6 +16,7 @@ const NB_HEALERS = 2;
 const NB_MELEE = 1;
 const NB_RANGED = 2;
 const NB_TOTAL = NB_HEALERS + NB_MELEE + NB_RANGED;
+const SOURCE_KEEPER = "Source Keeper";
 
 const FIND_HOSTILES = [
     FIND_HOSTILE_CREEPS,
@@ -51,14 +52,11 @@ export class DefendColony extends BaseObjective {
         const { defenderGarrison } = roomPlanner.roomPlan.plan;
         const { availableAttackers, leader } = this.splitAgentsByRole(creepAgents);
 
-
         // healers are always healing those who need it
         this.scheduleMissingHealTasks(creepAgents, leader);
 
-
         // don't schedule any new attack until we have a fully formed battalion
         this.attackLaunched = this.launchAttackIfReady(creepAgents, availableAttackers, roomPlanner);
-
 
         if (!defenderGarrison) {
             logger.warning("No defender garrison - place a flag named 'Garrison' at the appropriate location");
@@ -71,8 +69,8 @@ export class DefendColony extends BaseObjective {
 
     private scheduleMissingTowerTasks(towers: TowerAgent[]) {
         for (const tower of towers) {
-            if (!tower.taskQueue.find(t => t.getType() === 'TASK_TOWER')) {
-                tower.scheduleTask(new TowerTask())
+            if (!tower.taskQueue.find(t => t.getType() === "TASK_TOWER")) {
+                tower.scheduleTask(new TowerTask());
             }
         }
     }
@@ -87,13 +85,14 @@ export class DefendColony extends BaseObjective {
         const attacking = creepAgents.filter(creep =>
             creep.taskQueue.find(t => t.type === "TASK_ATTACK" || t.type === "TASK_RANGED_ATTACK"),
         );
-        const leader = attacking.length > 0
-            ? attacking[0]
-            : attackers.length > 0
+        const leader =
+            attacking.length > 0
+                ? attacking[0]
+                : attackers.length > 0
                 ? attackers[0]
                 : availableAttackers.length > 0
-                    ? availableAttackers[0]
-                    : undefined;
+                ? availableAttackers[0]
+                : undefined;
 
         return { availableAttackers, attackers, attacking, leader };
     }
@@ -106,11 +105,15 @@ export class DefendColony extends BaseObjective {
         }
     }
 
-    private launchAttackIfReady(creepAgents: CreepAgent[], availableAttackers: CreepAgent[], roomPlanner: RoomPlanner): boolean {
+    private launchAttackIfReady(
+        creepAgents: CreepAgent[],
+        availableAttackers: CreepAgent[],
+        roomPlanner: RoomPlanner,
+    ): boolean {
         let attackLaunched = this.attackLaunched;
         if (!attackLaunched && creepAgents.length < NB_TOTAL) {
             // TODO: self-defense tasks?
-            if (Game.time % 10 === 0) {
+            if (Game.time % WARN_FREQUENCY === 0) {
                 logger.info(
                     `Waiting for requested battalion to be fully formed (${creepAgents.length}/${NB_TOTAL} creeps)`,
                 );
@@ -118,7 +121,10 @@ export class DefendColony extends BaseObjective {
         } else {
             let foundHostiles = false;
             for (const FIND_C of FIND_HOSTILES) {
-                const hostiles = roomPlanner.room.roomController?.room.find(FIND_C);
+                // Ignore anything belonging to the source keeper for now. It's not really a threat at the moment.
+                const hostiles = roomPlanner.room.roomController?.room.find(FIND_C, {
+                    filter: item => !item.owner || item.owner.username !== SOURCE_KEEPER,
+                });
                 if (hostiles && hostiles.length > 0 && hostiles[0].hits > 0) {
                     foundHostiles = true;
 
@@ -144,16 +150,17 @@ export class DefendColony extends BaseObjective {
         return attackLaunched;
     }
 
-    private reachGarrison(creepAgents: CreepAgent[], defenderGarrison: { x: number; y: number; }) {
+    private reachGarrison(creepAgents: CreepAgent[], defenderGarrison: { x: number; y: number }) {
         for (const creep of creepAgents) {
             const creepPos = creep.creepController?.creep.pos;
             if (
                 !creep.taskQueue.find(
-                    t => t.type === "TASK_ATTACK"
-                        || t.type === "TASK_RANGED_ATTACK"
-                        || t.type === "TASK_REACH"
+                    t =>
+                        t.type === "TASK_ATTACK" ||
+                        t.type === "TASK_RANGED_ATTACK" ||
+                        t.type === "TASK_REACH" ||
                         // TODO?: avoid that the healers to be sent back before we launch an attack? Does it matter?
-                        || t.type === 'TASK_HEAL',
+                        t.type === "TASK_HEAL",
                 ) &&
                 creepPos &&
                 creepPos.getRangeTo(defenderGarrison.x, defenderGarrison.y) > 5

@@ -4,7 +4,7 @@ import { PlaceConstructionSites } from "tasks/PlaceConstructionSites";
 import { gridFortress } from "utils/layouts/gridFortress";
 import { COLORS, getLogger } from "utils/Logger";
 import { distance } from "utils/math";
-import { ROOM_HEIGHT, ROOM_WIDTH } from "../constants";
+import { DEFENDER_BATTALION_CREATE_RCL, ROOM_HEIGHT, ROOM_WIDTH } from "../constants";
 
 const logger = getLogger("colony.RoomPlanner", COLORS.colony);
 
@@ -24,7 +24,7 @@ export class RoomPlanner {
     }
 
     public reachedRCL(level: number) {
-        const rcl = this.getRCL()
+        const rcl = this.getRCL();
         return rcl !== undefined && rcl >= level;
     }
 
@@ -38,8 +38,7 @@ export class RoomPlanner {
             this.planNextLevel(controllerLevel);
         }
         const level = this.room.roomController?.room.controller?.level || 0;
-        if (level >= 8) {
-            // TODO: synchronize with the creation of the defender battalion by the colony
+        if (level >= DEFENDER_BATTALION_CREATE_RCL) {
             this.planDefenderGarrison();
         }
 

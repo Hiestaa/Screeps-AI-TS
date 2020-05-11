@@ -13,7 +13,7 @@ import {
     GENERAL_PURPOSE_BATTALION_PHASE_OUT_RCL,
     HARVESTERS_BATTALION_CREATE_RCL,
     HATCHERS_BATTALION_CREATE_RCL,
-    HAULERS_BATTALION_CREATE_RCL
+    HAULERS_BATTALION_CREATE_RCL,
 } from "../constants";
 import { Battalion } from "./Battalion";
 import { AvailableSpotsFinder, RoomPlanner } from "./RoomPlanner";
@@ -147,12 +147,11 @@ export class Colony {
                 const battalion = battalionId && this.battalions[battalionId];
                 if (battalion) {
                     battalion.assignTower(towerAgent);
-                }
-                else {
-                    logger.warning(`${this}: not battalion assigned to ${tower} - assigning defense battalion`);
-                    if (this.battalions.defenders) {
-                        this.battalions.defenders.assignTower(towerAgent);
-                    }
+                } else if (this.battalions.defenders) {
+                    logger.warning(`${this}: no battalion assigned to ${tower} - assigning defense battalion`);
+                    this.battalions.defenders.assignTower(towerAgent);
+                } else {
+                    logger.debug(`${this}: no defense battalion to assign ${tower} to.`);
                 }
             }
         }

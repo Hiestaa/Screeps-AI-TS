@@ -2,6 +2,7 @@ import { CreepAgent } from "agents/CreepAgent";
 import { RoomPlanner } from "colony/RoomPlanner";
 import { HarvestNonStop } from "tasks/creep/Harvest";
 import { COLORS, getLogger } from "utils/Logger";
+import { WARN_FREQUENCY } from "../constants";
 import { BaseObjective } from "./BaseObjective";
 
 const logger = getLogger("objectives.ContinuousHarvesting", COLORS.objectives);
@@ -68,7 +69,7 @@ export class ContinuousHarvesting extends BaseObjective {
             }
 
             if (i > sourceIds.length) {
-                if (Game.time % 10 === 0) {
+                if (Game.time % WARN_FREQUENCY === 0) {
                     logger.warning(`Too many creeps for the number of sources`);
                 }
                 break;

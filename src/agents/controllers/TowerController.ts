@@ -10,15 +10,16 @@ export class TowerController extends BaseController<StructureTower> {
         this.tower = roomObject;
     }
     public attack(target: AnyCreep): ReturnCodeSwitcher<ScreepsReturnCode> {
-        return this.doSwitch(this.tower.attack(target), 'attack');
+        return this.doSwitch(this.tower.attack(target), "attack");
     }
+
     public heal(target: AnyCreep): ReturnCodeSwitcher<ScreepsReturnCode> {
-        return this.doSwitch(this.tower.heal(target), 'heal');
+        return this.doSwitch(this.tower.heal(target), "heal");
     }
     public repair(target: Structure<StructureConstant>): ReturnCodeSwitcher<ScreepsReturnCode> {
-        return this.doSwitch(this.tower.repair(target), 'repair');
+        return this.doSwitch(this.tower.repair(target), "repair");
     }
     public notifyWhenAttacked(enabled: boolean): ReturnCodeSwitcher<ScreepsReturnCode> {
-        return this.doSwitch(this.tower.notifyWhenAttacked(enabled), 'notifyWhenAttacked');
+        return this.doSwitch(this.tower.notifyWhenAttacked(enabled), "notifyWhenAttacked");
     }
 }

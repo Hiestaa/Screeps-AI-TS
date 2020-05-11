@@ -1,6 +1,8 @@
 export const ROOM_WIDTH = 49;
 export const ROOM_HEIGHT = 49;
 
+export const WARN_FREQUENCY = 50;
+
 // BEHAVIORAL CONSTANTS
 // List of values that affect the behavior of the AI, such as the order of execution of certain actions
 // TODO: turn these into strategies, different sets of values (and potentially code) that would apply in different contexts

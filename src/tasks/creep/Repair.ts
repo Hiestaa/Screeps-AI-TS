@@ -1,5 +1,6 @@
 import { CreepController } from "agents/controllers/CreepController";
 import { BaseCreepTask } from "tasks/creep/BaseCreepTask";
+import { findNearbyMostDamaged } from "utils/findHelpers";
 import { COLORS, getLogger } from "utils/Logger";
 
 const logger = getLogger("tasks.creep.Repair", COLORS.tasks);
@@ -48,22 +49,14 @@ export class Repair extends BaseCreepTask {
         }
     }
 
-    private getTarget(creepCtl: CreepController) {
-        let target = creepCtl.creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-            filter: structure => structure.hitsMax > 0 && structure.hits < 100,
-        });
-        if (target) {
-            return target;
+    private getTarget(creepCtl: CreepController): Structure | null {
+        const nearbyOwned = findNearbyMostDamaged(creepCtl.creep.pos, FIND_MY_STRUCTURES, 10) as Structure;
+        if (nearbyOwned) {
+            return nearbyOwned;
         }
-        const decayGranularity = 10;
-        for (let index = 0; index < decayGranularity; index++) {
-            target = creepCtl.creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-                filter: structure =>
-                    structure.hitsMax > 0 && structure.hits < (index / decayGranularity) * structure.hitsMax,
-            });
-            if (target) {
-                return target;
-            }
+        const nearby = findNearbyMostDamaged(creepCtl.creep.pos, FIND_STRUCTURES, 10) as Structure;
+        if (nearby && nearby.structureType === STRUCTURE_CONTAINER) {
+            return nearby;
         }
         return null;
     }
