@@ -51,8 +51,19 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
 
     public execute() {
         for (const request of this.newSpawnRequests) {
-            this.scheduleTask(new SpawnTask(request));
+            if (request.battalion && request.creepProfile) {
+                this.scheduleTask(new SpawnTask(request));
+            } else {
+                logger.error(`${this}: Invalid spawn request: ${JSON.stringify(request)}`);
+            }
         }
+        this.taskQueue = this.taskQueue.filter(task => {
+            if (!task.request || !task.request.battalion || !task.request.creepProfile) {
+                logger.error(`${this}: Invalid task: missing request information in: ${JSON.stringify(task.request)}`);
+                return false;
+            }
+            return true;
+        });
         this.newSpawnRequests = [];
 
         this.reorderSpawnTasks();
@@ -72,7 +83,7 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
     public pendingSpawnRequests(battalion: keyof ColonyBattalionsMemory) {
         const requests = this.newSpawnRequests.filter(({ battalion: battalionId }) => battalionId === battalion);
         for (const task of this.taskQueue) {
-            if (task.request.battalion === battalion) {
+            if (task.request && task.request.battalion === battalion) {
                 requests.push(task.request);
             }
         }

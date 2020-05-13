@@ -51,11 +51,14 @@ export function render(layout: string, anchor: string, anchorPosition: { x: numb
     // console.log(`layout:>>${layout}<<`);
     const structureTypeMapper = (unitChar: string): BuildableStructureConstant | undefined => {
         const mapping: { [key: string]: BuildableStructureConstant } = {
-            C: "container",
-            E: "extension",
-            R: "rampart",
-            S: "spawn",
-            T: "tower",
+            C: STRUCTURE_CONTAINER,
+            E: STRUCTURE_EXTENSION,
+            R: STRUCTURE_RAMPART,
+            S: STRUCTURE_SPAWN,
+            T: STRUCTURE_TOWER,
+            O: STRUCTURE_STORAGE,
+            M: STRUCTURE_TERMINAL,
+            L: STRUCTURE_LINK,
         };
         return mapping[unitChar];
     };

@@ -82,7 +82,6 @@ export class Colony {
     private initializeBattalions(spawn: SpawnAgent) {
         const level = this.roomPlanner.room.roomController?.room.controller?.level;
 
-        // FIXME: This is run at init time only, it won't delete the battalion past RCL4
         if (level && level < GENERAL_PURPOSE_BATTALION_PHASE_OUT_RCL && !this.battalions.allPurposeReserve) {
             logger.info(`All Purpose Reserve battalion not found in ${this}. Initializing.`);
             this.battalions.allPurposeReserve = new Battalion("allPurposeReserve", spawn, this.roomPlanner);
@@ -229,7 +228,7 @@ export class Colony {
                 battalion.objective = new ReachRCL2(name);
             }
             if (controllerLevel >= 2) {
-                logger.warning("Controller reached or downgraded to level 2. ");
+                logger.warning("Controller reached or downgraded above level 2. ");
                 battalion.objective = new ReachRCL3(name);
             }
             // TODO: delete the battalion

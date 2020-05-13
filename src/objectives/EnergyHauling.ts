@@ -5,7 +5,7 @@ import { Haul } from "tasks/creep/Haul";
 import { COLORS, getLogger } from "utils/Logger";
 import { BaseObjective } from "./BaseObjective";
 
-const logger = getLogger("objectives.EnergyRefill", COLORS.objectives);
+const logger = getLogger("objectives.EnergyHauling", COLORS.objectives);
 
 /**
  * Keep (sink) containers refilled with energy fetched from any available target.
@@ -49,9 +49,8 @@ export class RefillSpawnStorage extends BaseObjective {
         logger.debug(`Executing ${this}`);
 
         const spawn = room.roomPlan.plan.containers?.spawn;
-        if (!spawn) {
-            logger.warning(`No spawn container/storage to fetch from.`);
-            return;
+        if (!spawn && Game.time % 10 === 0) {
+            logger.info(`No spawn container/storage to fetch from.`);
         }
 
         for (const creep of creepAgents) {

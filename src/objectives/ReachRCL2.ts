@@ -2,6 +2,7 @@ import { CreepAgent } from "agents/CreepAgent";
 import { SpawnAgent } from "agents/SpawnAgent";
 import { RoomPlanner } from "colony/RoomPlanner";
 import { Build } from "tasks/creep/Build";
+import { Fetch } from "tasks/creep/Fetch";
 import { Harvest } from "tasks/creep/Harvest";
 import { Haul } from "tasks/creep/Haul";
 import { Repair } from "tasks/creep/Repair";
@@ -17,6 +18,8 @@ export class ReachRCL2 extends BaseObjective {
         for (const creepAgent of creepAgents) {
             logger.debug(`${this}: ensuring ${creepAgent} has all creep tasks scheduled`);
             if (!creepAgent.taskQueue.length) {
+                // try to fetch something before going to harvest
+                creepAgent.scheduleTask(new Fetch());
                 const source = creepAgent.creepController?.creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
                 if (source) {
                     creepAgent.scheduleTask(new Harvest(source.id));

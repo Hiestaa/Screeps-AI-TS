@@ -4,7 +4,15 @@ import { PlaceConstructionSites } from "tasks/PlaceConstructionSites";
 import { gridFortress } from "utils/layouts/gridFortress";
 import { COLORS, getLogger } from "utils/Logger";
 import { distance } from "utils/math";
-import { DEFENDER_BATTALION_CREATE_RCL, ROOM_HEIGHT, ROOM_WIDTH } from "../constants";
+import {
+    DEFENDER_BATTALION_CREATE_RCL,
+    MAX_RCL,
+    ROOM_HEIGHT,
+    ROOM_PLAN_EXIT_RAMPARTS_RCL,
+    ROOM_PLAN_ROADS_BETWEEN_CONTAINERS_RCL,
+    ROOM_PLAN_SOURCE_SINK_CONTAINERS_RCL,
+    ROOM_WIDTH,
+} from "../constants";
 
 const logger = getLogger("colony.RoomPlanner", COLORS.colony);
 
@@ -80,13 +88,13 @@ export class RoomPlanner {
      */
     private planNextLevel(controllerLevel: number) {
         this.createSpawnFortress(controllerLevel);
-        if (controllerLevel >= 2) {
+        if (controllerLevel >= ROOM_PLAN_SOURCE_SINK_CONTAINERS_RCL) {
             this.createSinkAndSourceContainers();
         }
-        if (controllerLevel >= 5) {
+        if (controllerLevel >= ROOM_PLAN_ROADS_BETWEEN_CONTAINERS_RCL) {
             this.createRoadsBetweenContainers();
         }
-        if (controllerLevel >= 5) {
+        if (controllerLevel >= ROOM_PLAN_EXIT_RAMPARTS_RCL) {
             this.createExitRamparts();
         }
     }
@@ -96,28 +104,41 @@ export class RoomPlanner {
      * @param controllerLevel new controller level
      */
     private createSpawnFortress(controllerLevel: number) {
-        // FIXME: remember which spawn is the primary one!
-        for (const spawnName in this.spawns) {
-            if (!this.spawns.hasOwnProperty(spawnName)) {
-                continue;
-            }
-
-            const spawnAgent = this.spawns[spawnName];
-            if (spawnAgent.spawnController) {
-                const buildUnits = gridFortress(spawnAgent.spawnController.spawn.pos, controllerLevel);
-                const containerOrStore = buildUnits.find(
-                    b => b.structureType === STRUCTURE_CONTAINER || b.structureType === STRUCTURE_STORAGE,
-                );
-                if (containerOrStore) {
-                    this.roomPlan.addSinkContainer(containerOrStore.x, containerOrStore.y);
-                    this.roomPlan.setSpawnContainer(containerOrStore.x, containerOrStore.y);
+        if (!this.roomPlan.plan.mainSpawn) {
+            for (const spawnName in this.spawns) {
+                if (!this.spawns.hasOwnProperty(spawnName)) {
+                    continue;
                 }
-                this.roomPlan.updateSpawnFortress(spawnName, buildUnits);
-                this.room.scheduleTask(new PlaceConstructionSites(buildUnits));
+                const spawn = this.spawns[spawnName].spawnController?.spawn;
+                if (!spawn) {
+                    continue;
+                }
+                this.roomPlan.setMainSpawn(spawn.pos.x, spawn.pos.y, spawn.name);
             }
-
-            return; // only 1 spawn fortress per room - there is more than one spawn in them
         }
+
+        const { mainSpawn } = this.roomPlan.plan;
+
+        if (!mainSpawn) {
+            logger.warning(`${this.room}: No spawn agent to define as main`);
+            return;
+        }
+
+        const spawnAgent = this.spawns[mainSpawn.name];
+        if (!spawnAgent.spawnController) {
+            return;
+        }
+
+        const buildUnits = gridFortress(spawnAgent.spawnController.spawn.pos, controllerLevel);
+        const containerOrStore = buildUnits.find(
+            b => b.structureType === STRUCTURE_CONTAINER || b.structureType === STRUCTURE_STORAGE,
+        );
+        if (containerOrStore) {
+            this.roomPlan.addSinkContainer(containerOrStore.x, containerOrStore.y);
+            this.roomPlan.setSpawnContainer(containerOrStore.x, containerOrStore.y);
+        }
+        this.roomPlan.updateSpawnFortress(mainSpawn.name, buildUnits);
+        this.room.scheduleTask(new PlaceConstructionSites(buildUnits));
     }
 
     /**
@@ -161,8 +182,20 @@ export class RoomPlanner {
      * Place construction sites to link sink and source containers with roads.
      */
     private createRoadsBetweenContainers() {
-        // TODO[OPTIMIZATION]: use an object[`${x},${y}`] to store visited paths
+        // TODO[OPTIMIZATION]: use an object[`${x},${y}`] to store visited paths and avoid some unnecessary loop iterations
+        const { mainSpawn } = this.roomPlan.plan;
+        let maxedOutSpawnFortress: IBuildUnit[] = [];
+        if (mainSpawn) {
+            const spawnAgent = this.spawns[mainSpawn.name];
+            const pos = spawnAgent.spawnController?.spawn.pos;
+            if (pos) {
+                maxedOutSpawnFortress = gridFortress(pos, MAX_RCL);
+            }
+        }
         let allPaths: Array<{ x: number; y: number }> = [];
+        const plannedStructures = maxedOutSpawnFortress
+            .filter(({ structureType }) => structureType !== STRUCTURE_RAMPART)
+            .map(unit => ({ x: unit.x, y: unit.y }));
         const addPath = (path: Array<{ x: number; y: number }> | undefined) => {
             if (path) {
                 allPaths = allPaths
@@ -196,14 +229,14 @@ export class RoomPlanner {
             candidatePositions.push(spawn);
             for (const source of this.roomPlan.plan.containers?.sources || []) {
                 candidatePositions.push(source);
-                const path = this.buildRoadsBetweenPositions(spawn, source, allPaths);
+                const path = this.buildRoadsBetweenPositions(spawn, source, allPaths, plannedStructures);
                 addPath(path);
             }
             for (const sink of this.roomPlan.plan.containers?.sinks || []) {
                 const from = getClosestCandidateTo(sink) || spawn;
                 // spawn is a sink as well :)
                 if (sink.x !== from.x && sink.y !== from.y) {
-                    const path = this.buildRoadsBetweenPositions(spawn, sink, allPaths);
+                    const path = this.buildRoadsBetweenPositions(spawn, sink, allPaths, plannedStructures);
                     addPath(path);
                 }
             }
@@ -214,6 +247,7 @@ export class RoomPlanner {
         p1: { x: number; y: number },
         p2: { x: number; y: number },
         existingPaths: Array<{ x: number; y: number }>,
+        plannedBuildings: Array<{ x: number; y: number }>,
     ) {
         const room = this.room.roomController?.room;
         if (!room) {
@@ -233,9 +267,11 @@ export class RoomPlanner {
                 );
             const avoidPositions = ([] as IBuildUnit[]).concat
                 .apply([], pendingConstructionSites)
-                // exclude source and destination
-                .filter(({ x, y }) => (p1.x !== x || p1.y !== y) && (p2.x !== x || p2.y !== y));
-            const path = room.findPath(rp1, rp2, {
+                // exclude source and destination from position to avoid
+                .filter(({ x, y }) => (p1.x !== x || p1.y !== y) && (p2.x !== x || p2.y !== y))
+                .map(({ x, y }) => ({ x, y }))
+                .concat(plannedBuildings);
+            let path = room.findPath(rp1, rp2, {
                 ignoreCreeps: true,
                 ignoreRoads: true,
                 costCallback: (roomName, costMatrix) => {
@@ -244,6 +280,7 @@ export class RoomPlanner {
                             costMatrix.set(pos.x, pos.y, 255);
                         }
                     }
+
                     // avoid existing roads, it's ugly :p
                     for (const pos of existingPaths) {
                         costMatrix.set(pos.x, pos.y, 5);
@@ -257,18 +294,17 @@ export class RoomPlanner {
                 return;
             }
 
+            // exclude source and destination from the road path to avoid destroying any building placed there
+            path = path.filter(pos => (pos.x !== p1.x || pos.y !== p1.y) && (pos.x !== p2.x || pos.y !== p2.y));
             path.forEach(pos => this.roomPlan.addRoad(pos.x, pos.y));
 
             this.room.scheduleTask(
                 new PlaceConstructionSites(
-                    path
-                        // exclude source and destination
-                        .filter(({ x, y }) => (p1.x !== x && p1.y !== y) || (p2.x !== x && p2.y !== y))
-                        .map(({ x, y }) => ({
-                            x,
-                            y,
-                            structureType: STRUCTURE_ROAD,
-                        })),
+                    path.map(({ x, y }) => ({
+                        x,
+                        y,
+                        structureType: STRUCTURE_ROAD,
+                    })),
                 ),
             );
             return path.map(({ x, y }) => ({ x, y }));
@@ -538,6 +574,10 @@ class RoomPlan {
             spawnFortresses: {},
             roads: [],
         };
+    }
+
+    public setMainSpawn(x: number, y: number, name: string) {
+        this.plan.mainSpawn = { x, y, name };
     }
 
     // TODO[OPTIMIZATION]: index source containers by source id to avoid doing a `find`

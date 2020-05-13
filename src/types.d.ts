@@ -184,6 +184,7 @@ interface RoomPlanMemory {
     spawnFortresses?: { [key: string]: IBuildUnit[] };
     roads?: Array<{ x: number; y: number }>;
     ramparts?: Array<{ x: number; y: number }>;
+    mainSpawn?: { x: number; y: number; name: string };
 }
 
 interface Memory {
