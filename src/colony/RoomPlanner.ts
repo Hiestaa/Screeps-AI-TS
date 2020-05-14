@@ -192,24 +192,18 @@ export class RoomPlanner {
                 maxedOutSpawnFortress = gridFortress(pos, MAX_RCL);
             }
         }
-        let allPaths: Array<{ x: number; y: number }> = [];
+
         const plannedStructures = maxedOutSpawnFortress
             .filter(({ structureType }) => structureType !== STRUCTURE_RAMPART)
             .map(unit => ({ x: unit.x, y: unit.y }));
+
+        let allPaths: Array<{ x: number; y: number }> = [];
         const addPath = (path: Array<{ x: number; y: number }> | undefined) => {
             if (path) {
-                allPaths = allPaths
-                    .concat(path)
-                    .concat(path.map(({ x, y }) => ({ x: x + 1, y })))
-                    .concat(path.map(({ x, y }) => ({ x, y: y + 1 })))
-                    .concat(path.map(({ x, y }) => ({ x: x - 1, y })))
-                    .concat(path.map(({ x, y }) => ({ x, y: y - 1 })))
-                    .concat(path.map(({ x, y }) => ({ x: x + 1, y: y + 1 })))
-                    .concat(path.map(({ x, y }) => ({ x: x - 1, y: y - 1 })))
-                    .concat(path.map(({ x, y }) => ({ x: x + 1, y: y - 1 })))
-                    .concat(path.map(({ x, y }) => ({ x: x - 1, y: y + 1 })));
+                allPaths = allPaths.concat(path);
             }
         };
+
         const candidatePositions: Array<{ x: number; y: number }> = [];
         const getClosestCandidateTo = (pos: { x: number; y: number }) => {
             let min = null;
@@ -281,10 +275,21 @@ export class RoomPlanner {
                         }
                     }
 
-                    // avoid existing roads, it's ugly :p
+                    // reuse existing roads if possible, and avoid neighboring tiles as it's pointless
                     for (const pos of existingPaths) {
-                        costMatrix.set(pos.x, pos.y, 5);
+                        costMatrix.set(pos.x + 1, pos.y, 5);
+                        costMatrix.set(pos.x, pos.y + 1, 5);
+                        costMatrix.set(pos.x - 1, pos.y, 5);
+                        costMatrix.set(pos.x, pos.y - 1, 5);
+                        costMatrix.set(pos.x + 1, pos.y + 1, 5);
+                        costMatrix.set(pos.x - 1, pos.y - 1, 5);
+                        costMatrix.set(pos.x + 1, pos.y - 1, 5);
+                        costMatrix.set(pos.x - 1, pos.y + 1, 5);
                     }
+                    for (const pos of existingPaths) {
+                        costMatrix.set(pos.x, pos.y, 0);
+                    }
+
                     // TODO: discard the cost of swamps if road on swamp has no particular movement cost
                     return costMatrix;
                 },

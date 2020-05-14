@@ -6,6 +6,7 @@ import { COLORS, getLogger } from "utils/Logger";
 const logger = getLogger("tasks.PlaceConstructionSites", COLORS.tasks);
 
 const CAN_BE_BUILT_ON_STRUCTURES: StructureConstant[] = [STRUCTURE_RAMPART];
+const DO_NOT_DESTROY: StructureConstant[] = [STRUCTURE_SPAWN, STRUCTURE_STORAGE, STRUCTURE_RAMPART];
 
 /**
  * Tasks for placing construction site
@@ -50,7 +51,7 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
                 let destroyed = false;
                 const items = roomCtl.room.lookForAt(LOOK_STRUCTURES, unit.x, unit.y);
                 for (const item of items) {
-                    if (item.structureType !== unit.structureType) {
+                    if (item.structureType !== unit.structureType && !DO_NOT_DESTROY.includes(item.structureType)) {
                         logger.warning(
                             `${roomCtl}: destroying structure ${item} ` +
                                 `to place construction site ${buildUnitToStr(unit)}`,
