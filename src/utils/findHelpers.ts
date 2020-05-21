@@ -1,3 +1,4 @@
+const CRITICAL_DAMAGE_LVL = 1000;
 /**
  * Find the most damaged creep or building nearby the given position.
  * The granularity factor controls both the complexity in terms of numbers of `find` calls,
@@ -13,11 +14,17 @@ export function findNearbyMostDamaged(
         | FIND_HOSTILE_CREEPS
         | FIND_HOSTILE_STRUCTURES,
     granularity: number,
-    customFilter?: ({ pos }: { pos: RoomPosition }) => boolean,
+    customFilter?: (candidate: {
+        pos: RoomPosition;
+        hits: number;
+        hitsMax: number;
+        structureType?: StructureConstant;
+    }) => boolean,
 ) {
     const _customFilter = customFilter || (() => true);
     let target = pos.findClosestByRange(findType, {
-        filter: found => found.hitsMax > 0 && found.hits < 100 && _customFilter(found),
+        filter: found =>
+            found.hitsMax > 0 && found.hits < found.hitsMax && found.hits < CRITICAL_DAMAGE_LVL && _customFilter(found),
     });
     if (target) {
         return target;
@@ -32,5 +39,10 @@ export function findNearbyMostDamaged(
             return target;
         }
     }
-    return null;
+
+    target = pos.findClosestByRange(findType, {
+        filter: found => found.hitsMax > 0 && found.hits < found.hitsMax && _customFilter(found),
+    });
+
+    return target;
 }

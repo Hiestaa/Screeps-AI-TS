@@ -70,6 +70,10 @@ interface BuildTaskMemory extends CreepTaskMemory {
     buildPriority: StructureConstant[];
 }
 
+interface RepairTaskMemory extends CreepTaskMemory {
+    forced: boolean;
+}
+
 interface HarvestTaskMemory extends CreepTaskMemory {
     sourceId: string;
     from?: { x: number; y: number };

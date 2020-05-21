@@ -1,6 +1,7 @@
 import { CreepController } from "agents/controllers/CreepController";
 import { BaseCreepTask } from "tasks/creep/BaseCreepTask";
 import { COLORS, getLogger } from "utils/Logger";
+import { RAMPART_INITIAL_REPAIR_HITS_TARGET } from "./Repair";
 
 const logger = getLogger("tasks.creep.Build", COLORS.tasks);
 
@@ -67,7 +68,8 @@ export class Build extends BaseCreepTask {
             })
             .on(ERR_NOT_IN_RANGE, () => {
                 const rampartToBuild = creepCtl.creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-                    filter: structure => structure.structureType === "rampart" && structure.hits < structure.hitsMax,
+                    filter: structure =>
+                        structure.structureType === "rampart" && structure.hits < RAMPART_INITIAL_REPAIR_HITS_TARGET,
                 });
                 if (rampartToBuild) {
                     logger.warning(

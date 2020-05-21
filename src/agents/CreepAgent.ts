@@ -60,7 +60,8 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
                 const fetchMem = taskMemory as FetchTaskMemory;
                 return new Fetch(fetchMem.targetPriority, fetchMem.excludedPositions, fetchMem.lastFetchTargetId);
             case "TASK_REPAIR":
-                return new Repair();
+                const repairMem = taskMemory as RepairTaskMemory;
+                return new Repair(repairMem.forced);
             case "TASK_UPGRADE_CONTROLLER":
                 return new UpgradeController();
             case "TASK_HEAL":

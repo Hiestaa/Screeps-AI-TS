@@ -37,7 +37,7 @@ export class MaintainBuildings extends BaseObjective {
                     STRUCTURE_CONTAINER,
                 ]),
             );
-            creep.scheduleTask(new Repair());
+            creep.scheduleTask(new Repair(true));
             creep.scheduleTask(new UpgradeController());
         }
     }

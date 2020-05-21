@@ -91,7 +91,7 @@ export class RoomPlanner {
         if (controllerLevel >= ROOM_PLAN_SOURCE_SINK_CONTAINERS_RCL) {
             this.createSinkAndSourceContainers();
         }
-        if (controllerLevel >= ROOM_PLAN_ROADS_BETWEEN_CONTAINERS_RCL) {
+        if (controllerLevel >= ROOM_PLAN_ROADS_BETWEEN_CONTAINERS_RCL && !this.roomPlan.hasPlanForRoads()) {
             this.createRoadsBetweenContainers();
         }
         if (controllerLevel >= ROOM_PLAN_EXIT_RAMPARTS_RCL) {
@@ -625,6 +625,10 @@ class RoomPlan {
         if (!this.plan.roads.find(r => r.x === x && r.y === y)) {
             this.plan.roads.push({ x, y });
         }
+    }
+
+    public hasPlanForRoads() {
+        return this.plan.roads && this.plan.roads.length > 0;
     }
 
     public addRampart(x: number, y: number) {

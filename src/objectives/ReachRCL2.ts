@@ -29,7 +29,7 @@ export class ReachRCL2 extends BaseObjective {
                 creepAgent.scheduleTask(
                     new Build([STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_RAMPART, STRUCTURE_TOWER]),
                 );
-                creepAgent.scheduleTask(new Repair());
+                creepAgent.scheduleTask(new Repair(true));
                 creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_CONTROLLER, STRUCTURE_CONTAINER]));
             }
         }
