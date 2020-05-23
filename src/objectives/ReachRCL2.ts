@@ -22,15 +22,15 @@ export class ReachRCL2 extends BaseObjective {
                 creepAgent.scheduleTask(new Fetch());
                 const source = creepAgent.creepController?.creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE);
                 if (source) {
-                    creepAgent.scheduleTask(new Harvest(source.id));
+                    creepAgent.scheduleTask(new Harvest({ sourceId: source.id }));
                 }
-                creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN]));
+                creepAgent.scheduleTask(new Haul({ deliveryTargets: [STRUCTURE_SPAWN] }));
                 creepAgent.scheduleTask(new Repair());
                 creepAgent.scheduleTask(
-                    new Build([STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_RAMPART, STRUCTURE_TOWER]),
+                    new Build({ buildPriority: [STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_RAMPART, STRUCTURE_TOWER] }),
                 );
-                creepAgent.scheduleTask(new Repair(true));
-                creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_CONTROLLER, STRUCTURE_CONTAINER]));
+                creepAgent.scheduleTask(new Repair({ forced: true }));
+                creepAgent.scheduleTask(new Haul({ deliveryTargets: [STRUCTURE_SPAWN, STRUCTURE_CONTROLLER, STRUCTURE_CONTAINER] }));
             }
         }
     }

@@ -4,6 +4,7 @@ import { Build } from "tasks/creep/Build";
 import { Fetch } from "tasks/creep/Fetch";
 import { Haul } from "tasks/creep/Haul";
 import { Repair } from "tasks/creep/Repair";
+import { UpgradeController } from "tasks/creep/UpgradeController";
 import { COLORS, getLogger } from "utils/Logger";
 import { GENERAL_PURPOSE_BATTALION_PHASE_OUT_RCL } from "../constants";
 import { ReachRCL2 } from "./ReachRCL2";
@@ -30,13 +31,13 @@ export class ReachRCL3 extends ReachRCL2 {
             if (!creepAgent.taskQueue.length) {
                 creepAgent.scheduleTask(new Fetch());
                 this.assignUpgradeControllerIfNecessary(creepAgent);
-                creepAgent.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_EXTENSION]));
+                creepAgent.scheduleTask(new Haul({ deliveryTargets: [STRUCTURE_SPAWN, STRUCTURE_EXTENSION] }));
                 creepAgent.scheduleTask(new Repair());
                 creepAgent.scheduleTask(
-                    new Build([STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_RAMPART, STRUCTURE_CONTAINER]),
+                    new Build({ buildPriority: [STRUCTURE_EXTENSION, STRUCTURE_TOWER, STRUCTURE_RAMPART, STRUCTURE_CONTAINER] }),
                 );
                 creepAgent.scheduleTask(
-                    new Haul([STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_CONTROLLER, STRUCTURE_CONTAINER]),
+                    new Haul({ deliveryTargets: [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_CONTROLLER, STRUCTURE_CONTAINER] }),
                 );
             }
         }
@@ -49,7 +50,7 @@ export class ReachRCL3 extends ReachRCL2 {
         if (roomController) {
             const fullDowngradeTimer = CONTROLLER_DOWNGRADE_TIMER_LEVEL[roomController.level];
             if (fullDowngradeTimer && roomController.ticksToDowngrade < fullDowngradeTimer * 0.8) {
-                creepAgent.scheduleTask(new Haul([STRUCTURE_CONTROLLER]));
+                creepAgent.scheduleTask(new UpgradeController());
             }
         }
     }

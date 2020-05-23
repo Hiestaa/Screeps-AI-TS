@@ -42,7 +42,7 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
     }
 
     protected createTaskInstance(taskMemory: SpawnTaskMemory): SpawnTask {
-        return new SpawnTask(taskMemory.request, taskMemory.spawnDelay);
+        return new SpawnTask(taskMemory);
     }
 
     public requestSpawn(battalion: keyof ColonyBattalionsMemory, count: number, profile: CREEP_PROFILE) {
@@ -52,7 +52,7 @@ export class SpawnAgent extends BaseAgent<StructureSpawn, SpawnController, Spawn
     public execute() {
         for (const request of this.newSpawnRequests) {
             if (request.battalion && request.creepProfile) {
-                this.scheduleTask(new SpawnTask(request));
+                this.scheduleTask(new SpawnTask({ request }));
             } else {
                 logger.error(`${this}: Invalid spawn request: ${JSON.stringify(request)}`);
             }

@@ -77,7 +77,7 @@ export class RoomPlanner {
         }
         if (missingBuildUnits.length > 0) {
             logger.warning(`Detected ${missingBuildUnits.length} missing build units. Re-placing them now.`);
-            this.room.scheduleTask(new PlaceConstructionSites(missingBuildUnits));
+            this.room.scheduleTask(new PlaceConstructionSites({ scheduledBuildUnits: missingBuildUnits }));
         }
     }
 
@@ -138,7 +138,7 @@ export class RoomPlanner {
             this.roomPlan.setSpawnContainer(containerOrStore.x, containerOrStore.y);
         }
         this.roomPlan.updateSpawnFortress(mainSpawn.name, buildUnits);
-        this.room.scheduleTask(new PlaceConstructionSites(buildUnits));
+        this.room.scheduleTask(new PlaceConstructionSites({ scheduledBuildUnits: buildUnits }));
     }
 
     /**
@@ -175,7 +175,7 @@ export class RoomPlanner {
             }
         }
 
-        this.room.scheduleTask(new PlaceConstructionSites(buildUnits));
+        this.room.scheduleTask(new PlaceConstructionSites({ scheduledBuildUnits: buildUnits }));
     }
 
     /**
@@ -304,13 +304,14 @@ export class RoomPlanner {
             path.forEach(pos => this.roomPlan.addRoad(pos.x, pos.y));
 
             this.room.scheduleTask(
-                new PlaceConstructionSites(
-                    path.map(({ x, y }) => ({
-                        x,
-                        y,
-                        structureType: STRUCTURE_ROAD,
-                    })),
-                ),
+                new PlaceConstructionSites({
+                    scheduledBuildUnits:
+                        path.map(({ x, y }) => ({
+                            x,
+                            y,
+                            structureType: STRUCTURE_ROAD,
+                        })),
+                }),
             );
             return path.map(({ x, y }) => ({ x, y }));
         } else {
@@ -337,7 +338,7 @@ export class RoomPlanner {
                 }
             }
         }
-        this.room.scheduleTask(new PlaceConstructionSites(sites));
+        this.room.scheduleTask(new PlaceConstructionSites({ scheduledBuildUnits: sites }));
     }
 
     /**

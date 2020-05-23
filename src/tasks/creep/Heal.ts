@@ -15,8 +15,8 @@ export class Heal extends BaseCreepTask {
     public following: string | undefined;
     public noMoreTarget: boolean = false;
 
-    constructor(following?: string, currentTarget?: string) {
-        super("TASK_HEAL");
+    constructor({ following, currentTarget }: { following?: string, currentTarget?: string }) {
+        super({ type: "TASK_HEAL" });
         this.currentTarget = currentTarget;
         this.following = following;
     }

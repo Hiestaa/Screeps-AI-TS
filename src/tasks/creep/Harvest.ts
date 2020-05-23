@@ -11,8 +11,12 @@ export class Harvest extends BaseCreepTask {
     public sourceId: string;
     public from?: { x: number; y: number };
 
-    constructor(sourceId: string, from?: { x: number; y: number }, type?: "TASK_HARVEST_NON_STOP") {
-        super(type || "TASK_HARVEST");
+    constructor({ sourceId, from, type }: {
+        sourceId: string,
+        from?: { x: number; y: number },
+        type?: CREEP_TASK
+    }) {
+        super({ type: type || "TASK_HARVEST" });
         this.sourceId = sourceId;
         this.from = from;
     }
@@ -87,8 +91,8 @@ export class Harvest extends BaseCreepTask {
  * Never stop harvesting even when full - will continue and let resource drop on the floor
  */
 export class HarvestNonStop extends Harvest {
-    constructor(sourceId: string, from?: { x: number; y: number }) {
-        super(sourceId, from, "TASK_HARVEST_NON_STOP");
+    constructor({ sourceId, from }: { sourceId: string, from?: { x: number; y: number } }) {
+        super({ sourceId, from, type: "TASK_HARVEST_NON_STOP" });
     }
 
     public canBeExecuted(creepCtl: CreepController) {

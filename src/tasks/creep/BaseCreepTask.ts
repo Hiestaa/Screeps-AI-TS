@@ -11,7 +11,7 @@ const logger = getLogger("tasks.BaseCreepTask", COLORS.tasks);
 export abstract class BaseCreepTask extends BaseTask<Creep, CreepController> {
     public type: CREEP_TASK;
 
-    constructor(type: CREEP_TASK) {
+    constructor({ type }: { type: CREEP_TASK }) {
         super();
         this.type = type;
     }

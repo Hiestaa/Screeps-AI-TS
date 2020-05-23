@@ -89,10 +89,10 @@ export class DefendColony extends BaseObjective {
             attacking.length > 0
                 ? attacking[0]
                 : attackers.length > 0
-                ? attackers[0]
-                : availableAttackers.length > 0
-                ? availableAttackers[0]
-                : undefined;
+                    ? attackers[0]
+                    : availableAttackers.length > 0
+                        ? availableAttackers[0]
+                        : undefined;
 
         return { availableAttackers, attackers, attacking, leader };
     }
@@ -100,7 +100,7 @@ export class DefendColony extends BaseObjective {
     private scheduleMissingHealTasks(creepAgents: CreepAgent[], leader: CreepAgent | undefined) {
         for (const creep of creepAgents) {
             if (creep.profile === "Healer" && !creep.taskQueue.find(t => t.type === "TASK_HEAL")) {
-                creep.scheduleTask(new Heal(leader?.creepController?.creep.id || undefined));
+                creep.scheduleTask(new Heal({ following: leader?.creepController?.creep.id || undefined }));
             }
         }
     }
@@ -131,10 +131,10 @@ export class DefendColony extends BaseObjective {
                     for (const creep of availableAttackers) {
                         if (creep.profile === "R-Attacker") {
                             creep.taskQueue = []; // focus attack - don't wait for completion of another task (e.g. reach)
-                            creep.scheduleTask(new RangedAttack(hostiles[0].id));
+                            creep.scheduleTask(new RangedAttack({ target: hostiles[0].id }));
                         } else if (creep.profile === "M-Attacker") {
                             creep.taskQueue = []; // focus attack - don't wait for completion of another task (e.g. reach)
-                            creep.scheduleTask(new Attack(hostiles[0].id));
+                            creep.scheduleTask(new Attack({ target: hostiles[0].id }));
                         }
                     }
 
@@ -165,7 +165,7 @@ export class DefendColony extends BaseObjective {
                 creepPos &&
                 creepPos.getRangeTo(defenderGarrison.x, defenderGarrison.y) > 5
             ) {
-                creep.scheduleTask(new Reach(defenderGarrison));
+                creep.scheduleTask(new Reach({ destination: defenderGarrison }));
             }
         }
     }

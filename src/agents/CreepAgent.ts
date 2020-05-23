@@ -46,34 +46,27 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
         // is it possible to get there also without doing any casting, e.g. if CreepTaskMemory used here is a type union we might be able to use type exhaustion?
         switch (taskMemory.type) {
             case "TASK_HAUL":
-                const haulMem = taskMemory as HaulTaskMemory;
-                return new Haul(haulMem.deliveryTargets, haulMem.excludedPositions);
+                return new Haul(taskMemory as HaulTaskMemory);
             case "TASK_HARVEST":
-                const harvestMem = taskMemory as HarvestTaskMemory;
-                return new Harvest(harvestMem.sourceId, harvestMem.from);
+                return new Harvest(taskMemory as HarvestTaskMemory);
             case "TASK_HARVEST_NON_STOP":
-                const harvestMem2 = taskMemory as HarvestTaskMemory;
-                return new HarvestNonStop(harvestMem2.sourceId, harvestMem2.from);
+                return new HarvestNonStop(taskMemory as HarvestTaskMemory);
             case "TASK_BUILD":
-                return new Build((taskMemory as BuildTaskMemory).buildPriority);
+                return new Build(taskMemory as BuildTaskMemory);
             case "TASK_FETCH":
-                const fetchMem = taskMemory as FetchTaskMemory;
-                return new Fetch(fetchMem.targetPriority, fetchMem.excludedPositions, fetchMem.lastFetchTargetId);
+                return new Fetch(taskMemory as FetchTaskMemory);
             case "TASK_REPAIR":
-                const repairMem = taskMemory as RepairTaskMemory;
-                return new Repair(repairMem.forced);
+                return new Repair(taskMemory as RepairTaskMemory);
             case "TASK_UPGRADE_CONTROLLER":
                 return new UpgradeController();
             case "TASK_HEAL":
-                const healMem = taskMemory as HealTaskMemory;
-                return new Heal(healMem.following, healMem.currentTarget);
+                return new Heal(taskMemory as HealTaskMemory);
             case "TASK_ATTACK":
-                return new Attack((taskMemory as AttackTaskMemory).target);
+                return new Attack(taskMemory as AttackTaskMemory);
             case "TASK_RANGED_ATTACK":
-                return new RangedAttack((taskMemory as AttackTaskMemory).target);
+                return new RangedAttack(taskMemory as AttackTaskMemory);
             case "TASK_REACH":
-                const reachMem = taskMemory as ReachTaskMemory;
-                return new Reach(reachMem.destination, reachMem.noPath, reachMem.destinationReached);
+                return new Reach(taskMemory as ReachTaskMemory);
         }
     }
 

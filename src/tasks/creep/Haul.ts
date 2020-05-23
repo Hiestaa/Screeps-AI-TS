@@ -14,8 +14,11 @@ export class Haul extends BaseCreepTask {
     private deliveryTargets: DeliveryTarget[];
     private excludedPositions: Array<{ x: number; y: number }>;
 
-    constructor(deliveryTargets: DeliveryTarget[], excludedPositions?: Array<{ x: number; y: number }>) {
-        super("TASK_HAUL");
+    constructor({ deliveryTargets, excludedPositions }: {
+        deliveryTargets: DeliveryTarget[],
+        excludedPositions?: Array<{ x: number; y: number }>
+    }) {
+        super({ type: "TASK_HAUL" });
         this.deliveryTargets = deliveryTargets;
         this.excludedPositions = excludedPositions || [];
     }

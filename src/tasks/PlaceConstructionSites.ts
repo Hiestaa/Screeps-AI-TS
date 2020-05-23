@@ -20,7 +20,7 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
     public buildUnitsInProgress: IBuildUnit[] = [];
     public executionPeriod = 10;
 
-    constructor(scheduledBuildUnits: IBuildUnit[], buildUnitsInProgress?: IBuildUnit[]) {
+    constructor({ scheduledBuildUnits, buildUnitsInProgress }: { scheduledBuildUnits: IBuildUnit[], buildUnitsInProgress?: IBuildUnit[] }) {
         super();
         this.scheduledBuildUnits = scheduledBuildUnits || [];
         this.buildUnitsInProgress = buildUnitsInProgress || [];
@@ -54,7 +54,7 @@ export class PlaceConstructionSites extends BaseTask<Room, RoomController> {
                     if (item.structureType !== unit.structureType && !DO_NOT_DESTROY.includes(item.structureType)) {
                         logger.warning(
                             `${roomCtl}: destroying structure ${item} ` +
-                                `to place construction site ${buildUnitToStr(unit)}`,
+                            `to place construction site ${buildUnitToStr(unit)}`,
                         );
                         item.destroy();
                         destroyed = true;

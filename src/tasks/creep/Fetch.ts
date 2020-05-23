@@ -24,12 +24,12 @@ export class Fetch extends BaseCreepTask {
     private lastFetchTargetId?: string;
     public targetPriority: FETCH_TARGETS[];
 
-    constructor(
+    constructor({ targetPriority, excludedPositions, lastFetchTargetId }: {
         targetPriority?: FETCH_TARGETS[],
         excludedPositions?: Array<{ x: number; y: number }>,
         lastFetchTargetId?: string,
-    ) {
-        super("TASK_FETCH");
+    } = {}) {
+        super({ type: "TASK_FETCH" });
         this.excludedPositions = excludedPositions || [];
         this.targetPriority = targetPriority || [];
         this._addMissingTargets();
@@ -87,6 +87,7 @@ export class Fetch extends BaseCreepTask {
         });
         if (target) {
             logger.debug(`${creepCtl}: withdrawing from ${target}`);
+            this.lastFetchTargetId = target.id;
             this.moveToIfFail(creepCtl, creepCtl.withdraw(target, RESOURCE_ENERGY), target);
             return true;
         }
@@ -105,6 +106,7 @@ export class Fetch extends BaseCreepTask {
         });
         if (droppedResource) {
             logger.debug(`${creepCtl}: picking up ${droppedResource}`);
+            this.lastFetchTargetId = droppedResource.id;
             this.moveToIfFail(creepCtl, creepCtl.pickup(droppedResource), droppedResource);
             return true;
         }
@@ -136,6 +138,7 @@ export class Fetch extends BaseCreepTask {
         const source = creepCtl.creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE, { filter: commonFilter });
         if (source) {
             logger.debug(`${creepCtl}: picking up ${source}`);
+            this.lastFetchTargetId = source.id;
             this.moveToIfFail(creepCtl, creepCtl.harvest(source), source);
             return true;
         }

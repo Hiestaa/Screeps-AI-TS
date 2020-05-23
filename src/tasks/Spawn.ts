@@ -13,10 +13,10 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     public executionPeriod = 10;
     private spawnDelay = 0;
 
-    constructor(request: SpawnRequest, spawnDelay: number = 0) {
+    constructor({ request, spawnDelay }: { request: SpawnRequest, spawnDelay?: number }) {
         super();
         this.request = request;
-        this.spawnDelay = spawnDelay;
+        this.spawnDelay = spawnDelay || 0;
     }
 
     public execute(spawnCtl: SpawnController) {

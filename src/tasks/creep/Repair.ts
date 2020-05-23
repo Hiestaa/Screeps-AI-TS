@@ -7,19 +7,21 @@ const logger = getLogger("tasks.creep.Repair", COLORS.tasks);
 
 // stop repairing ramparts that have more hitpoints than that and consider other construction sites
 export const RAMPART_INITIAL_REPAIR_HITS_TARGET = 10000;
+export const IGNORE_REPAIR_TARGET_ABOVE_HITS_PC = 80;
+
 /**
- * Simple Haul task - go Haul resources to the first available spawn
+ * Repair task - go pick a low health target and repair it fully (or until energy storage is depleted)
  */
 export class Repair extends BaseCreepTask {
     // when on, task is complete - only useful during the current turn, saving in task memory is not needed
     private noMoreTarget: boolean = false;
     private forced: boolean = false;
+    private currentTarget?: string;
 
-    /**
-     */
-    constructor(forced?: boolean) {
-        super("TASK_REPAIR");
+    constructor({ forced, currentTarget }: { forced?: boolean, currentTarget?: string } = {}) {
+        super({ type: "TASK_REPAIR" });
         this.forced = forced || false;
+        this.currentTarget = currentTarget;
     }
 
     public canBeExecuted(creepCtl: CreepController) {
@@ -41,6 +43,9 @@ export class Repair extends BaseCreepTask {
                 })
                 .on(ERR_INVALID_TARGET, () => {
                     logger.debug(`${creepCtl}: target ${target} is fully repaired.`);
+                    if (this.currentTarget) {
+                        this.currentTarget = undefined;
+                    }
                 })
                 .on(ERR_NOT_ENOUGH_RESOURCES, () => {
                     logger.debug(`${creepCtl}: No more energy - task is completed.`);
@@ -54,22 +59,43 @@ export class Repair extends BaseCreepTask {
         }
     }
 
+    private getTarget(creepCtl: CreepController): Structure | null {
+        if (this.currentTarget) {
+            const currentTarget = Game.getObjectById(this.currentTarget) as Structure;
+            if (currentTarget) {
+                return currentTarget;
+            }
+        }
+        const newTarget = this.findTarget(creepCtl);
+        if (newTarget) {
+            this.currentTarget = newTarget.id;
+        }
+        return newTarget;
+    }
+
     /**
      * Find a suitable target for repair.
      * @param creepCtl controller for the creep executing the task
      */
-    private getTarget(creepCtl: CreepController): Structure | null {
+    private findTarget(creepCtl: CreepController): Structure | null {
         let constructionSite: ConstructionSite | null = null;
         let noConstructionSiteFound = false;
-        const customFilter = ({ structureType, hits }: { structureType?: StructureConstant; hits: number }) => {
+        const customFilter = ({ structureType, hits, hitsMax }: { structureType?: StructureConstant; hits: number, hitsMax: number }) => {
+            // reject any structure with more hitpoints than the repair threshold
+            if (hits > IGNORE_REPAIR_TARGET_ABOVE_HITS_PC * hits / 100) {
+                return false;
+            }
+
             // accept any structure that isn't a rampart
             if (structureType !== STRUCTURE_RAMPART) {
                 return true;
             }
+
             // if forced, keep pouring energy into any found target
             if (this.forced) {
                 return true;
             }
+
             // for ramparts, accept any with significantly low health
             if (hits < RAMPART_INITIAL_REPAIR_HITS_TARGET) {
                 return true;
@@ -78,6 +104,7 @@ export class Repair extends BaseCreepTask {
             if (constructionSite) {
                 return false;
             }
+
             // don't do the same find query twice:
             // if no construction site could be found the first time it won't happen this time either
             if (noConstructionSiteFound) {
@@ -106,7 +133,7 @@ export class Repair extends BaseCreepTask {
 
     public toJSON(): RepairTaskMemory {
         const json = super.toJSON();
-        const memory: RepairTaskMemory = { forced: this.forced, ...json };
+        const memory: RepairTaskMemory = { forced: this.forced, currentTarget: this.currentTarget, ...json };
         return memory;
     }
 

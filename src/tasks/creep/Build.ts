@@ -18,8 +18,8 @@ export class Build extends BaseCreepTask {
      *
      * @param buildPriority array of structure types first come first serve.
      */
-    constructor(buildPriority: StructureConstant[] = []) {
-        super("TASK_BUILD");
+    constructor({ buildPriority }: { buildPriority: StructureConstant[] }) {
+        super({ type: "TASK_BUILD" });
         this.buildPriority = buildPriority || [];
     }
 
@@ -61,7 +61,7 @@ export class Build extends BaseCreepTask {
                 if (target.structureType === STRUCTURE_RAMPART) {
                     logger.debug(
                         `${creepCtl}: Constructed rampart ${target}. ` +
-                            `Interrupting build task to proceed with the repair.`,
+                        `Interrupting build task to proceed with the repair.`,
                     );
                     this.earlyInterruption = true;
                 }

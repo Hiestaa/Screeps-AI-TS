@@ -26,9 +26,9 @@ export class RefillContainers extends BaseObjective {
                 continue;
             }
 
-            creep.scheduleTask(new Fetch([], sinks)); // avoid sinks (but pick any suitable source)
+            creep.scheduleTask(new Fetch({ targetPriority: [], excludedPositions: sinks })); // avoid sinks (but pick any suitable source)
             // note: won't fill up the storage if containers aren't full, there is a cap when it's not the last item
-            creep.scheduleTask(new Haul(["storage", "container", "storage"], sources)); // avoid source (but pink any suitable sink)
+            creep.scheduleTask(new Haul({ deliveryTargets: ["storage", "container", "storage"], excludedPositions: sources })); // avoid source (but pink any suitable sink)
         }
     }
 
@@ -58,8 +58,8 @@ export class RefillSpawnStorage extends BaseObjective {
                 continue;
             }
 
-            creep.scheduleTask(new Fetch([STRUCTURE_STORAGE, STRUCTURE_CONTAINER]));
-            creep.scheduleTask(new Haul([STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER]));
+            creep.scheduleTask(new Fetch({ targetPriority: [STRUCTURE_STORAGE, STRUCTURE_CONTAINER] }));
+            creep.scheduleTask(new Haul({ deliveryTargets: [STRUCTURE_SPAWN, STRUCTURE_EXTENSION, STRUCTURE_TOWER] }));
         }
     }
 

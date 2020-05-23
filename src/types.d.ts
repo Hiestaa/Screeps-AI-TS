@@ -72,6 +72,7 @@ interface BuildTaskMemory extends CreepTaskMemory {
 
 interface RepairTaskMemory extends CreepTaskMemory {
     forced: boolean;
+    currentTarget?: string;
 }
 
 interface HarvestTaskMemory extends CreepTaskMemory {
@@ -205,6 +206,7 @@ interface Memory {
     prevDuration: number;
     prevDurations: number[];
     cpuUsageEstimator: { enabled: boolean; depth: number };
+    bookings: { [key in 'constructionSites' | 'structures' | 'resources']: { [key: string]: { [key: string]: number } } }
 }
 
 declare interface RoomPosition {

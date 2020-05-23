@@ -14,8 +14,8 @@ export class Attack extends BaseCreepTask {
     public target: string;
     private noMoreTarget: boolean = false;
 
-    constructor(target: string, type?: "TASK_RANGED_ATTACK") {
-        super(type || "TASK_ATTACK");
+    constructor({ target, type }: { target: string, type?: CREEP_TASK }) {
+        super({ type: type || "TASK_ATTACK" });
         this.target = target;
     }
 
@@ -69,8 +69,8 @@ export class Attack extends BaseCreepTask {
 }
 
 export class RangedAttack extends Attack {
-    constructor(target: string) {
-        super(target, "TASK_RANGED_ATTACK");
+    constructor({ target }: { target: string }) {
+        super({ target, type: "TASK_RANGED_ATTACK" });
     }
 
     protected attackTarget(

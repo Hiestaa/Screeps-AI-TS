@@ -20,8 +20,12 @@ export class Reach extends BaseCreepTask {
     // after MAX_REACH_ATTEMPT the task will be considered complete
     private destinationReached: number = 0;
 
-    constructor(destination: { x: number; y: number }, noPath?: number, destinationReached?: number) {
-        super("TASK_REACH");
+    constructor({ destination, noPath, destinationReached }: {
+        destination: { x: number; y: number },
+        noPath?: number,
+        destinationReached?: number
+    }) {
+        super({ type: "TASK_REACH" });
         this.destination = destination;
         this.noPath = noPath || 0;
         this.destinationReached = destinationReached || 0;

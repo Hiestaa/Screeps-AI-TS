@@ -29,15 +29,17 @@ export class MaintainBuildings extends BaseObjective {
             this.assignUpgradeControllerIfNecessary(creep);
             creep.scheduleTask(new Repair());
             creep.scheduleTask(
-                new Build([
-                    STRUCTURE_EXTENSION,
-                    STRUCTURE_TOWER,
-                    STRUCTURE_STORAGE,
-                    STRUCTURE_RAMPART,
-                    STRUCTURE_CONTAINER,
-                ]),
+                new Build({
+                    buildPriority: [
+                        STRUCTURE_EXTENSION,
+                        STRUCTURE_TOWER,
+                        STRUCTURE_STORAGE,
+                        STRUCTURE_RAMPART,
+                        STRUCTURE_CONTAINER,
+                    ]
+                }),
             );
-            creep.scheduleTask(new Repair(true));
+            creep.scheduleTask(new Repair({ forced: true }));
             creep.scheduleTask(new UpgradeController());
         }
     }
@@ -47,7 +49,7 @@ export class MaintainBuildings extends BaseObjective {
         if (roomController) {
             const fullDowngradeTimer = CONTROLLER_DOWNGRADE_TIMER_LEVEL[roomController.level];
             if (fullDowngradeTimer && roomController.ticksToDowngrade < fullDowngradeTimer * 0.8) {
-                creepAgent.scheduleTask(new Haul([STRUCTURE_CONTROLLER]));
+                creepAgent.scheduleTask(new UpgradeController());
             }
         }
     }

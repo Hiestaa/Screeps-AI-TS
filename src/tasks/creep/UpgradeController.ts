@@ -11,7 +11,7 @@ export class UpgradeController extends BaseCreepTask {
     public noMoreTarget: boolean = false;
 
     constructor() {
-        super("TASK_UPGRADE_CONTROLLER");
+        super({ type: "TASK_UPGRADE_CONTROLLER" });
     }
 
     public canBeExecuted(creepCtl: CreepController) {

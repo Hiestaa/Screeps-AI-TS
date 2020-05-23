@@ -108,9 +108,9 @@ export class ContinuousHarvesting extends BaseObjective {
     private makeHarvestTask(sourceId: string, soloHarvest: boolean, roomPlanner: RoomPlanner) {
         if (soloHarvest) {
             const fromPos = roomPlanner.roomPlan.getContainerPositionForSource(sourceId);
-            return new HarvestNonStop(sourceId, fromPos);
+            return new HarvestNonStop({ sourceId, from: fromPos });
         }
-        return new HarvestNonStop(sourceId);
+        return new HarvestNonStop({ sourceId });
     }
 
     public estimateRequiredWorkForce(roomPlanner: RoomPlanner): SpawnRequest[] {
