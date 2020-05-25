@@ -68,13 +68,13 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
         const initialCost = profile.cost();
 
         let profileWithCurrentEnergy = profile.clone();
-        while (profile.cost() <= energy) {
+        while (profile.cost() <= energy && !profile.exceededMaxLevel()) {
             profileWithCurrentEnergy = profile.clone();
             profile.incrementLevel();
         }
 
         let profileWithMaxPotentialEnergy = profileWithCurrentEnergy;
-        while (profile.cost() <= potentialEnergy) {
+        while (profile.cost() <= potentialEnergy && !profile.exceededMaxLevel()) {
             profileWithMaxPotentialEnergy = profile.clone();
             profile.incrementLevel();
         }

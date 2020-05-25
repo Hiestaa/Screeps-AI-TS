@@ -48,4 +48,8 @@ export abstract class BaseCreepProfile {
             `${this.bodyParts.join(",")} (cost: ${this.cost()})`
         );
     }
+
+    public exceededMaxLevel(): boolean {
+        return this.bodyParts.length > MAX_CREEP_SIZE;
+    }
 }

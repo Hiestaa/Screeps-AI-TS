@@ -58,12 +58,14 @@ type FETCH_TARGETS =
     | FIND_DROPPED_RESOURCES
     | STRUCTURE_CONTAINER
     | STRUCTURE_STORAGE
-    | FIND_SOURCES;
+    | FIND_SOURCES_ACTIVE;
 
 interface FetchTaskMemory extends CreepTaskMemory {
     targetPriority: FETCH_TARGETS[];
     excludedPositions: Array<{ x: number; y: number }>;
     lastFetchTargetId?: string;
+    lastFetchTargetType?: FETCH_TARGETS;
+    lastFetchTargetAmount?: number;
 }
 
 interface BuildTaskMemory extends CreepTaskMemory {
@@ -206,7 +208,7 @@ interface Memory {
     prevDuration: number;
     prevDurations: number[];
     cpuUsageEstimator: { enabled: boolean; depth: number };
-    bookings: { [key in 'constructionSites' | 'structures' | 'resources']: { [key: string]: { [key: string]: number } } }
+    resourceLocks: { [key in 'constructionSites' | 'structures' | 'resources']: { [key: string]: { [key: string]: number } } }
 }
 
 declare interface RoomPosition {
