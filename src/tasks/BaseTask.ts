@@ -1,4 +1,8 @@
 import { BaseController, Controllable } from "agents/controllers/BaseController";
+import { COLORS, getLogger } from "utils/Logger";
+
+
+const logger = getLogger('tasks.BaseTask', COLORS.tasks);
 
 /**
  * Base Class for any task object. The interface describes the task load/execute/save cycle:
@@ -46,7 +50,24 @@ export abstract class BaseTask<RO extends Controllable, Controller extends BaseC
         return;
     }
 
+    /**
+     * Called a single time on task completion
+     * @param controller controller executing this task
+     */
+    public onComplete(controller: Controller | undefined) {
+        return;
+    };
+
+    /**
+     * Called when interrupting a task before it is completed, for instance on creep death.
+     * @param id identifier of the agent that got interrupted executing this task.
+     */
+    public onInterrupt(id: string) {
+        logger.info(`${id}: interrupted ${this} before execution completion.`)
+    }
+
     public toString() {
         return `task ${this.getType()} ${JSON.stringify(this.toJSON())}`;
     }
+
 }

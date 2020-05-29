@@ -1,6 +1,7 @@
 import * as cpuUsageEstimator from "utils/cpuUsageEstimator";
 
 import { act } from "./act";
+import { cleanup } from "./cleanup";
 import { isPaused } from "./pause";
 import { reload } from "./reload";
 import { save } from "./save";
@@ -25,6 +26,8 @@ export function mainLoop() {
 
     measure();
     cpuUsageEstimator.tickEnd();
+
+    cleanup()
 }
 
 function initialize() {

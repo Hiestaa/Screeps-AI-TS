@@ -14,6 +14,34 @@ import { BaseAgent } from "./BaseAgent";
 
 const logger = getLogger("controllers.agents.CreepAgent", COLORS.controllers);
 
+export function createTaskInstance(taskMemory: CreepTaskMemory): BaseCreepTask {
+    switch (taskMemory.type) {
+        case "TASK_HAUL":
+            return new Haul(taskMemory as HaulTaskMemory);
+        case "TASK_HARVEST":
+            return new Harvest(taskMemory as HarvestTaskMemory);
+        case "TASK_HARVEST_NON_STOP":
+            return new HarvestNonStop(taskMemory as HarvestTaskMemory);
+        case "TASK_BUILD":
+            return new Build(taskMemory as BuildTaskMemory);
+        case "TASK_FETCH":
+            return new Fetch(taskMemory as FetchTaskMemory);
+        case "TASK_REPAIR":
+            return new Repair(taskMemory as RepairTaskMemory);
+        case "TASK_UPGRADE_CONTROLLER":
+            return new UpgradeController();
+        case "TASK_HEAL":
+            return new Heal(taskMemory as HealTaskMemory);
+        case "TASK_ATTACK":
+            return new Attack(taskMemory as AttackTaskMemory);
+        case "TASK_RANGED_ATTACK":
+            return new RangedAttack(taskMemory as AttackTaskMemory);
+        case "TASK_REACH":
+            return new Reach(taskMemory as ReachTaskMemory);
+    }
+}
+
+
 export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask, CreepMemory> {
     public creepController?: CreepController;
     public profile: CREEP_PROFILE;
@@ -41,33 +69,7 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
     }
 
     protected createTaskInstance(taskMemory: CreepTaskMemory): BaseCreepTask {
-        // TODO: use objects instead of lists of params in all tasks constructor
-        // so we don't need to come back and update this function ever again to extend the task memory
-        // is it possible to get there also without doing any casting, e.g. if CreepTaskMemory used here is a type union we might be able to use type exhaustion?
-        switch (taskMemory.type) {
-            case "TASK_HAUL":
-                return new Haul(taskMemory as HaulTaskMemory);
-            case "TASK_HARVEST":
-                return new Harvest(taskMemory as HarvestTaskMemory);
-            case "TASK_HARVEST_NON_STOP":
-                return new HarvestNonStop(taskMemory as HarvestTaskMemory);
-            case "TASK_BUILD":
-                return new Build(taskMemory as BuildTaskMemory);
-            case "TASK_FETCH":
-                return new Fetch(taskMemory as FetchTaskMemory);
-            case "TASK_REPAIR":
-                return new Repair(taskMemory as RepairTaskMemory);
-            case "TASK_UPGRADE_CONTROLLER":
-                return new UpgradeController();
-            case "TASK_HEAL":
-                return new Heal(taskMemory as HealTaskMemory);
-            case "TASK_ATTACK":
-                return new Attack(taskMemory as AttackTaskMemory);
-            case "TASK_RANGED_ATTACK":
-                return new RangedAttack(taskMemory as AttackTaskMemory);
-            case "TASK_REACH":
-                return new Reach(taskMemory as ReachTaskMemory);
-        }
+        return createTaskInstance(taskMemory);
     }
 
     protected onTaskExecutionStarts(task: BaseCreepTask, creepCtl: CreepController | undefined) {
@@ -77,9 +79,8 @@ export class CreepAgent extends BaseAgent<Creep, CreepController, BaseCreepTask,
         }
     }
 
-    protected onTaskExecutionCompletes(task: BaseCreepTask, creepCtl: CreepController | undefined) {
+    protected logTaskExecutionCompletion(task: BaseCreepTask, creepCtl: CreepController | undefined) {
         this.logger.debug(`${creepCtl}: Completed execution of task: ${task}`);
-        return;
     }
 
     protected commitToMemory(memory: CreepMemory) {

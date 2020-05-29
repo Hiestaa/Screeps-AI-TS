@@ -24,11 +24,4 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
     logger.debug(`[MAIN] Tick ${Game.time} ends.`);
     logger.debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-
-    // Automatically delete memory of missing creeps
-    for (const name in Memory.creeps) {
-        if (!(name in Game.creeps)) {
-            delete Memory.creeps[name];
-        }
-    }
 });

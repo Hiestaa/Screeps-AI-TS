@@ -20,7 +20,7 @@ export abstract class BaseAgent<
     ControllerType extends BaseController<ControlledRoomObjectType>,
     TaskType extends BaseTask<ControlledRoomObjectType, ControllerType>,
     MemoryType extends BaseMemory
-> {
+    > {
     public taskQueue: TaskType[] = [];
     public name: string;
     public memory: MemoryType;
@@ -184,12 +184,15 @@ export abstract class BaseAgent<
 
     protected onTaskExecutionStarts(task: TaskType, controller: ControllerType | undefined) {
         this.logger.debug(`${controller}: Started execution of task: ${task}`);
-        return;
     }
 
     protected onTaskExecutionCompletes(task: TaskType, controller: ControllerType | undefined) {
+        this.logTaskExecutionCompletion(task, controller);
+        task.onComplete(controller);
+    }
+
+    protected logTaskExecutionCompletion(task: TaskType, controller: ControllerType | undefined) {
         this.logger.debug(`${controller}: Completed execution of task: ${task}`);
-        return;
     }
 
     public toString() {

@@ -65,7 +65,8 @@ interface FetchTaskMemory extends CreepTaskMemory {
     excludedPositions: Array<{ x: number; y: number }>;
     lastFetchTargetId?: string;
     lastFetchTargetType?: FETCH_TARGETS;
-    lastFetchTargetAmount?: number;
+    lockedAmount?: number;
+    roomResourceLock?: string;
 }
 
 interface BuildTaskMemory extends CreepTaskMemory {
@@ -208,7 +209,8 @@ interface Memory {
     prevDuration: number;
     prevDurations: number[];
     cpuUsageEstimator: { enabled: boolean; depth: number };
-    resourceLocks: { [key in 'constructionSites' | 'structures' | 'resources']: { [key: string]: { [key: string]: number } } }
+    resourceLocks: { [key in 'constructionSites' | 'structures' | 'resources']: { [key: string]: { [key: string]: number } } };
+    resourceLockers: { [key: string]: { [key: string]: number } };
 }
 
 declare interface RoomPosition {

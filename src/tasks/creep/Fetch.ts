@@ -32,15 +32,17 @@ export class Fetch extends BaseCreepTask {
     public excludedPositions: Array<{ x: number; y: number }>;
     private lastFetchTargetId?: string;
     private lastFetchTargetType?: FETCH_TARGETS;
-    private lastFetchTargetAmount?: number;
+    private lockedAmount?: number;
+    private roomResourceLock?: string;
     public targetPriority: FETCH_TARGETS[];
 
-    constructor({ targetPriority, excludedPositions, lastFetchTargetId, lastFetchTargetType, lastFetchTargetAmount }: {
+    constructor({ targetPriority, excludedPositions, lastFetchTargetId, lastFetchTargetType, lockedAmount, roomResourceLock }: {
         targetPriority?: FETCH_TARGETS[],
         excludedPositions?: Array<{ x: number; y: number }>,
         lastFetchTargetId?: string,
         lastFetchTargetType?: FETCH_TARGETS,
-        lastFetchTargetAmount?: number,
+        lockedAmount?: number,
+        roomResourceLock?: string,
     } = {}) {
         super({ type: "TASK_FETCH" });
         this.excludedPositions = excludedPositions || [];
@@ -48,7 +50,8 @@ export class Fetch extends BaseCreepTask {
         this._addMissingTargets();
         this.lastFetchTargetId = lastFetchTargetId;
         this.lastFetchTargetType = lastFetchTargetType
-        this.lastFetchTargetAmount = lastFetchTargetAmount
+        this.lockedAmount = lockedAmount
+        this.roomResourceLock = roomResourceLock;
     }
 
     private _addMissingTargets(): void {
@@ -154,14 +157,14 @@ export class Fetch extends BaseCreepTask {
     ) {
         let target: TargetStructure | null = null;
         // if we already aimed to fetch from a particular target, pick this as a target
-        if (this.lastFetchTargetId && this.lastFetchTargetType === fetchTarget) {
+        if (this.lastFetchTargetId && this.lastFetchTargetType === fetchTarget && this.roomResourceLock) {
             target = Game.getObjectById(this.lastFetchTargetId) as TargetStructure;
             // resource decayed, got stolen by another faction, or a creep didn't honour resource reservation
             if (!target) {
-                resourceLock.lock('resources', creepCtl.creep.room.name, this.lastFetchTargetId, this.lastFetchTargetAmount || 0);
+                resourceLock.release('resources', this.roomResourceLock, this.lastFetchTargetId, this.lockedAmount || 0, creepCtl.creep.name);
                 this.lastFetchTargetId = undefined;
                 this.lastFetchTargetType = undefined;
-                this.lastFetchTargetAmount = undefined;
+                this.lockedAmount = undefined;
                 // TODO: unreserve the resource (and remember how much was reserved)
             }
         }
@@ -172,10 +175,15 @@ export class Fetch extends BaseCreepTask {
         }
 
         if (target) {
-            this.lastFetchTargetAmount = creepCtl.creep.store.getFreeCapacity();
+            const capacity = creepCtl.creep.store.getFreeCapacity();
+            // this assumes the 'id' of a resource drop doesn't change if more resources are added - make sure this is true
             if (!this.lastFetchTargetId || this.lastFetchTargetId !== target.id) {
-                // FIXME: this assumes the 'id' of a resource drop doesn't change if more resources are added - make sure this is true
-                resourceLock.lock('resources', creepCtl.creep.room.name, target.id, this.lastFetchTargetAmount);
+                if (this.roomResourceLock && this.lastFetchTargetId) {  // release any currently locked resource
+                    resourceLock.release('resources', this.roomResourceLock, this.lastFetchTargetId, this.lockedAmount || 0, creepCtl.creep.name);
+                }
+                this.lockedAmount = capacity;
+                this.roomResourceLock = creepCtl.creep.room.name;
+                resourceLock.lock('resources', this.roomResourceLock, target.id, this.lockedAmount, creepCtl.creep.name);
             }
             this.lastFetchTargetId = target.id;
             this.lastFetchTargetType = fetchTarget;
@@ -216,7 +224,13 @@ export class Fetch extends BaseCreepTask {
                         && commonFilter(structure),
                 });
             case FIND_SOURCES_ACTIVE:
-                return creepCtl.creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE, { filter: commonFilter });
+                return creepCtl.creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE, {
+                    filter: structure =>
+                        structure.room
+                        && structure.energy - resourceLock.isLocked('resources', structure.room.name, structure.id)
+                        > creepCtl.creep.store.getFreeCapacity()
+                        && commonFilter(structure)
+                });
         }
     }
 
@@ -231,23 +245,41 @@ export class Fetch extends BaseCreepTask {
                 creepCtl.moveTo(target).logFailure();
             })
             .on(ERR_FULL, () => {
-                resourceLock.release('resources', creepCtl.creep.room.name, target.id, this.lastFetchTargetAmount || 0);
                 logger.debug(`${creepCtl}: Creep is full - task is completed.`);
             })
             .on(ERR_NOT_ENOUGH_RESOURCES, () => {
+                if (this.lastFetchTargetId && this.roomResourceLock) {
+                    // if resources were locked and the source is depleted, the creep will start looking for a new source.
+                    // release the lock on the resources of this source and clear up locked amount.
+                    resourceLock.release('resources', this.roomResourceLock, this.lastFetchTargetId, this.lockedAmount || 0, creepCtl.creep.name);
+                    this.lockedAmount = 0;
+                }
                 logger.debug(`${creepCtl}: Target is empty - will try again.`);
             })
             .on(ERR_INVALID_TARGET, () => {
                 logger.failure(ERR_INVALID_TARGET, `${creepCtl}: Invalid target: ${target}`);
-                resourceLock.release('resources', creepCtl.creep.room.name, target.id, this.lastFetchTargetAmount || 0);
                 this.excludedPositions.push(target.pos);
             })
             .logFailure();
     }
 
-    public completed(creep: CreepController): boolean {
-        return creep.creep.store.getFreeCapacity() === 0;
+    public completed(creepCtl: CreepController): boolean {
+        return creepCtl.creep.store.getFreeCapacity() === 0;
     }
+
+    public onComplete(creepCtl: CreepController | undefined) {
+        if (creepCtl && this.lastFetchTargetId && this.roomResourceLock) {
+            resourceLock.release('resources', this.roomResourceLock, this.lastFetchTargetId, this.lockedAmount || 0, creepCtl.creep.name);
+        }
+    }
+
+    public onInterrupt(id: string) {
+        super.onInterrupt(id);
+        if (this.lastFetchTargetId && this.roomResourceLock) {
+            resourceLock.release('resources', this.roomResourceLock, this.lastFetchTargetId, this.lockedAmount || 0, id);
+        }
+    }
+
 
     public persistAfterCompletion(): undefined | PersistTaskMemory {
         return {
@@ -267,6 +299,8 @@ export class Fetch extends BaseCreepTask {
             excludedPositions: this.excludedPositions,
             targetPriority: this.targetPriority,
             lastFetchTargetId: this.lastFetchTargetId,
+            lockedAmount: this.lockedAmount,
+            roomResourceLock: this.roomResourceLock,
             ...json,
         };
         return memory;
