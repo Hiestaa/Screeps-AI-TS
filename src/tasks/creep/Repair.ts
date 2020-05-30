@@ -82,7 +82,7 @@ export class Repair extends BaseCreepTask {
         let noConstructionSiteFound = false;
         const customFilter = ({ structureType, hits, hitsMax }: { structureType?: StructureConstant; hits: number, hitsMax: number }) => {
             // reject any structure with more hitpoints than the repair threshold
-            if (hits > IGNORE_REPAIR_TARGET_ABOVE_HITS_PC * hits / 100) {
+            if (hits > IGNORE_REPAIR_TARGET_ABOVE_HITS_PC * hitsMax / 100) {
                 return false;
             }
 
