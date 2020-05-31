@@ -20,7 +20,7 @@ export abstract class BaseAgent<
     ControllerType extends BaseController<ControlledRoomObjectType>,
     TaskType extends BaseTask<ControlledRoomObjectType, ControllerType>,
     MemoryType extends BaseMemory
-    > {
+> {
     public taskQueue: TaskType[] = [];
     public name: string;
     public memory: MemoryType;
@@ -175,6 +175,15 @@ export abstract class BaseAgent<
         } else if (controller) {
             this.logger.debug(`${controller} is executing ${task}`);
             task.executionStarted = true;
+            if (
+                Memory.taskDebug &&
+                Memory.taskDebug.agent === this.name &&
+                (!Memory.taskDebug.task || Memory.taskDebug.task === task.getType())
+            ) {
+                Memory.taskDebug = undefined;
+                // tslint:disable-next-line:no-debugger
+                debugger;
+            }
             task.execute(controller);
         } else {
             this.logger.error(`Not executing ${task} - controller is undefined`);

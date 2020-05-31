@@ -45,3 +45,7 @@ global.cli.enableCpuUsageEstimator = (depth?: number) => {
 global.cli.disableCpuUsageEstimator = () => {
     cpuUsageEstimator.disable();
 };
+
+global.cli.debugTask = (agent: string, task?: TASK_TYPE) => {
+    Memory.taskDebug = { agent: agent.trim(), task };
+};

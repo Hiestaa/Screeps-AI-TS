@@ -18,7 +18,7 @@ export class Repair extends BaseCreepTask {
     private forced: boolean = false;
     private currentTarget?: string;
 
-    constructor({ forced, currentTarget }: { forced?: boolean, currentTarget?: string } = {}) {
+    constructor({ forced, currentTarget }: { forced?: boolean; currentTarget?: string } = {}) {
         super({ type: "TASK_REPAIR" });
         this.forced = forced || false;
         this.currentTarget = currentTarget;
@@ -29,7 +29,6 @@ export class Repair extends BaseCreepTask {
     }
 
     public execute(creepCtl: CreepController) {
-        // TODO[OPTIMIZATION]: remember the target so we don't search for it at every tick
         const target = this.getTarget(creepCtl);
 
         if (target !== null) {
@@ -62,7 +61,7 @@ export class Repair extends BaseCreepTask {
     private getTarget(creepCtl: CreepController): Structure | null {
         if (this.currentTarget) {
             const currentTarget = Game.getObjectById(this.currentTarget) as Structure;
-            if (currentTarget) {
+            if (currentTarget && currentTarget.hits < currentTarget.hitsMax) {
                 return currentTarget;
             }
         }
@@ -80,9 +79,17 @@ export class Repair extends BaseCreepTask {
     private findTarget(creepCtl: CreepController): Structure | null {
         let constructionSite: ConstructionSite | null = null;
         let noConstructionSiteFound = false;
-        const customFilter = ({ structureType, hits, hitsMax }: { structureType?: StructureConstant; hits: number, hitsMax: number }) => {
+        const customFilter = ({
+            structureType,
+            hits,
+            hitsMax,
+        }: {
+            structureType?: StructureConstant;
+            hits: number;
+            hitsMax: number;
+        }) => {
             // reject any structure with more hitpoints than the repair threshold
-            if (hits > IGNORE_REPAIR_TARGET_ABOVE_HITS_PC * hitsMax / 100) {
+            if (hits > (IGNORE_REPAIR_TARGET_ABOVE_HITS_PC * hitsMax) / 100) {
                 return false;
             }
 

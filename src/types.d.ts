@@ -209,8 +209,11 @@ interface Memory {
     prevDuration: number;
     prevDurations: number[];
     cpuUsageEstimator: { enabled: boolean; depth: number };
-    resourceLocks: { [key in 'constructionSites' | 'structures' | 'resources']: { [key: string]: { [key: string]: number } } };
+    resourceLocks: {
+        [key in "constructionSites" | "structures" | "resources"]: { [key: string]: { [key: string]: number } };
+    };
     resourceLockers: { [key: string]: { [key: string]: number } };
+    taskDebug?: { agent: string; task?: string };
 }
 
 declare interface RoomPosition {
@@ -231,6 +234,7 @@ declare namespace NodeJS {
             queryTickTimer: () => void;
             enableCpuUsageEstimator: (depth?: number) => void;
             disableCpuUsageEstimator: () => void;
+            debugTask: (agent: string, task?: TASK_TYPE) => void;
         };
         tmpCache: {
             debugFlag: boolean;
