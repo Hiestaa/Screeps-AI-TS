@@ -174,7 +174,7 @@ export abstract class BaseAgent<
             logger.debug(`Not executing ${task} - task is currently on pause.`);
         } else if (controller) {
             this.logger.debug(`${controller} is executing ${task}`);
-            task.executionStarted = true;
+            task.executionStarted = Game.time;
             if (
                 Memory.taskDebug &&
                 Memory.taskDebug.agent === this.name &&

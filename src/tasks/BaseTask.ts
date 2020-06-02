@@ -1,8 +1,7 @@
 import { BaseController, Controllable } from "agents/controllers/BaseController";
 import { COLORS, getLogger } from "utils/Logger";
 
-
-const logger = getLogger('tasks.BaseTask', COLORS.tasks);
+const logger = getLogger("tasks.BaseTask", COLORS.tasks);
 
 /**
  * Base Class for any task object. The interface describes the task load/execute/save cycle:
@@ -14,7 +13,7 @@ const logger = getLogger('tasks.BaseTask', COLORS.tasks);
  * TODO: make the children task specify the kind of memory as another generic parameter
  */
 export abstract class BaseTask<RO extends Controllable, Controller extends BaseController<RO>> {
-    public executionStarted: boolean = false;
+    public executionStarted: number = 0;
     public executionPeriod: number = 1;
     public executionPaused: number = 0;
     // populated by the data persisted by the previous task
@@ -36,7 +35,7 @@ export abstract class BaseTask<RO extends Controllable, Controller extends BaseC
         return Game.time < this.executionPaused || Game.time % this.executionPeriod !== 0;
     }
     public execute(controller: Controller) {
-        this.executionStarted = true;
+        this.executionStarted = Game.time;
     }
 
     public abstract completed(controller: Controller): boolean;
@@ -56,18 +55,17 @@ export abstract class BaseTask<RO extends Controllable, Controller extends BaseC
      */
     public onComplete(controller: Controller | undefined) {
         return;
-    };
+    }
 
     /**
      * Called when interrupting a task before it is completed, for instance on creep death.
      * @param id identifier of the agent that got interrupted executing this task.
      */
     public onInterrupt(id: string) {
-        logger.info(`${id}: interrupted ${this} before execution completion.`)
+        logger.info(`${id}: interrupted ${this} before execution completion.`);
     }
 
     public toString() {
         return `task ${this.getType()} ${JSON.stringify(this.toJSON())}`;
     }
-
 }

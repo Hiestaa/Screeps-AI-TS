@@ -5,7 +5,7 @@ declare interface IBuildUnit {
 }
 
 interface BaseTaskMemory {
-    executionStarted: boolean;
+    executionStarted: number;
     executionPaused: number;
 }
 
@@ -65,6 +65,7 @@ interface FetchTaskMemory extends CreepTaskMemory {
     excludedPositions: Array<{ x: number; y: number }>;
     lastFetchTargetId?: string;
     lastFetchTargetType?: FETCH_TARGETS;
+    fetchTargetSelectTime?: number;
     lockedAmount?: number;
     roomResourceLock?: string;
 }
