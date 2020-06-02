@@ -7,10 +7,22 @@ import { COLORS, getLogger } from "utils/Logger";
 const logger = getLogger("tasks.Spawn", COLORS.tasks);
 
 const MAX_SPAWN_DELAY = 100;
+const ENERGY_STORAGE_RESERVE_TARGET: { [key: number]: number } = {
+    0: 0,
+    1: 0,
+    2: 0,
+    3: 1000,
+    4: 10000,
+    5: 20000,
+    6: 50000,
+    7: 100000,
+    8: 200000,
+};
 
 export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     public request: SpawnRequest;
     public executionPeriod = 10;
+    private availableEnergyStorage: number | null = null;
     private spawnDelay = 0;
 
     constructor({ request, spawnDelay }: { request: SpawnRequest, spawnDelay?: number }) {
@@ -35,8 +47,11 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
         }
 
         const name = gun(this.request.creepProfile.slice(0, 4));
+        // TODO[OPTIMIZATION] cache energy structures
         const energyStructures = this.getEnergyStructures(spawnCtl);
-        const bodyParts = this.maxCreepProfile(energyStructures, this.request.creepProfile);
+        // TODO[TEST] make sure offsetting works so we don't max creep out
+        // unless there is storage in energy (following the reserve targets)
+        const bodyParts = this.maxCreepProfile(energyStructures, this.request.creepProfile, spawnCtl);
         if (!bodyParts) {
             return;
         }
@@ -61,9 +76,10 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     private maxCreepProfile(
         energyStructures: Array<StructureSpawn | StructureExtension>,
         creepProfile: CREEP_PROFILE,
+        spawnCtl: SpawnController,
     ): BodyPartConstant[] | undefined {
-        const energy = this.computeAvailableEnergy(energyStructures);
-        const potentialEnergy = this.computePotentialEnergy(energyStructures);
+        const energy = this.energyStorageLevelOffset(spawnCtl, this.computeAvailableEnergy(energyStructures));
+        const potentialEnergy = this.energyStorageLevelOffset(spawnCtl, this.computePotentialEnergy(energyStructures));
         const profile = makeCreepProfileInstance(creepProfile);
         const initialCost = profile.cost();
 
@@ -99,8 +115,6 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
             this.spawnDelay = 0;
             return profileWithCurrentEnergy.bodyParts;
         } else {
-            // TODO: count the number of cycles where we're delaying and stop delaying when this exceeds a threshold
-            // in which case spawn `profileWithCurrentEnergy`
             logger.info(
                 `Spawn delay ${this.spawnDelay}/${maxSpawnDelay} of '${profileWithMaxPotentialEnergy}' ` +
                 `until ${maxedPotentialCost} energy is available ${suffix}.`,
@@ -122,6 +136,37 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
                 structure.store.getFreeCapacity(RESOURCE_ENERGY),
             0,
         );
+    }
+
+    private energyStorageLevelOffset(spawnCtl: SpawnController, energy: number) {
+        const rcl = spawnCtl.spawn.room.controller?.level;
+        const target = ENERGY_STORAGE_RESERVE_TARGET[rcl || 0] || 0;
+        if (target === 0) {  // no reserve target, no reason to offset energy storage level
+            return energy;
+        }
+
+        if (this.availableEnergyStorage === null) {
+            const storages = spawnCtl.spawn.room.find(FIND_STRUCTURES, {
+                filter: structure =>
+                    (
+                        structure.structureType === STRUCTURE_CONTAINER || (
+                            structure.structureType === STRUCTURE_STORAGE && structure.my)
+                    ) && (
+                        structure.pos.x > spawnCtl.spawn.pos.x - 5
+                        && structure.pos.x < spawnCtl.spawn.pos.x + 5
+                        && structure.pos.y > spawnCtl.spawn.pos.y - 5
+                        && structure.pos.y < spawnCtl.spawn.pos.y + 5
+                    )
+            }) as Array<StructureStorage | StructureContainer>;
+            this.availableEnergyStorage = storages.reduce((acc, { store }) => acc + store.getUsedCapacity(RESOURCE_ENERGY), 0);
+        }
+
+        // if available energy in storage is 20% of the target, offset the provided energy by 20%
+        const discounted = Math.min(energy, energy * this.availableEnergyStorage * 100 / target);
+        if (discounted !== energy) {
+            logger.info(`${this}: discounting ${energy} to ${discounted} based on ${this.availableEnergyStorage} / ${target} energy available.`);
+        }
+        return discounted;
     }
 
     private getEnergyStructures(spawnCtl: SpawnController): Array<StructureExtension | StructureSpawn> {
