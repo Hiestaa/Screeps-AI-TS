@@ -3,14 +3,27 @@ import { BaseTask } from "tasks/BaseTask";
 import { findNearbyMostDamaged } from "utils/findHelpers";
 import { COLORS, getLogger } from "utils/Logger";
 import { WARN_FREQUENCY } from "../constants";
+import { RAMPART_SUBSEQUENT_REPAIR_HITS_TARGET } from "./creep/Repair";
 
 const logger = getLogger("tasks.TowerTask", COLORS.tasks);
 
 const DEFENSE_RADIUS = 10;
 
-const customFilter = (towerCtl: TowerController) => ({ pos }: { pos: RoomPosition }) => {
-    return towerCtl.tower.pos.getRangeTo(pos) <= DEFENSE_RADIUS;
+const customFilter = (towerCtl: TowerController) => (item: {
+    pos: RoomPosition;
+    hits: number;
+    structureType?: StructureConstant;
+}) => {
+    const { pos, hits, structureType } = item;
+    const isInRange = towerCtl.tower.pos.getRangeTo(pos) <= DEFENSE_RADIUS;
+
+    if (structureType === STRUCTURE_RAMPART) {
+        return isInRange && hits < RAMPART_SUBSEQUENT_REPAIR_HITS_TARGET;
+    }
+
+    return isInRange;
 };
+
 export class TowerTask extends BaseTask<StructureTower, TowerController> {
     private currentHealTarget?: string;
     private currentAttackTarget?: string;

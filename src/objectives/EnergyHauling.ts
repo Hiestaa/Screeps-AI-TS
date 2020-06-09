@@ -28,12 +28,17 @@ export class RefillContainers extends BaseObjective {
 
             creep.scheduleTask(new Fetch({ targetPriority: [], excludedPositions: sinks })); // avoid sinks (but pick any suitable source)
             // note: won't fill up the storage if containers aren't full, there is a cap when it's not the last item
-            creep.scheduleTask(new Haul({ deliveryTargets: ["storage", "container", "storage"], excludedPositions: sources })); // avoid source (but pink any suitable sink)
+            creep.scheduleTask(
+                new Haul({
+                    deliveryTargets: [STRUCTURE_STORAGE, STRUCTURE_CONTAINER, STRUCTURE_STORAGE],
+                    excludedPositions: sources,
+                }),
+            ); // avoid source (but pink any suitable sink)
         }
     }
 
     public estimateRequiredWorkForce(room: RoomPlanner): SpawnRequest[] {
-        // TODO: make it a function of the number of buildings or construction sites?
+        // TODO: make it a function of the number of buildings or construction sites? or sources?
         return [{ count: 3, battalion: this.battalionId, creepProfile: "Hauler" }];
     }
 }
@@ -64,6 +69,11 @@ export class RefillSpawnStorage extends BaseObjective {
     }
 
     public estimateRequiredWorkForce(room: RoomPlanner): SpawnRequest[] {
-        return [{ count: 2, battalion: this.battalionId, creepProfile: "Hauler" }];
+        const rcl = room.getRCL();
+        let count = 1;
+        if (rcl && rcl > 4) {
+            count = 2;
+        }
+        return [{ count, battalion: this.battalionId, creepProfile: "Hauler" }];
     }
 }

@@ -25,7 +25,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     private availableEnergyStorage: number | null = null;
     private spawnDelay = 0;
 
-    constructor({ request, spawnDelay }: { request: SpawnRequest, spawnDelay?: number }) {
+    constructor({ request, spawnDelay }: { request: SpawnRequest; spawnDelay?: number }) {
         super();
         this.request = request;
         this.spawnDelay = spawnDelay || 0;
@@ -78,13 +78,14 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
         creepProfile: CREEP_PROFILE,
         spawnCtl: SpawnController,
     ): BodyPartConstant[] | undefined {
-        const energy = this.energyStorageLevelOffset(spawnCtl, this.computeAvailableEnergy(energyStructures));
+        const realAvailableEnergy = this.computeAvailableEnergy(energyStructures);
+        const availableEnergy = this.energyStorageLevelOffset(spawnCtl, realAvailableEnergy);
         const potentialEnergy = this.energyStorageLevelOffset(spawnCtl, this.computePotentialEnergy(energyStructures));
         const profile = makeCreepProfileInstance(creepProfile);
         const initialCost = profile.cost();
 
         let profileWithCurrentEnergy = profile.clone();
-        while (profile.cost() <= energy && !profile.exceededMaxLevel()) {
+        while (profile.cost() <= availableEnergy && !profile.exceededMaxLevel()) {
             profileWithCurrentEnergy = profile.clone();
             profile.incrementLevel();
         }
@@ -96,16 +97,20 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
         }
         const maxedPotentialCost = profileWithMaxPotentialEnergy.cost();
 
-        const suffix = `(potential for: ${potentialEnergy}, cost min: ${initialCost}, available: ${energy})`;
+        const suffix = `(potential for: ${potentialEnergy}, cost min: ${initialCost}, available: ${realAvailableEnergy} discounted to ${availableEnergy})`;
         const maxSpawnDelay = MAX_SPAWN_DELAY / this.executionPeriod;
-        if (maxedPotentialCost <= energy) {
+        if (maxedPotentialCost <= availableEnergy) {
             logger.info(`Spawning '${profileWithMaxPotentialEnergy}' ${suffix}.`);
             this.spawnDelay = 0;
             return profileWithMaxPotentialEnergy.bodyParts;
-        } else if (initialCost >= energy) {
+        } else if (initialCost < realAvailableEnergy) {
+            logger.info(`Spawning '${profileWithCurrentEnergy}' ${suffix}.`);
+            this.spawnDelay = 0;
+            return profileWithCurrentEnergy.bodyParts;
+        } else if (initialCost >= availableEnergy) {
             logger.info(
                 `Unable to spawn '${profileWithMaxPotentialEnergy}' ${suffix} (forced delay ${
-                this.spawnDelay
+                    this.spawnDelay
                 }/${maxSpawnDelay * 2}).`,
             );
             this.spawnDelay += 1;
@@ -117,7 +122,7 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
         } else {
             logger.info(
                 `Spawn delay ${this.spawnDelay}/${maxSpawnDelay} of '${profileWithMaxPotentialEnergy}' ` +
-                `until ${maxedPotentialCost} energy is available ${suffix}.`,
+                    `until ${maxedPotentialCost} energy is available ${suffix}.`,
             );
             this.spawnDelay += 1;
             return;
@@ -141,30 +146,37 @@ export class SpawnTask extends BaseTask<StructureSpawn, SpawnController> {
     private energyStorageLevelOffset(spawnCtl: SpawnController, energy: number) {
         const rcl = spawnCtl.spawn.room.controller?.level;
         const target = ENERGY_STORAGE_RESERVE_TARGET[rcl || 0] || 0;
-        if (target === 0) {  // no reserve target, no reason to offset energy storage level
+        if (target === 0) {
+            // no reserve target, no reason to offset energy storage level
             return energy;
         }
 
         if (this.availableEnergyStorage === null) {
             const storages = spawnCtl.spawn.room.find(FIND_STRUCTURES, {
                 filter: structure =>
-                    (
-                        structure.structureType === STRUCTURE_CONTAINER || (
-                            structure.structureType === STRUCTURE_STORAGE && structure.my)
-                    ) && (
-                        structure.pos.x > spawnCtl.spawn.pos.x - 5
-                        && structure.pos.x < spawnCtl.spawn.pos.x + 5
-                        && structure.pos.y > spawnCtl.spawn.pos.y - 5
-                        && structure.pos.y < spawnCtl.spawn.pos.y + 5
-                    )
+                    (structure.structureType === STRUCTURE_CONTAINER ||
+                        (structure.structureType === STRUCTURE_STORAGE && structure.my)) &&
+                    structure.pos.x > spawnCtl.spawn.pos.x - 5 &&
+                    structure.pos.x < spawnCtl.spawn.pos.x + 5 &&
+                    structure.pos.y > spawnCtl.spawn.pos.y - 5 &&
+                    structure.pos.y < spawnCtl.spawn.pos.y + 5,
             }) as Array<StructureStorage | StructureContainer>;
-            this.availableEnergyStorage = storages.reduce((acc, { store }) => acc + store.getUsedCapacity(RESOURCE_ENERGY), 0);
+            if (storages.length === 0) {
+                // let's not discount until we actually build a storage
+                return energy;
+            }
+            this.availableEnergyStorage = storages.reduce(
+                (acc, { store }) => acc + store.getUsedCapacity(RESOURCE_ENERGY),
+                0,
+            );
         }
 
         // if available energy in storage is 20% of the target, offset the provided energy by 20%
-        const discounted = Math.min(energy, energy * this.availableEnergyStorage * 100 / target);
+        const discounted = Math.min(energy, (energy * this.availableEnergyStorage) / target);
         if (discounted !== energy) {
-            logger.info(`${this}: discounting ${energy} to ${discounted} based on ${this.availableEnergyStorage} / ${target} energy available.`);
+            logger.info(
+                `${spawnCtl}: discounting ${energy} to ${discounted} based on ${this.availableEnergyStorage} / ${target} energy available.`,
+            );
         }
         return discounted;
     }

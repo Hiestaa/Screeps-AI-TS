@@ -165,9 +165,13 @@ export class Fetch extends BaseCreepTask {
 
         // if we're going to clear this target for another one, avoid re-selecting the same one
         const excludeTarget: string | undefined = this.lastFetchTargetId;
-        if (this.fetchTargetSelectTime && Game.time - this.fetchTargetSelectTime > MAX_CYCLES_ATTEMPT_SAME_TARGET) {
+        if (
+            this.lastFetchTargetId &&
+            this.fetchTargetSelectTime &&
+            Game.time - this.fetchTargetSelectTime > MAX_CYCLES_ATTEMPT_SAME_TARGET
+        ) {
             logger.warning(
-                `${creepCtl}: releasing target ${excludeTarget} after attempting to fetch for ${Game.time -
+                `${creepCtl}: releasing target ${this.lastFetchTargetId} after attempting to fetch for ${Game.time -
                     this.fetchTargetSelectTime} cycles.`,
             );
             this.releaseResourcesAndClearMemory(creepCtl);

@@ -4,7 +4,7 @@ import * as cpuUsageEstimator from "utils/cpuUsageEstimator";
 import { COLORS, getLogger, Logger } from "utils/Logger";
 
 const logger = getLogger("controllers.agents.BaseAgent", COLORS.controllers);
-const WARN_IDLE_PERIOD = 100;
+const LOG_IDLE_PERIOD = 1000;
 
 /**
  * Base class for any agent.
@@ -101,8 +101,8 @@ export abstract class BaseAgent<
         cpuUsageEstimator.notifyStart(`agents.${this.name}`);
         if (this.taskQueue.length === 0) {
             this.memory.idleTime += 1;
-            if (this.memory.idleTime > 0 && this.memory.idleTime % WARN_IDLE_PERIOD === 0) {
-                this.logger.warning(`${controller}: No task to perform (idle time: ${this.memory.idleTime})`);
+            if (this.memory.idleTime > 0 && this.memory.idleTime % LOG_IDLE_PERIOD === 0) {
+                this.logger.info(`${controller}: No task to perform (idle time: ${this.memory.idleTime})`);
             }
             cpuUsageEstimator.notifyComplete();
             return;

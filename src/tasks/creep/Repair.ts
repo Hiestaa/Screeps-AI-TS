@@ -7,6 +7,7 @@ const logger = getLogger("tasks.creep.Repair", COLORS.tasks);
 
 // stop repairing ramparts that have more hitpoints than that and consider other construction sites
 export const RAMPART_INITIAL_REPAIR_HITS_TARGET = 10000;
+export const RAMPART_SUBSEQUENT_REPAIR_HITS_TARGET = 250000; // TODO: make this function of the RCL?
 export const IGNORE_REPAIR_TARGET_ABOVE_HITS_PC = 80;
 
 /**
@@ -100,7 +101,7 @@ export class Repair extends BaseCreepTask {
 
             // if forced, keep pouring energy into any found target
             if (this.forced) {
-                return true;
+                return hits < RAMPART_SUBSEQUENT_REPAIR_HITS_TARGET;
             }
 
             // for ramparts, accept any with significantly low health
@@ -115,7 +116,7 @@ export class Repair extends BaseCreepTask {
             // don't do the same find query twice:
             // if no construction site could be found the first time it won't happen this time either
             if (noConstructionSiteFound) {
-                return true;
+                return hits < RAMPART_SUBSEQUENT_REPAIR_HITS_TARGET;
             }
 
             // now look for construction sites - accept the rampart if none can be found
@@ -123,7 +124,7 @@ export class Repair extends BaseCreepTask {
             constructionSite = creepCtl.creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES);
             if (!constructionSite) {
                 noConstructionSiteFound = true;
-                return true;
+                return hits < RAMPART_SUBSEQUENT_REPAIR_HITS_TARGET;
             }
             return false;
         };

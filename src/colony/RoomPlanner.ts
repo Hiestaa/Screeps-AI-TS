@@ -305,12 +305,11 @@ export class RoomPlanner {
 
             this.room.scheduleTask(
                 new PlaceConstructionSites({
-                    scheduledBuildUnits:
-                        path.map(({ x, y }) => ({
-                            x,
-                            y,
-                            structureType: STRUCTURE_ROAD,
-                        })),
+                    scheduledBuildUnits: path.map(({ x, y }) => ({
+                        x,
+                        y,
+                        structureType: STRUCTURE_ROAD,
+                    })),
                 }),
             );
             return path.map(({ x, y }) => ({ x, y }));
@@ -324,9 +323,15 @@ export class RoomPlanner {
      * Create ramparts to shield all exit to bunker the room.
      */
     private createExitRamparts() {
-        const exits = this.room.roomController?.room.find(FIND_EXIT);
-        const ramparts = (exits || []).map(exit =>
-            AvailableSpotsFinder.estimateAvailableSpots(this.room, exit, [], { min: 2, max: 3 }),
+        const exits = this.room.roomController?.room.find(FIND_EXIT) || [];
+        const ramparts = exits.map(exit =>
+            AvailableSpotsFinder.estimateAvailableSpots(this.room, exit, [], { min: 2, max: 3 }).filter(
+                ({ x, y }: { x: number; y: number }) => {
+                    return exits.every(otherExit => {
+                        return Math.abs(otherExit.x - x) >= 2 || Math.abs(otherExit.y - y) >= 2;
+                    });
+                },
+            ),
         );
 
         const sites: IBuildUnit[] = [];
